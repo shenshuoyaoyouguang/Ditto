@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ClipboardMonitorImpl.h"
 #include "..\Shared\IClipboardConfig.h"
+#include "CP_Main.h"
 #include "MainFrm.h"
 #include "Misc.h"
 #include "Options.h"
