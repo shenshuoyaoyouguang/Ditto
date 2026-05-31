@@ -97,6 +97,7 @@ public:
 
 	// CopyThread and ClipViewer (Copy and Paste Management)
 	std::unique_ptr<IClipboardMonitor> m_monitor;
+	CCriticalSection m_monitorLock;
 	CAppConfigAdapter m_configAdapter;
 
 	void StartStopMonitor();

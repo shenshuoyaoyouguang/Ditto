@@ -43,19 +43,6 @@ bool CClipboardMonitorImpl::Create(HWND hClipHandler, IClipboardConfig* pConfig)
 
     m_copyThread.Init(CCopyConfig(m_hClipHandler, true, true, pTypes));
 
-    bool connectOnStartup = (theApp.m_connectOnStartup != FALSE &&
-        CGetSetOptions::GetConnectedToClipboard() != FALSE);
-
-    if (!connectOnStartup)
-    {
-        m_copyThread.m_connectOnStartup = false;
-        Log(_T("Starting Ditto up disconnected from clipboard"));
-    }
-    else
-    {
-        Log(_T("Starting Ditto up connected from clipboard"));
-    }
-
     VERIFY(m_copyThread.CreateThread(CREATE_SUSPENDED));
     m_copyThread.ResumeThread();
 

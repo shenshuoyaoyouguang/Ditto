@@ -617,6 +617,7 @@ void CCP_MainApp::StartStopMonitor()
 
 void CCP_MainApp::StopMonitor()
 {
+	CSingleLock lock(&m_monitorLock, TRUE);
 	if (m_monitor)
 	{
 		m_monitor->Destroy();

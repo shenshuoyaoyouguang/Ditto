@@ -251,16 +251,19 @@ UINT CProcessPaste::MarkAsPastedThread(LPVOID pParam)
 				theApp.RefreshClipInUI(id, refreshFlags);
 			}
 
-			if (theApp.m_monitor)
+			IClipboardMonitor* pMonitor = nullptr;
 			{
-				// 提取所有 ID 到本地 vector，避免 pData 释放后仍被访问
+				CSingleLock lock(&theApp.m_monitorLock, TRUE);
+				pMonitor = theApp.m_monitor.get();
+			}
+			if (pMonitor)
+			{
 				std::vector<ClipId> pasteIds;
 				pasteIds.reserve(clipCount);
 				for (int i = 0; i < clipCount; i++)
 					pasteIds.push_back(pData->ids.ElementAt(i));
 
-				// 使用批量更新减少 DB 事务数
-				theApp.m_monitor->NotifyPasteBatch(pasteIds);
+				pMonitor->NotifyPasteBatch(pasteIds);
 			}
 
 			delete pData;

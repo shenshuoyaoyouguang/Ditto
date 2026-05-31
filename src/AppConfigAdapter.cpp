@@ -6,7 +6,6 @@
 #include "..\Shared\Tokenizer.h"
 #include "WildCardMatch.h"
 #include "sqlite\CppSQLite3.h"
-#include "..\Shared\DittoDefines.h"
 
 CAppConfigAdapter::CAppConfigAdapter()
     : m_bCopyOnChange(true)
@@ -67,7 +66,7 @@ std::shared_ptr<std::vector<CLIPFORMAT>> CAppConfigAdapter::GetSupportedTypes() 
         CppSQLite3Query q = theApp.m_db.execQuery(_T("SELECT TypeText FROM Types ORDER BY lID ASC"));
         while (!q.eof())
         {
-            CLIPFORMAT cf = CDittoAddinHelpers::GetFormatID(q.fieldValue(_T("TypeText")));
+            CLIPFORMAT cf = GetFormatID(q.fieldValue(_T("TypeText")));
             if (cf != 0)
                 pTypes->push_back(cf);
             q.nextRow();
