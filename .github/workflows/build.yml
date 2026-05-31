@@ -42,8 +42,20 @@ jobs:
         run: |
             DittoSetup\rcedit-x64 Release64\Ditto.exe --set-file-version ${{env.VERSION_DOT_FILENAME}} --set-product-version ${{env.VERSION_DOT_FILENAME}}
 
+      - name: Check signing availability
+        id: check_signing
+        run: |
+            if ([string]::IsNullOrWhiteSpace('${{ secrets.SIGNPATH_API_TOKEN }}')) {
+                echo "available=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                echo "Signing is NOT available - will skip signing and release steps"
+            } else {
+                echo "available=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                echo "Signing is available - will run full release pipeline"
+            }
+
       - name: upload-unsigned-exe
         id: upload-unsigned-exe
+        if: steps.check_signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with: 
           name: unsigned-exe
@@ -54,6 +66,7 @@ jobs:
             Release64\Addins\DittoUtil.dll
             
       - id: sign-exe
+        if: steps.check_signing.outputs.available == 'true'
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -66,12 +79,14 @@ jobs:
           output-artifact-directory: '/Release64'      
                    
       - name: Installer
+        if: steps.check_signing.outputs.available == 'true'
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.7
         with:
           path: DittoSetup\DittoSetup_10.iss
           
       - name: upload-unsigned-artifact
         id: upload-unsigned-artifact
+        if: steps.check_signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with: 
           name: unsigned-intaller
@@ -79,6 +94,7 @@ jobs:
           path: DittoSetup\output\DittoSetup_${{env.VERSION_FILENAME}}.exe
           
       - id: sing-installer
+        if: steps.check_signing.outputs.available == 'true'
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -91,6 +107,7 @@ jobs:
           output-artifact-directory: '/DittoSetup/output'          
           
       - name: Build Portable
+        if: steps.check_signing.outputs.available == 'true'
         run: |
             DittoSetup\BuildPortableZIP.bat "DittoPortable_${{env.VERSION_FILENAME}}" bit64
             
@@ -100,6 +117,7 @@ jobs:
             7z a DittoSetup\output\DittoDebug_${{env.VERSION_FILENAME}}.7z *.map -r
             
       - name: Choco - Ditto
+        if: steps.check_signing.outputs.available == 'true'
         run: |
             (Get-Content 'DittoSetup\Chocolatey\ditto.nuspec' -Raw).Replace("%version%", "${{env.VERSION_DOT_FILENAME}}") | Out-File 'DittoSetup\Chocolatey\ditto.nuspec'
             copy DittoSetup\Output\DittoSetup_${{env.VERSION_FILENAME}}.exe DittoSetup\Chocolatey\tools\DittoSetup_${{env.VERSION_FILENAME}}.exe
@@ -110,6 +128,7 @@ jobs:
             cd ..
             
       - name: Choco - Ditto.Install
+        if: steps.check_signing.outputs.available == 'true'
         run: |
             (Get-Content 'DittoSetup\Chocolatey.install\ditto.nuspec' -Raw).Replace("%version%", "${{env.VERSION_DOT_FILENAME}}") | Out-File 'DittoSetup\Chocolatey.install\ditto.nuspec'
             copy DittoSetup\output\DittoSetup_${{env.VERSION_FILENAME}}.exe DittoSetup\Chocolatey.install\tools\DittoSetup_${{env.VERSION_FILENAME}}.exe
@@ -120,6 +139,7 @@ jobs:
             cd ..
     
       - name: Choco - Ditto.Portable
+        if: steps.check_signing.outputs.available == 'true'
         run: |
             (Get-Content 'DittoSetup\Chocolatey.portable\ditto.nuspec' -Raw).Replace("%version%", "${{env.VERSION_DOT_FILENAME}}") | Out-File 'DittoSetup\Chocolatey.portable\ditto.nuspec'
             copy DittoSetup\output\DittoPortable_${{env.VERSION_FILENAME}}.zip DittoSetup\Chocolatey.portable\tools\DittoPortable_${{env.VERSION_FILENAME}}.zip
@@ -130,6 +150,7 @@ jobs:
             cd ..
             
       - name: Build appx
+        if: steps.check_signing.outputs.available == 'true'
         run: |
             7z x DittoSetup\output\DittoPortable_${{env.VERSION_FILENAME}}.zip -oDittoSetup\appx -r
             (Get-Content 'DittoSetup\appx\appxmanifest.xml' -Raw).Replace("%version%", "${{env.VERSION_DOT_FILENAME}}") | Out-File 'DittoSetup\appx\appxmanifest.xml'  
@@ -144,6 +165,7 @@ jobs:
             copy DittoSetup\appx\Ditto_${{env.VERSION_FILENAME}}.appx DittoSetup\Output\Ditto_${{env.VERSION_FILENAME}}.appx
     
       - name: Publish to GitHub
+        if: steps.check_signing.outputs.available == 'true'
         env:
           token: ${{secrets.GITHUB_TOKEN}}
           uploadPath: DittoSetup\output\
@@ -153,3 +175,14 @@ jobs:
              npm install ./DittoSetup/GitHubRelease
              node ./DittoSetup/GitHubRelease/index.js
 
+      - name: Upload unsigned build artifacts
+        if: steps.check_signing.outputs.available != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-build-${{env.VERSION_FILENAME}}
+          retention-days: 7
+          path: |
+            Release64\Ditto.exe
+            Release64\ICU_Loader.dll
+            Release64\Addins\DittoUtil.dll
+            DittoSetup\output\DittoDebug_${{env.VERSION_FILENAME}}.7z
