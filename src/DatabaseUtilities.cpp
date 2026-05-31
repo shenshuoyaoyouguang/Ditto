@@ -722,7 +722,8 @@ BOOL CreateDB(CString csFile)
 			_T("stickyClipOrder REAL, ")
 			_T("stickyClipGroupOrder REAL, ")
 			_T("MoveToGroupShortCut INTEGER, ")
-			_T("GlobalMoveToGroupShortCut INTEGER);"));
+			_T("GlobalMoveToGroupShortCut INTEGER, ")
+			_T("paste_count INTEGER NOT NULL DEFAULT 0);"));
 
 		db.execDML(_T("CREATE TABLE Data(")
 			_T("lID INTEGER PRIMARY KEY AUTOINCREMENT, ")
@@ -740,6 +741,7 @@ BOOL CreateDB(CString csFile)
 		db.execDML(_T("CREATE INDEX Main_ClipGroupOrder on Main(clipGroupOrder DESC)"));
 		db.execDML(_T("CREATE INDEX Main_ParentId on Main(lParentID DESC)"));
 		db.execDML(_T("CREATE INDEX Main_IsGroup on Main(bIsGroup DESC)"));
+		db.execDML(_T("CREATE INDEX Main_PasteCount on Main(paste_count DESC)"));
 
 		db.execDML(_T("CREATE TRIGGER delete_data_trigger BEFORE DELETE ON Main FOR EACH ROW\n")
 			_T("BEGIN\n")

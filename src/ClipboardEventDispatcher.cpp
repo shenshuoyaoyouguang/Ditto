@@ -30,8 +30,13 @@ void CClipboardEventDispatcher::Unsubscribe(EventToken token)
 
 void CClipboardEventDispatcher::FireEvent(const ClipEventInfo& info)
 {
-    CSingleLock lock(&m_cs, TRUE);
-    for (auto* listener : m_listeners)
+    // 在锁内复制快照，释放锁后再调用回调，避免重入死锁
+    std::vector<IClipEventListener*> snapshot;
+    {
+        CSingleLock lock(&m_cs, TRUE);
+        snapshot = m_listeners;
+    }
+    for (auto* listener : snapshot)
     {
         if (listener)
             listener->OnClipEvent(info);

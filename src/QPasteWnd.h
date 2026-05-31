@@ -32,7 +32,8 @@ public:
 		m_bHasShortCut(false), 
 		m_bHasParent(false),
 		m_dateCopied(0),
-		m_datePasted(0)
+		m_datePasted(0),
+		m_pasteCount(0)
 	{
 
 	}

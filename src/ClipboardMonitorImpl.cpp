@@ -130,6 +130,7 @@ std::vector<ClipEntry> CClipboardMonitorImpl::QueryClips(const ClipQueryFilter& 
         if (filter.textSearch.has_value())
         {
             CString escaped = filter.textSearch.value();
+            escaped.Replace(_T("\\"), _T("\\\\"));  // 先转义反斜杠
             escaped.Replace(_T("'"), _T("''"));
             escaped.Replace(_T("%"), _T("\\%"));
             escaped.Replace(_T("_"), _T("\\_"));
@@ -153,7 +154,7 @@ std::vector<ClipEntry> CClipboardMonitorImpl::QueryClips(const ClipQueryFilter& 
             entry.pasteCount = q.getIntField(_T("paste_count"));
             entry.copyTime = CTime(q.getInt64Field(_T("lDate")));
             entry.lastPasteTime = CTime(q.getInt64Field(_T("lastPasteDate")));
-            entry.isSticky = false;
+            entry.isSticky = q.getIntField(_T("lDontAutoDelete")) > 0;
             entry.formatCount = 0;
             results.push_back(entry);
             q.nextRow();
@@ -181,6 +182,16 @@ size_t CClipboardMonitorImpl::CountClips(const ClipQueryFilter& filter)
         {
             CString g; g.Format(_T(" AND Main.lParentID = %ld"), filter.groupId.value()); where += g;
         }
+        if (filter.minPasteCount.has_value())
+        {
+            CString m; m.Format(_T(" AND Main.paste_count >= %d"), filter.minPasteCount.value()); where += m;
+        }
+        if (filter.textSearch.has_value())
+        {
+            CString escaped = filter.textSearch.value();
+            escaped.Replace(_T("'"), _T("''"));
+            CString t; t.Format(_T(" AND Main.mText LIKE '%%%s%%'"), escaped); where += t;
+        }
         CString sql; sql.Format(_T("SELECT COUNT(Main.lID) FROM Main WHERE %s"), where);
         result = (size_t)theApp.m_db.execScalar(sql);
     }
@@ -192,9 +203,10 @@ void CClipboardMonitorImpl::NotifyPaste(ClipId id)
 {
     try
     {
+        __time64_t now = CTime::GetCurrentTime().GetTime();
         theApp.m_db.execDMLEx(_T("UPDATE Main SET paste_count = paste_count + 1, ")
-            _T("lastPasteDate = %d WHERE lID = %d"),
-            (int)CTime::GetCurrentTime().GetTime(), id);
+            _T("lastPasteDate = %lld WHERE lID = %ld"),
+            (long long)now, id);
 
         ClipEventInfo info;
         info.type = ClipEventType::Saved;
@@ -206,18 +218,39 @@ void CClipboardMonitorImpl::NotifyPaste(ClipId id)
 
 void CClipboardMonitorImpl::NotifyPasteBatch(const std::vector<ClipId>& ids)
 {
+    bool inTransaction = false;
     try
     {
         theApp.m_db.execDML(_T("BEGIN TRANSACTION"));
-        int now = (int)CTime::GetCurrentTime().GetTime();
+        inTransaction = true;
+        __time64_t now = CTime::GetCurrentTime().GetTime();
         for (auto id : ids)
         {
             theApp.m_db.execDMLEx(_T("UPDATE Main SET paste_count = paste_count + 1, ")
-                _T("lastPasteDate = %d WHERE lID = %d"), now, id);
+                _T("lastPasteDate = %lld WHERE lID = %ld"), (long long)now, id);
         }
         theApp.m_db.execDML(_T("COMMIT"));
+        inTransaction = false;
+
+        // 通知事件监听器
+        ClipEventInfo info;
+        info.type = ClipEventType::Saved;
+        for (auto id : ids)
+        {
+            info.clipId = id;
+            m_dispatcher.FireEvent(info);
+        }
     }
-    CATCH_SQLITE_EXCEPTION
+    catch (CppSQLite3Exception& e)
+    {
+        if (inTransaction)
+        {
+            try { theApp.m_db.execDML(_T("ROLLBACK")); }
+            catch (...) { }
+        }
+        Log(StrF(_T("SQLITE Exception %d - %s"), e.errorCode(), e.errorMessage()));
+        ASSERT(FALSE);
+    }
 }
 
 bool CClipboardMonitorImpl::IsClipboardViewerConnected()

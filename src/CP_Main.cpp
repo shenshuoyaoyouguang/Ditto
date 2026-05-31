@@ -601,12 +601,13 @@ void CCP_MainApp::StartStopMonitor()
 	if (m_monitor)
 	{
 		m_monitor->Create(m_MainhWnd, &m_configAdapter);
+
 		if (m_connectOnStartup == FALSE || CGetSetOptions::GetConnectedToClipboard() == FALSE)
 		{
 			Log(StrF(_T("Starting Ditto up disconnected from the clipboard")));
 			SetConnectCV(false);
 		}
-		else if (m_connectOnStartup == TRUE)
+		else
 		{
 			SetConnectCV(true);
 			Log(_T("Starting Ditto up connected from the clipboard"));

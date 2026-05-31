@@ -1481,7 +1481,12 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 	{
 		csSort = "Main.paste_count DESC, "
 			"Main.lDate DESC";
-		if (theApp.m_GroupID >= 0)
+
+		if (m_bShowStarredClips)
+		{
+			strFilter = strStarredFilter;
+		}
+		else if (theApp.m_GroupID >= 0)
 		{
 			strFilter.Format(_T("Main.lParentID = %d AND Main.bIsGroup = 0"), theApp.m_GroupID);
 			strParentFilter = strFilter;

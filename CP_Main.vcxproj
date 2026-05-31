@@ -803,6 +803,7 @@
     <ClInclude Include="src\AddType.h" />
     <ClInclude Include="src\AdvGeneral.h" />
     <ClInclude Include="src\AlphaBlend.h" />
+    <ClInclude Include="src\AppConfigAdapter.h" />
     <ClInclude Include="src\AutoSendToClientThread.h" />
     <ClInclude Include="src\BitmapHelper.h" />
     <ClInclude Include="src\CF_HDropAggregator.h" />
@@ -813,6 +814,9 @@
     <ClInclude Include="src\ChaiScriptXml.h" />
     <ClInclude Include="src\Client.h" />
     <ClInclude Include="src\Clip.h" />
+    <ClInclude Include="src\ClipboardEventDispatcher.h" />
+    <ClInclude Include="src\ClipboardMonitorFactory.h" />
+    <ClInclude Include="src\ClipboardMonitorImpl.h" />
     <ClInclude Include="src\ClipboardSaveRestore.h" />
     <ClInclude Include="src\ClipboardViewer.h" />
     <ClInclude Include="src\ClipCompare.h" />
