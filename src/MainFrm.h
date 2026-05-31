@@ -5,6 +5,7 @@
 #include "ToolTipEx.h"
 #include "MainFrmThread.h"
 #include "ClipboardSaveRestore.h"
+#include "ClipboardEventDispatcher.h"
 #include "PowerManager.h"
 #include "DittoPopupWindow.h"
 #include "NTray.h"
@@ -63,6 +64,7 @@ public:
     ULONG m_ulCopyGap;
     CString m_csKeyboardPaste;
     CAlphaBlend m_Transparency;
+    CClipboardEventDispatcher m_eventDispatcher;
     BYTE m_keyStateModifiers;
     DWORD m_startKeyStateTime;
     bool m_bMovedSelectionMoveKeyState;

@@ -13,7 +13,8 @@
 #include "MainFrm.h"
 #include "ProcessPaste.h"
 #include "MultiLanguage.h"
-#include "CopyThread.h"
+#include "..\Shared\IClipboardMonitor.h"
+#include "AppConfigAdapter.h"
 #include "ClipboardSaveRestore.h"
 #include "DittoCopyBuffer.h"
 #include "sqlite\CppSQLite3.h"
@@ -95,14 +96,14 @@ public:
 	CClipEditThread m_editThread;
 
 	// CopyThread and ClipViewer (Copy and Paste Management)
-	CCopyThread	m_CopyThread;
-	void StartCopyThread();
-	void StopCopyThread();
+	std::unique_ptr<IClipboardMonitor> m_monitor;
+	CAppConfigAdapter m_configAdapter;
+
+	void StartStopMonitor();
+	void StopMonitor();
 	// for posting messages
-	HWND GetClipboardViewer() { return m_CopyThread.m_pClipboardViewer->m_hWnd; }
-	bool EnableCbCopy(bool bState) { return m_CopyThread.SetCopyOnChange(bState); }
-	bool IsClipboardViewerConnected() { return m_CopyThread.IsClipboardViewerConnected(); }
-	bool GetConnectCV() { return m_CopyThread.GetConnectCV(); }
+	bool IsClipboardViewerConnected();
+	bool GetConnectCV();
 	void SetConnectCV(bool bConnect);
 	bool ToggleConnectCV();
 	void UpdateMenuConnectCV(CMenu* pMenu, UINT nMenuID);

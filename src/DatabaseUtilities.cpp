@@ -482,6 +482,12 @@ BOOL ValidDB(CString csPath, BOOL bUpgrade)
 		db.execDML(_T("CREATE INDEX IF NOT EXISTS Main_ShortCut2 on Main(lShortCut DESC, globalShortCut DESC)"));
 		db.execDML(_T("CREATE INDEX IF NOT EXISTS Main_MoveToGroup on Main(MoveToGroupShortCut DESC, GlobalMoveToGroupShortCut DESC)"));
 		db.execDML(_T("CREATE INDEX IF NOT EXISTS Main_CRC on Main(CRC ASC)"));
+
+		try { db.execDML(_T("ALTER TABLE Main ADD paste_count INTEGER NOT NULL DEFAULT 0")); }
+		catch (CppSQLite3Exception&) { }
+
+		try { db.execDML(_T("CREATE INDEX IF NOT EXISTS Main_PasteCount ON Main(paste_count DESC)")); }
+		catch (CppSQLite3Exception&) { }
 	}
 	CATCH_SQLITE_EXCEPTION_AND_RETURN(FALSE)
 

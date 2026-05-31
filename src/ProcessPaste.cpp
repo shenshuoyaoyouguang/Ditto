@@ -249,7 +249,13 @@ UINT CProcessPaste::MarkAsPastedThread(LPVOID pParam)
 			{
 				int id = pData->ids.ElementAt(i);
 				theApp.RefreshClipInUI(id, refreshFlags);
-			}			
+			}
+
+			if (theApp.m_monitor)
+			{
+				for (int i = 0; i < clipCount; i++)
+					theApp.m_monitor->NotifyPaste(pData->ids.ElementAt(i));
+			}
 
 			delete pData;
 			bRet = TRUE;

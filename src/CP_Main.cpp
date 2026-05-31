@@ -12,6 +12,7 @@
 #include "OptionsSheet.h"
 #include "DittoCopyBuffer.h"
 #include "SendKeys.h"
+#include "ClipboardMonitorFactory.h"
 #include "MainTableFunctions.h"
 #include "ShowTaskBarIcon.h"
 #include "NoDbFrameWnd.h"
@@ -506,7 +507,7 @@ void CCP_MainApp::AfterMainCreate()
 	LoadGlobalClips();
 
 	g_HotKeys.RegisterAll();
-	StartCopyThread();
+	StartStopMonitor();
 	StartStopServerThread();
 
 #ifdef UNICODE
@@ -589,40 +590,51 @@ void CCP_MainApp::BeforeMainClose()
 	m_bAppExiting = true;
 	g_HotKeys.UnregisterAll();
 	StopServerThread();
-	StopCopyThread();
+	StopMonitor();
 }
 
-void CCP_MainApp::StartCopyThread()
+void CCP_MainApp::StartStopMonitor()
 {
-	ASSERT( m_MainhWnd );
-	CClipTypes* pTypes = LoadTypesFromDB();
-	// initialize to:
-	// - m_MainhWnd = send WM_CLIPBOARD_COPIED messages to m_MainhWnd
-	// - true = use Asynchronous communication (PostMessage)
-	// - true = enable copying on clipboard changes
-	// - pTypes = the supported types to use
-	m_CopyThread.Init(CCopyConfig(m_MainhWnd, true, true, pTypes));
-	
-	if(m_connectOnStartup == FALSE || CGetSetOptions::GetConnectedToClipboard() == FALSE)
-	{
-		m_CopyThread.m_connectOnStartup = false;
-		Log(StrF(_T("Starting Ditto up disconnected from the clipboard, commandLine: %d, saved value: %d"), m_connectOnStartup, CGetSetOptions::GetConnectedToClipboard()));
-		SetConnectCV(false);
-	}
-	else if(m_connectOnStartup == TRUE)
-	{
-		SetConnectCV(true);
-		Log(_T("Starting Ditto up connected from the clipboard, passed in true from command line to start connected"));
-	}
+	ASSERT(m_MainhWnd);
 
-	VERIFY(m_CopyThread.CreateThread(CREATE_SUSPENDED));
-	m_CopyThread.ResumeThread();
+	m_monitor = CreateClipboardMonitor();
+	if (m_monitor)
+	{
+		m_monitor->Create(m_MainhWnd, &m_configAdapter);
+		if (m_connectOnStartup == FALSE || CGetSetOptions::GetConnectedToClipboard() == FALSE)
+		{
+			Log(StrF(_T("Starting Ditto up disconnected from the clipboard")));
+			SetConnectCV(false);
+		}
+		else if (m_connectOnStartup == TRUE)
+		{
+			SetConnectCV(true);
+			Log(_T("Starting Ditto up connected from the clipboard"));
+		}
+	}
 }
 
-void CCP_MainApp::StopCopyThread()
+void CCP_MainApp::StopMonitor()
 {
-	EnableCbCopy(false);
-	m_CopyThread.Quit();
+	if (m_monitor)
+	{
+		m_monitor->Destroy();
+		m_monitor.reset();
+	}
+}
+
+bool CCP_MainApp::IsClipboardViewerConnected()
+{
+	if (m_monitor)
+		return m_monitor->IsClipboardViewerConnected();
+	return false;
+}
+
+bool CCP_MainApp::GetConnectCV()
+{
+	if (m_monitor)
+		return m_monitor->GetConnectCV();
+	return false;
 }
 
 // returns the current Clipboard Viewer Connect state (though it might not yet
@@ -692,12 +704,7 @@ CClipTypes* CCP_MainApp::LoadTypesFromDB()
 
 void CCP_MainApp::ReloadTypes()
 {
-	CClipTypes* pTypes = LoadTypesFromDB();
-
-	if(pTypes)
-	{
-		m_CopyThread.SetSupportedTypes(pTypes);
-	}
+	Log(_T("ReloadTypes: types now managed through IClipboardConfig adapter"));
 }
 
 void CCP_MainApp::RefreshView(CopyReasonEnum::CopyReason copyReason)
@@ -943,8 +950,9 @@ BOOL CCP_MainApp::OnIdle(LONG lCount)
 }
 
 void CCP_MainApp::SetConnectCV(bool bConnect)
-{ 
-	m_CopyThread.SetConnectCV(bConnect); 
+{
+	if (m_monitor)
+		m_monitor->SetConnectCV(bConnect);
 	CGetSetOptions::SetConnectedToClipboard(bConnect == true);
 
 	if(bConnect)
