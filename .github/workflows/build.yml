@@ -47,7 +47,7 @@ jobs:
         run: |
             if ([string]::IsNullOrWhiteSpace('${{ secrets.SIGNPATH_API_TOKEN }}')) {
                 echo "available=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-                echo "Signing is NOT available - will skip signing and release steps"
+                echo "Signing is NOT available - will build unsigned installer and portable"
             } else {
                 echo "available=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
                 echo "Signing is available - will run full release pipeline"
@@ -79,7 +79,6 @@ jobs:
           output-artifact-directory: '/Release64'      
                    
       - name: Installer
-        if: steps.check_signing.outputs.available == 'true'
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.7
         with:
           path: DittoSetup\DittoSetup_10.iss
@@ -107,7 +106,6 @@ jobs:
           output-artifact-directory: '/DittoSetup/output'          
           
       - name: Build Portable
-        if: steps.check_signing.outputs.available == 'true'
         run: |
             DittoSetup\BuildPortableZIP.bat "DittoPortable_${{env.VERSION_FILENAME}}" bit64
             
@@ -185,4 +183,6 @@ jobs:
             Release64\Ditto.exe
             Release64\ICU_Loader.dll
             Release64\Addins\DittoUtil.dll
+            DittoSetup\output\DittoSetup_${{env.VERSION_FILENAME}}.exe
+            DittoSetup\output\DittoPortable_${{env.VERSION_FILENAME}}.zip
             DittoSetup\output\DittoDebug_${{env.VERSION_FILENAME}}.7z
