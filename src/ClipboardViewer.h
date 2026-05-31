@@ -10,6 +10,8 @@
 #define TIMER_DRAW_CLIPBOARD			7
 #define TIMER_PING						8
 
+class CCopyThread;
+
 class CClipboardViewer : public CWnd
 {
 // Construction
