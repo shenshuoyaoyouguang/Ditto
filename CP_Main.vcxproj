@@ -550,6 +550,7 @@
     <ClCompile Include="src\ClipEditThread.cpp" />
     <ClCompile Include="src\ClipFormatQListCtrl.cpp" />
     <ClCompile Include="src\ClipIds.cpp" />
+    <ClCompile Include="src\ClipCompare.cpp" />
     <ClCompile Include="src\Clip_ImportExport.cpp" />
     <ClCompile Include="src\ConvertRTFToText.cpp" />
     <ClCompile Include="src\CopyProperties.cpp" />
