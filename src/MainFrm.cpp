@@ -920,7 +920,14 @@ LRESULT CMainFrame::OnClipboardCopied(WPARAM wParam, LPARAM lParam)
 	CClip *pClip = (CClip*)wParam;
 	if(pClip != NULL)
 	{
+		ClipId clipId = pClip->ID();
+		CString clipDesc = pClip->Description();
+		int clipFmtCount = (int)pClip->m_Formats.GetSize();
+
 		m_thread.AddClipToSave(pClip);
+
+		if (theApp.m_monitor)
+			theApp.m_monitor->NotifyClipCaptured(clipId, clipDesc, clipFmtCount);
 	} 
     
     Log(_T("End of function OnClipboardCopied"));	

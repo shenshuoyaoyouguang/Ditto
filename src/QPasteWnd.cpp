@@ -1477,7 +1477,26 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 	CString csSort;
 
 	// History Groupiter->m_stickyClipGroupOrder = clip.m_stickyClipGroupOrder;
-	if (m_bShowStarredClips)
+	if (m_sortMode == ClipSortMode::PasteCountDesc)
+	{
+		csSort = "Main.paste_count DESC, "
+			"Main.lDate DESC";
+
+		if (m_bShowStarredClips)
+		{
+			strFilter = strStarredFilter;
+		}
+		else if (theApp.m_GroupID >= 0)
+		{
+			strFilter.Format(_T("Main.lParentID = %d AND Main.bIsGroup = 0"), theApp.m_GroupID);
+			strParentFilter = strFilter;
+		}
+		else
+		{
+			strFilter = "(Main.bIsGroup = 0)";
+		}
+	}
+	else if (m_bShowStarredClips)
 	{
 		csSort = "Main.stickyClipOrder DESC, "
 			"Main.bIsGroup ASC, "
@@ -1662,7 +1681,8 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 
 	sql.Format(_T("SELECT %s Main.lID, Main.mText, Main.lParentID, Main.lDontAutoDelete, ")
 		_T("Main.lShortCut, Main.bIsGroup, Main.QuickPasteText, Main.clipOrder, Main.clipGroupOrder, ")
-		_T("Main.stickyClipOrder, Main.stickyClipGroupOrder, Main.lDate, Main.lastPasteDate FROM Main %s ")
+		_T("Main.stickyClipOrder, Main.stickyClipGroupOrder, Main.lDate, Main.lastPasteDate, ")
+		_T("Main.paste_count FROM Main %s ")
 		_T("where %s order by %s"), IsDistinct, dataJoin, strFilter, csSort);
 
 
@@ -6497,6 +6517,16 @@ void CQPasteWnd::FillMainTable(CMainTable& table, CppSQLite3Query& q)
 	table.m_stickyClipGroupOrder = q.getFloatField(_T("stickyClipGroupOrder"));
 	table.m_dateCopied = q.getInt64Field(_T("lDate"));
 	table.m_datePasted = q.getInt64Field(_T("lastPasteDate"));
+	table.m_pasteCount = q.getIntField(_T("paste_count"));
+}
+
+void CQPasteWnd::SetSortMode(ClipSortMode mode)
+{
+	if (m_sortMode != mode)
+	{
+		m_sortMode = mode;
+		theApp.RefreshView();
+	}
 }
 
 void CQPasteWnd::OnDestroy()

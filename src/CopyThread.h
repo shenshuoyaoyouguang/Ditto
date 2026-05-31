@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ClipboardViewer.h"
+#include "Clip.h"
 #include <afxmt.h>
 
 struct CCopyConfig

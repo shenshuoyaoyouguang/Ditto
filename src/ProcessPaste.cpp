@@ -249,7 +249,22 @@ UINT CProcessPaste::MarkAsPastedThread(LPVOID pParam)
 			{
 				int id = pData->ids.ElementAt(i);
 				theApp.RefreshClipInUI(id, refreshFlags);
-			}			
+			}
+
+			IClipboardMonitor* pMonitor = nullptr;
+			{
+				CSingleLock lock(&theApp.m_monitorLock, TRUE);
+				pMonitor = theApp.m_monitor.get();
+			}
+			if (pMonitor)
+			{
+				std::vector<ClipId> pasteIds;
+				pasteIds.reserve(clipCount);
+				for (int i = 0; i < clipCount; i++)
+					pasteIds.push_back(pData->ids.ElementAt(i));
+
+				pMonitor->NotifyPasteBatch(pasteIds);
+			}
 
 			delete pData;
 			bRet = TRUE;

@@ -532,6 +532,7 @@
     <ClCompile Include="src\AddType.cpp" />
     <ClCompile Include="src\AdvGeneral.cpp" />
     <ClCompile Include="src\AlphaBlend.cpp" />
+    <ClCompile Include="src\AppConfigAdapter.cpp" />
     <ClCompile Include="src\AutoSendToClientThread.cpp" />
     <ClCompile Include="src\BitmapHelper.cpp" />
     <ClCompile Include="src\CF_HDropAggregator.cpp" />
@@ -541,12 +542,15 @@
     <ClCompile Include="src\ChaiScriptXml.cpp" />
     <ClCompile Include="src\Client.cpp" />
     <ClCompile Include="src\Clip.cpp" />
+    <ClCompile Include="src\ClipboardEventDispatcher.cpp" />
+    <ClCompile Include="src\ClipboardMonitorFactory.cpp" />
+    <ClCompile Include="src\ClipboardMonitorImpl.cpp" />
     <ClCompile Include="src\ClipboardSaveRestore.cpp" />
     <ClCompile Include="src\ClipboardViewer.cpp" />
-    <ClCompile Include="src\ClipCompare.cpp" />
     <ClCompile Include="src\ClipEditThread.cpp" />
     <ClCompile Include="src\ClipFormatQListCtrl.cpp" />
     <ClCompile Include="src\ClipIds.cpp" />
+    <ClCompile Include="src\ClipCompare.cpp" />
     <ClCompile Include="src\Clip_ImportExport.cpp" />
     <ClCompile Include="src\ConvertRTFToText.cpp" />
     <ClCompile Include="src\CopyProperties.cpp" />
@@ -799,6 +803,7 @@
     <ClInclude Include="src\AddType.h" />
     <ClInclude Include="src\AdvGeneral.h" />
     <ClInclude Include="src\AlphaBlend.h" />
+    <ClInclude Include="src\AppConfigAdapter.h" />
     <ClInclude Include="src\AutoSendToClientThread.h" />
     <ClInclude Include="src\BitmapHelper.h" />
     <ClInclude Include="src\CF_HDropAggregator.h" />
@@ -809,6 +814,9 @@
     <ClInclude Include="src\ChaiScriptXml.h" />
     <ClInclude Include="src\Client.h" />
     <ClInclude Include="src\Clip.h" />
+    <ClInclude Include="src\ClipboardEventDispatcher.h" />
+    <ClInclude Include="src\ClipboardMonitorFactory.h" />
+    <ClInclude Include="src\ClipboardMonitorImpl.h" />
     <ClInclude Include="src\ClipboardSaveRestore.h" />
     <ClInclude Include="src\ClipboardViewer.h" />
     <ClInclude Include="src\ClipCompare.h" />
