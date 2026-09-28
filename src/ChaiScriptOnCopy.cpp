@@ -56,12 +56,6 @@ bool ChaiScriptOnCopy::ProcessScript(CDittoChaiScript &clipData, std::string scr
 
 		chai.add(chaiscript::var(&clipData), "clip");
 
-		//loop over all scripts
-		/*std::string script = R""(	
-									var md5 = clip.GetClipMD5(13)
-									return md5 == "4FF8DB22A28559FB23AB9EB90523AE3E"
-								)"";*/
-
 
 		Boxed_Value bv = chai.eval(script);
 		if (chaiscript::boxed_cast<bool> (bv) == true)

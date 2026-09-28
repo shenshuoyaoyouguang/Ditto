@@ -33,16 +33,16 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 	m_themeChanged = FALSE;
 	m_pKeyBoardOptions = NULL;
 	m_pGeneralOptions = NULL;
-	//m_pQuickPasteOptions = NULL;
+
 	m_pCopyBuffers = NULL;
 	m_pStats = NULL;
 	m_pTypes = NULL;
 	m_pAbout = NULL;
 	m_pFriends = NULL;
-	m_pCopyBuffers = NULL;
+
 	m_pQuickPasteShortCuts = NULL;
 	
-	m_pUtilites = NULL;
+
 	m_hWndParent = NULL;
 
 	EnableStackedTabs(TRUE);
@@ -61,7 +61,7 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 	AddPage(m_pTypes);
 	AddPage(m_pKeyBoardOptions);
 	AddPage(m_pCopyBuffers);
-	//AddPage(m_pQuickPasteOptions);
+
 	AddPage(m_pQuickPasteShortCuts);
 	if(CGetSetOptions::GetAllowFriends())
 	{
@@ -84,7 +84,7 @@ COptionsSheet::~COptionsSheet()
 	delete m_pTypes;
 	delete m_pAbout;	
 	delete m_pFriends;
-	delete m_pUtilites;
+
 	delete m_pQuickPasteShortCuts;	
 }
 

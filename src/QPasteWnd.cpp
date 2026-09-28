@@ -233,9 +233,7 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_COMMAND(ID_MENU_SEARCHQUICKPASTE, OnMenuSearchQuickPaste)
 	ON_COMMAND(ID_MENU_SHOWSTARREDCLIPS, OnMenuShowStarredClips)
 	ON_COMMAND(ID_MENU_CONTAINSTEXTSEARCHONLY, OnMenuSimpleTextSearch)
-	//ON_WM_CTLCOLOR()
-	//ON_WM_ERASEBKGND()
-	//ON_WM_PAINT()
+
 	ON_COMMAND(ID_QUICKOPTIONS_SHOWINTASKBAR, &CQPasteWnd::OnQuickoptionsShowintaskbar)
 	ON_COMMAND(ID_MENU_VIEWASQRCODE, &CQPasteWnd::OnMenuViewasqrcode)
 	ON_COMMAND(ID_EXPORT_EXPORTTOTEXTFILE, &CQPasteWnd::OnExportExporttotextfile)
@@ -269,7 +267,7 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_COMMAND(ID_MENU_GOTOENTRY, &CQPasteWnd::OnMenuGoToEntry)
 	ON_UPDATE_COMMAND_UI(ID_MENU_GOTOENTRY, &CQPasteWnd::OnUpdateMenuGoToEntry)
 	ON_BN_CLICKED(ON_TOP_WARNING, OnAlwaysOnTopClicked)
-	//ON_WM_CTLCOLOR()
+
 	ON_COMMAND(ID_SPECIALPASTE_UPPERCASE, &CQPasteWnd::OnSpecialpasteUppercase)
 	ON_UPDATE_COMMAND_UI(ID_SPECIALPASTE_UPPERCASE, &CQPasteWnd::OnUpdateSpecialpasteUppercase)
 	ON_COMMAND(ID_SPECIALPASTE_LOWERCASE, &CQPasteWnd::OnSpecialpasteLowercase)
@@ -417,7 +415,7 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_search.SetDpiInfo(&m_DittoWindow.m_dpi);
 	m_search.SetPromptText(theApp.m_Language.GetString(_T("Search"), _T("Search")));
 	::SHAutoComplete(m_search.m_hWnd, SHACF_AUTOSUGGEST_FORCE_OFF);
-	SetSearchImages();
+
 	m_search.LoadPastSearches(CGetSetOptions::GetPastSearchXml());
 
 	CRect rcEditArea(m_DittoWindow.m_dpi.Scale(4), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(2));
@@ -619,35 +617,6 @@ void CQPasteWnd::LoadShortcuts()
 	m_actions.AddAccel(ActionEnums::TOGGLEOUTPUTDEBUGSTRING, ACCEL_MAKEKEY('D', HOTKEYF_CONTROL), ACCEL_MAKEKEY('O', HOTKEYF_CONTROL));
 
 	m_lstHeader.SetTooltipActions(&m_toolTipActions);
-}
-
-void CQPasteWnd::SetSearchImages()
-{
-	//int iSourceImageDPIToUse = 96; // We will assume 96 by default.
-
-	//if (m_DittoWindow.m_dpi.GetDPI() > 144) 
-	//	iSourceImageDPIToUse = 192;
-	//else if (m_DittoWindow.m_dpi.GetDPI() > 120) 
-	//	iSourceImageDPIToUse = 144;
-	//else if (m_DittoWindow.m_dpi.GetDPI() > 96) 
-	//	iSourceImageDPIToUse = 120;
-
-	//// Now select the right resource to load.
-	//switch(iSourceImageDPIToUse)
-	//{
-	//case 120: 
-	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL_125, IDB_BITMAP_SEARCH_CLOSE_125);
-	//	break;
-	//case 144: 
-	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL_150, IDB_BITMAP_SEARCH_CLOSE_150);
-	//	break;
-	//case 192: 
-	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL_200, IDB_BITMAP_SEARCH_CLOSE_200);
-	//	break;						
-	//default: // default to 96 DPI
-	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL, IDB_BITMAP_SEARCH_CLOSE);
-	//	break;
-	//}
 }
 
 void CQPasteWnd::OnSize(UINT nType, int cx, int cy)
@@ -6043,21 +6012,6 @@ void CQPasteWnd::OnGetToolTipText(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CQPasteWnd::OnFindItem(NMHDR* pNMHDR, LRESULT* pResult)
 {
-	NMLVFINDITEM* pFindInfo = (NMLVFINDITEM*)pNMHDR;
-	LVFINDINFO fndItem = pFindInfo->lvfi;
-
-
-	if (fndItem.flags & LVFI_STRING)
-	{
-		//m_search.SetWindowText(fndItem.psz);
-		//m_search.SetFocus();
-		//m_search.SetSel(1, 1);
-
-		//OnSearchEditChange();
-
-		//*pResult = m_lstHeader.GetCaret();
-		//return;
-	}
 
 	*pResult = -1; // Default action.
 }
@@ -6683,48 +6637,6 @@ LRESULT CQPasteWnd::OnUpdateScrollBar(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-//HBRUSH CQPasteWnd::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
-//{
-//	// Call the base class implementation first! Otherwise, it may 
-//	// undo what we're trying to accomplish here.
-//	HBRUSH hbr = CWnd::OnCtlColor(pDC, pWnd, nCtlColor);
-//
-//	switch (nCtlColor) 
-//	{
-//	case CTLCOLOR_STATIC:
-//		switch (pWnd->GetDlgCtrlID())
-//		{
-//			case ON_TOP_WARNING:
-//			{
-//				pDC->SetBkMode(TRANSPARENT);
-//				pDC->SetBkColor(RGB(0, 0, 255));
-//
-//				CBrush brush;
-//				brush.CreateSolidBrush(COLORREF(RGB(255, 0, 0)));
-//				return brush;
-//			}
-//			break;
-//		}
-//	}
-//
-//	return hbr;
-//}
-
-//void CQPasteWnd::OnPaint()
-//{
-//	/*CBrush brush;
-//	brush.CreateSolidBrush(COLORREF(RGB(255, 0, 0)));
-//
-//	CRect clientRect;
-//	GetClientRect(clientRect);
-//
-//	CPaintDC dc(this);
-//	dc.FillRect(clientRect, &brush);*/
-//
-//	
-//		CQPasteWnd::OnPaint();
-//	
-//}
 
 BOOL CQPasteWnd::OnEraseBkgnd(CDC* pDC)
 {
@@ -7406,13 +7318,7 @@ void CQPasteWnd::OnNMRClickList1(NMHDR* pNMHDR, LRESULT* pResult)
 void CQPasteWnd::OnNMRDblclkList1(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
-	/*MSG msg;
-	msg.lParam = 0;
-	msg.wParam = VK_MOUSE_RIGHT_CLICK;
-	msg.message = WM_KEYDOWN;
-	if (CheckActions(&msg) == false)
-	{
-	}*/
+
 	*pResult = 0;
 }
 

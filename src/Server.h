@@ -36,7 +36,7 @@ protected:
 protected:
 	CClipList *m_pClipList;
 	CClip *m_pClip;
-	CTextConvert m_Convert;
+
 	BOOL m_bSetToClipBoard;
 	CString m_csIP;
 	bool m_manualSend;

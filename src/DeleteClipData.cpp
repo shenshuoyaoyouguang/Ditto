@@ -817,10 +817,7 @@ void CDeleteClipData::OnLvnColumnclickList2(NMHDR *pNMHDR, LRESULT *pResult)
 			std::sort(m_data.begin(), m_data.end(), SortByTitleAsc);
 		break;
 	case 2:
-		if (desc)
-			std::sort(m_data.begin(), m_data.end(), SortByQuickPaste);
-		else
-			std::sort(m_data.begin(), m_data.end(), SortByQuickPaste);
+		std::sort(m_data.begin(), m_data.end(), SortByQuickPaste);
 		break;
 	case 3:
 		if(desc)
@@ -1164,7 +1161,7 @@ void CDeleteClipData::SaveClipDataItemToFile(CDeleteData item)
 	ofn.hwndOwner = m_hWnd;
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	CString x = _T("Exported Ditto Clips (.txt)\0*.txt\0\0");
+
 	ofn.lpstrFilter = filter;
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = nullptr;
@@ -1176,7 +1173,7 @@ void CDeleteClipData::SaveClipDataItemToFile(CDeleteData item)
 	if (GetSaveFileName(&ofn))
 	{
 		using namespace nsPath;
-		CString startingFilePath = ofn.lpstrFile;
+
 		CPath path(ofn.lpstrFile);
 		CString csPath = path.GetPath();
 		CString csExt = path.GetExtension();
