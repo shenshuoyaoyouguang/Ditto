@@ -364,9 +364,6 @@
     <ClCompile Include="src\SymbolEdit.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\SystemTray.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\TabCtrl.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -884,9 +881,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\SymbolEdit.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\SystemTray.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\TabCtrl.h">
