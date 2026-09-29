@@ -1,6 +1,5 @@
 #pragma once
 
-//#include "SystemTray.h"
 #include "QuickPaste.h"
 #include "ToolTipEx.h"
 #include "MainFrmThread.h"
@@ -59,7 +58,6 @@ public:
     #endif 
 
     CQuickPaste m_quickPaste;
-    //CSystemTray m_TrayIcon;
 	CTrayNotifyIcon m_trayIcon;
     ULONG m_ulCopyGap;
     CString m_csKeyboardPaste;

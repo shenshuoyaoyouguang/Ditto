@@ -751,7 +751,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\SymbolEdit.cpp" />
-    <ClCompile Include="src\SystemTray.cpp" />
     <ClCompile Include="src\TabCtrl.cpp" />
     <ClCompile Include="src\Theme.cpp" />
     <ClCompile Include="src\TinyXml\tinystr.cpp">
@@ -961,7 +960,6 @@
     <ClInclude Include="src\sqlite\sqlite3mc_amalgamation.h" />
     <ClInclude Include="src\StdAfx.h" />
     <ClInclude Include="src\SymbolEdit.h" />
-    <ClInclude Include="src\SystemTray.h" />
     <ClInclude Include="src\TabCtrl.h" />
     <ClInclude Include="src\Theme.h" />
     <ClInclude Include="src\TinyXml\tinystr.h" />
