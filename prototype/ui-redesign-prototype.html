@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<!--
+  PROTOTYPE (throwaway) — Ditto 主窗口 UI 重设计原型，非产品代码
+  问题: Ditto 主窗口(剪贴板列表+搜索)怎样更紧凑、更现代，且能在 MFC owner-draw + Themes 引擎下落地?
+  方案: 4 个结构性不同的变体，同一文件内通过 ?variant=A|B|C|D 切换，浮动底栏 ◀▶ 或 ←/→ 键循环切换；
+        ?theme=light|dark 或底栏按钮切换明/暗主题(两套均为平面配色，MFC 可直接画出来)。
+  数据: 静态示例剪贴板历史，只读，无持久化。
+  运行: 双击本文件在浏览器打开。
+  MFC 可行性备注: 平面填充、圆角 hover 高亮(RoundRect 自绘)、行内图标(多分辨率 PNG)、
+  顶/底搜索框、侧栏(子面板)、Win11 DWM 圆角窗——全部可在现有 QListCtrl owner-draw + Themes XML 内实现。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Ditto UI 重设计原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    background: #1a1d21;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  body.theme-light { background: #e8eaed; }
+
+  /* ---------- 主题变量（全部为平面色，MFC Themes XML 可表达） ---------- */
+  body.theme-dark {
+    --bg: #202020; --panel: #2b2b2b; --input: #333333;
+    --text: #f2f2f2; --sub: #9a9a9a; --faint: #6b6b6b;
+    --accent: #4cc2ff; --accent-text: #062b3f;
+    --row-hover: #2f2f2f; --row-sel: #3b4c5a; --row-sel-text: #ffffff;
+    --line: #3a3a3a; --zebra: #262626; --chip: #333333; --chip-on: #3a4c5a;
+    --thumb-bg: #3d3d3d;
+  }
+  body.theme-light {
+    --bg: #f3f3f3; --panel: #fbfbfb; --input: #ffffff;
+    --text: #1b1b1b; --sub: #6e6e6e; --faint: #9a9a9a;
+    --accent: #0067c0; --accent-text: #ffffff;
+    --row-hover: #ececec; --row-sel: #cfe4f7; --row-sel-text: #10233a;
+    --line: #e3e3e3; --zebra: #f6f6f6; --chip: #e9e9e9; --chip-on: #d3e5f7;
+    --thumb-bg: #dcdcdc;
+  }
+
+  /* ---------- 舞台与窗口外观 ---------- */
+  #stage { position: relative; }
+  .app {
+    width: 660px; height: 600px;
+    background: var(--bg); color: var(--text);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    display: flex; flex-direction: column;
+    border: 1px solid rgba(128,128,128,.25);
+  }
+  .proto-note {
+    position: absolute; top: -30px; right: 0;
+    font-size: 12px; color: #8a9199;
+  }
+  svg.ic { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none;
+           stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- 通用行 ---------- */
+  .row { display: flex; align-items: center; gap: 9px; padding: 0 10px; cursor: default; }
+  .row .txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .meta { color: var(--faint); font-size: 11px; flex: none; }
+  .row .pin { color: var(--accent); font-size: 11px; flex: none; }
+  .row.sel { background: var(--row-sel); color: var(--row-sel-text); }
+  .row.sel .meta { color: inherit; opacity: .75; }
+  mark { background: transparent; color: var(--accent); font-weight: 600; }
+  .row.sel mark { color: inherit; text-decoration: underline; }
+
+  /* ---------- 变体 A：紧凑单栏 · 顶部搜索 ---------- */
+  .A-top { padding: 12px 12px 8px; }
+  .A-search { display: flex; align-items: center; gap: 8px; background: var(--input);
+              border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; }
+  .A-search input { flex: 1; border: 0; outline: 0; background: transparent;
+                    color: var(--text); font: inherit; font-size: 13px; }
+  .A-search .ph { color: var(--faint); font-size: 12px; }
+  .A-chips { display: flex; gap: 6px; margin-top: 9px; }
+  .A-chip { font-size: 11px; color: var(--sub); background: var(--chip);
+            border-radius: 20px; padding: 3px 10px; cursor: default; }
+  .A-chip.on { background: var(--chip-on); color: var(--text); }
+  #listA { flex: 1; overflow: hidden; padding: 2px 8px 8px; }
+  #listA .row { height: 30px; border-radius: 6px; margin: 1px 0; }
+  #listA .row:hover { background: var(--row-hover); }
+
+  /* ---------- 变体 B：侧栏分组 · 双行列表 ---------- */
+  .B-body { flex: 1; display: flex; min-height: 0; }
+  .B-side { width: 158px; background: var(--panel); border-right: 1px solid var(--line);
+            display: flex; flex-direction: column; padding: 10px 8px; }
+  .B-nav { display: flex; align-items: center; gap: 9px; padding: 7px 10px;
+           border-radius: 6px; font-size: 12.5px; color: var(--sub); }
+  .B-nav.on { background: var(--chip-on); color: var(--text); }
+  .B-nav .cnt { margin-left: auto; font-size: 11px; color: var(--faint); }
+  .B-nav.hd { font-size: 10.5px; letter-spacing: .5px; color: var(--faint);
+              padding-bottom: 2px; margin-top: 8px; }
+  .B-side .grow { flex: 1; }
+  .B-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .B-head { padding: 12px 14px 10px; }
+  .B-head .title { font-size: 15px; font-weight: 600; }
+  .B-head .sub { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
+  #listB { flex: 1; overflow: hidden; padding: 0 8px 8px; }
+  #listB .row { height: 50px; border-radius: 8px; padding: 0 12px; }
+  #listB .row:hover { background: var(--row-hover); }
+  #listB .l1 { font-size: 12.5px; }
+  #listB .l2 { font-size: 11px; color: var(--sub); margin-top: 3px; }
+  .B-thumb { width: 38px; height: 38px; border-radius: 6px; flex: none;
+             background: var(--thumb-bg); display: flex; align-items: center;
+             justify-content: center; color: var(--sub); font-size: 9px; }
+  .B-time { text-align: right; font-size: 11px; color: var(--faint); flex: none; white-space: nowrap; }
+
+  /* ---------- 变体 C：命令面板 · 极简浮窗 ---------- */
+  .C-dim { position: absolute; inset: 0; background: rgba(0,0,0,.38);
+           display: flex; align-items: flex-start; justify-content: center; padding-top: 56px; }
+  .C-panel { width: 520px; background: var(--panel); border: 1px solid var(--line);
+             border-radius: 12px; overflow: hidden; box-shadow: 0 14px 44px rgba(0,0,0,.5);
+             display: flex; flex-direction: column; max-height: 470px; }
+  .C-search { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+  .C-search input { flex: 1; border: 0; outline: 0; background: transparent;
+                    color: var(--text); font: inherit; font-size: 15px; }
+  .C-search .k { font-size: 10.5px; color: var(--faint); border: 1px solid var(--line);
+                 border-radius: 4px; padding: 1px 6px; }
+  .C-hr { height: 1px; background: var(--line); }
+  #listC { overflow: hidden; padding: 5px 7px; }
+  #listC .row { height: 34px; border-radius: 7px; }
+  #listC .row:hover { background: var(--row-hover); }
+  .C-foot { padding: 8px 14px; border-top: 1px solid var(--line);
+            display: flex; gap: 14px; font-size: 11px; color: var(--faint); }
+  .C-foot kbd { font: inherit; color: var(--sub); }
+
+  /* ---------- 变体 D：现状紧凑化 · 底部搜索 + 列头 ---------- */
+  .D-headrow { display: grid; grid-template-columns: 26px 1fr 66px 34px;
+               padding: 0 10px 4px; font-size: 10.5px; color: var(--faint); }
+  #listD { flex: 1; overflow: hidden; padding: 0 8px; }
+  #listD .row { height: 24px; border-radius: 4px; font-size: 12px; }
+  #listD .row:nth-child(even) { background: var(--zebra); }
+  #listD .row:hover { background: var(--row-hover); }
+  #listD .row.sel { background: var(--row-sel); }
+  .D-grid { display: contents; }
+  #listD .row .c-time, #listD .row .c-n { text-align: right; }
+  .D-bottom { border-top: 1px solid var(--line); padding: 8px 10px;
+              display: flex; align-items: center; gap: 8px; }
+  .D-bottom .btn { width: 26px; height: 26px; border-radius: 6px; background: var(--chip);
+                   display: flex; align-items: center; justify-content: center; color: var(--sub); }
+  .D-bottom .sbox { flex: 1; display: flex; align-items: center; gap: 8px;
+                    background: var(--input); border: 1px solid var(--line);
+                    border-radius: 6px; padding: 5px 10px; }
+  .D-bottom input { flex: 1; border: 0; outline: 0; background: transparent;
+                    color: var(--text); font: inherit; font-size: 12.5px; }
+  .D-status { position: absolute; right: 14px; bottom: 46px; font-size: 10.5px; color: var(--faint); }
+
+  /* ---------- 浮动切换底栏（非被评估设计的一部分） ---------- */
+  #bar {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: #111417; color: #e8e8e8; border: 1px solid #3a3f45;
+    border-radius: 30px; padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.55); font-size: 12.5px; user-select: none; z-index: 10;
+  }
+  #bar button { background: #2a2f35; color: #e8e8e8; border: 0; border-radius: 50%;
+                width: 26px; height: 26px; cursor: pointer; font-size: 13px; }
+  #bar button:hover { background: #3a4046; }
+  #bar .lbl { min-width: 190px; text-align: center; }
+  #bar .lbl b { color: #7fc9ff; }
+  #bar .sep { width: 1px; height: 16px; background: #3a3f45; }
+  #bar .hint { color: #8a9199; font-size: 11px; }
+</style>
+</head>
+<body class="theme-dark">
+
+<div id="stage">
+  <div class="proto-note">PROTOTYPE · 丢弃式原型，非产品代码</div>
+  <div class="app" id="app"></div>
+</div>
+
+<div id="bar">
+  <button id="prev" title="上一个方案">◀</button>
+  <span class="lbl" id="barLabel"></span>
+  <button id="next" title="下一个方案">▶</button>
+  <span class="sep"></span>
+  <button id="themeBtn" title="明/暗主题"></button>
+  <span class="hint">←/→ 切方案 · ↑/↓ 选行 · 搜索框内打字不受影响</span>
+</div>
+
+<script>
+// ---------------- 示例数据（静态、只读） ----------------
+const ITEMS = [
+  { t:'text',  s:'会议纪要 — Q4 发布窗口定在 10-14，Ditto 3.32 变更清单已归档', time:'2 分钟前', n:1, sticky:true },
+  { t:'code',  s:'auto formats = ClipFormats::Aggregate(clip);', time:'5 分钟前', n:3 },
+  { t:'link',  s:'https://github.com/Ditto-cp/Ditto/pull/23', time:'9 分钟前', n:2 },
+  { t:'image', s:'屏幕截图 2026-09-29 143210.png', time:'14 分钟前', n:1, img:'1280×720' },
+  { t:'file',  s:'D:\\2026.91\\Ditto\\Release64\\Ditto.exe', time:'22 分钟前', n:5 },
+  { t:'rich',  s:'季度 OKR — 目标：粘贴效率提升 30%（富文本片段）', time:'31 分钟前', n:2 },
+  { t:'email', s:'chen.wei@corp.example.com', time:'1 小时前', n:8 },
+  { t:'text',  s:'const CLIP_EMD_TEXT = 0x0001; // 去除空行后的版本', time:'1 小时前', n:1 },
+  { t:'image', s:'数据流图导出.vsdx', time:'2 小时前', n:1, img:'960×540' },
+  { t:'code',  s:'{"id":128,"desc":"剪贴板条目","sticky":false}', time:'3 小时前', n:12 },
+  { t:'text',  s:'138-0011-2233', time:'昨天', n:1 },
+  { t:'file',  s:'D:\\2026.91\\Ditto\\Debug\\Language\\ChineseSimplified.xml', time:'昨天', n:2 },
+];
+const TYPE_NAME = { text:'文本', code:'代码', link:'链接', image:'图片', file:'文件', rich:'富文本', email:'邮件' };
+
+function icon(t) {
+  const p = {
+    text:  '<path d="M4 3.5h8M4 6h8M4 8.5h5"/>',
+    code:  '<path d="M5 4 2.5 7.5 5 11M11 4l2.5 3.5L11 11"/>',
+    link:  '<path d="M6.5 9.5 9.5 6.5M6 4.8 7.6 3.2a2.4 2.4 0 0 1 3.4 3.4L9.4 8.2M10 11.2 8.4 12.8a2.4 2.4 0 0 1-3.4-3.4L6.6 7.8"/>',
+    image: '<rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><circle cx="6" cy="6.8" r="1"/><path d="M4 11l3-3 2 2 2-2 2 2"/>',
+    file:  '<path d="M4.5 2.5h4l3 3v8h-7zM8.5 2.5v3h3"/>',
+    rich:  '<path d="M4 4.5h8M8 4.5V12M6.5 12h3"/>',
+    email: '<rect x="2.5" y="4" width="11" height="8" rx="1.5"/><path d="M3.5 5.5 8 9l4.5-3.5"/>',
+  }[t];
+  return '<svg class="ic" viewBox="0 0 16 16">' + p + '</svg>';
+}
+function esc(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function hl(s, q){ // 搜索词高亮
+  if(!q) return esc(s);
+  const i = s.toLowerCase().indexOf(q.toLowerCase());
+  if(i < 0) return esc(s);
+  return esc(s.slice(0,i)) + '<mark>' + esc(s.slice(i,i+q.length)) + '</mark>' + esc(s.slice(i+q.length));
+}
+
+// ---------------- 状态 ----------------
+let variant = 'A', theme = 'dark', sel = 0, query = '';
+const VARIANTS = [
+  ['A','紧凑单栏 · 顶部搜索'],
+  ['B','侧栏分组 · 双行列表'],
+  ['C','命令面板 · 极简浮窗'],
+  ['D','现状紧凑化 · 底部搜索+列头'],
+];
+const $ = s => document.querySelector(s);
+const app = $('#app');
+
+// ---------------- 变体渲染 ----------------
+function filtered(){ return ITEMS.filter(it => it.s.toLowerCase().includes(query.toLowerCase())); }
+
+function rowsHTML(list, mkRow) {
+  const items = filtered();
+  if(!items.length) return '<div style="padding:24px;text-align:center;color:var(--faint);font-size:12px">无匹配结果</div>';
+  return items.map((it,i) => mkRow(it, i===sel)).join('');
+}
+
+function renderA(){
+  app.innerHTML = `
+    <div class="A-top">
+      <div class="A-search">${icon('text')}<input id="q" placeholder="搜索全文或文件名…  (Ctrl+\` 呼出)" value="${esc(query)}"></div>
+      <div class="A-chips">
+        <span class="A-chip on">全部 142</span><span class="A-chip">文本 86</span>
+        <span class="A-chip">图片 18</span><span class="A-chip">文件 21</span><span class="A-chip">链接 17</span>
+      </div>
+    </div>
+    <div id="listA">${rowsHTML(0,(it,on)=>`
+      <div class="row ${on?'sel':''}" data-i="${filtered().indexOf(it)}">
+        ${icon(it.t)}<span class="txt">${hl(it.s,query)}</span>
+        ${it.sticky?'<span class="pin">📌 置顶</span>':''}
+        <span class="meta">${it.n>1?'×'+it.n+' · ':''}${it.time}</span>
+      </div>`)}</div>`;
+}
+
+function renderB(){
+  app.innerHTML = `
+    <div class="B-body">
+      <div class="B-side">
+        <div class="B-nav on">${icon('text')} 历史 <span class="cnt">142</span></div>
+        <div class="B-nav">${icon('rich')} 收藏 <span class="cnt">12</span></div>
+        <div class="B-nav">${icon('image')} 便签 <span class="cnt">3</span></div>
+        <div class="B-nav hd">分组</div>
+        <div class="B-nav">${icon('file')} 工作组 <span class="cnt">31</span></div>
+        <div class="B-nav">${icon('code')} 项目 Ditto <span class="cnt">58</span></div>
+        <div class="B-nav">${icon('link')} 临时 <span class="cnt">9</span></div>
+        <div class="grow"></div>
+        <div class="B-nav">${icon('email')} 好友同步</div>
+        <div class="B-nav">${icon('file')} 设置</div>
+      </div>
+      <div class="B-main">
+        <div class="B-head">
+          <div class="title">历史记录</div>
+          <div class="sub">142 条 · 已同步到 3 台设备</div>
+        </div>
+        <div id="listB">${rowsHTML(0,(it,on)=>`
+          <div class="row ${on?'sel':''}" data-i="${filtered().indexOf(it)}">
+            ${it.img ? `<div class="B-thumb">${it.img}</div>` : icon(it.t)}
+            <div style="flex:1;min-width:0">
+              <div class="l1 txt">${hl(it.s,query)}</div>
+              <div class="l2">${TYPE_NAME[it.t]}${it.n>1?' · 粘贴 '+it.n+' 次':''}${it.sticky?' · 置顶':''}</div>
+            </div>
+            <div class="B-time">${it.time}</div>
+          </div>`)}</div>
+      </div>
+    </div>`;
+}
+
+function renderC(){
+  app.innerHTML = `
+    <div class="C-dim">
+      <div class="C-panel">
+        <div class="C-search">${icon('text')}<input id="q" placeholder="搜索剪贴板…" value="${esc(query)}"><span class="k">Ctrl + \`</span></div>
+        <div class="C-hr"></div>
+        <div id="listC">${rowsHTML(0,(it,on)=>`
+          <div class="row ${on?'sel':''}" data-i="${filtered().indexOf(it)}">
+            ${icon(it.t)}<span class="txt" style="font-size:12.5px">${hl(it.s,query)}</span>
+            ${it.sticky?'<span class="pin">📌</span>':''}
+            <span class="meta">${TYPE_NAME[it.t]} · ${it.time}</span>
+          </div>`)}</div>
+        <div class="C-foot">
+          <span><kbd>↵</kbd> 粘贴</span><span><kbd>⇧↵</kbd> 纯文本粘贴</span>
+          <span><kbd>Ctrl↵</kbd> 收藏</span><span style="margin-left:auto">142 条</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderD(){
+  app.innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative">
+      <div class="D-headrow"><span></span><span>内容</span><span style="text-align:right">时间</span><span style="text-align:right">次数</span></div>
+      <div id="listD">${rowsHTML(0,(it,on)=>`
+        <div class="row ${on?'sel':''}" data-i="${filtered().indexOf(it)}">
+          <div class="D-grid" style="display:grid;grid-template-columns:26px 1fr 66px 34px;align-items:center;gap:9px;flex:1;min-width:0">
+            ${icon(it.t)}<span class="txt">${hl(it.s,query)}</span>
+            <span class="meta c-time">${it.time}</span><span class="meta c-n">${it.n}</span>
+          </div>
+        </div>`)}</div>
+      <div class="D-status">${filtered().length} / 142 条${query?' · 过滤中':''}</div>
+      <div class="D-bottom">
+        <div class="btn" title="分组">${icon('file')}</div>
+        <div class="sbox">${icon('text')}<input id="q" placeholder="搜索全文或文件名…" value="${esc(query)}"></div>
+        <div class="btn" title="菜单">⋯</div>
+      </div>
+    </div>`;
+}
+
+const RENDER = { A: renderA, B: renderB, C: renderC, D: renderD };
+
+function render(){
+  (RENDER[variant]||renderA)();
+  const q = $('#q');
+  if(q){ q.addEventListener('input', e => { query = e.target.value; sel = 0; render();
+                                          const nq=$('#q'); nq.focus(); nq.setSelectionRange(nq.value.length,nq.value.length); }); }
+  document.querySelectorAll('.row').forEach(r => r.addEventListener('click', () => { sel = +r.dataset.i; render(); }));
+  $('#barLabel').innerHTML = `<b>${variant}</b> — ${VARIANTS.find(v=>v[0]===variant)[1]}`;
+  $('#themeBtn').textContent = theme==='dark' ? '☀️' : '🌙';
+  const u = new URL(location); u.searchParams.set('variant', variant); u.searchParams.set('theme', theme);
+  history.replaceState(null,'',u);
+}
+
+// ---------------- 底栏与键盘 ----------------
+$('#prev').onclick = () => { const i = VARIANTS.findIndex(v=>v[0]===variant); variant = VARIANTS[(i+VARIANTS.length-1)%VARIANTS.length][0]; sel=0; render(); };
+$('#next').onclick = () => { const i = VARIANTS.findIndex(v=>v[0]===variant); variant = VARIANTS[(i+1)%VARIANTS.length][0]; sel=0; render(); };
+$('#themeBtn').onclick = () => { theme = theme==='dark'?'light':'dark';
+  document.body.className = 'theme-'+theme; render(); };
+
+document.addEventListener('keydown', e => {
+  if(document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if(e.key === 'ArrowLeft')  $('#prev').click();
+  if(e.key === 'ArrowRight') $('#next').click();
+  if(e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+    e.preventDefault();
+    const n = filtered().length; if(!n) return;
+    sel = (sel + (e.key==='ArrowDown'?1:n-1)) % n;
+    render();
+    const el = document.querySelector('.row.sel'); if(el) el.scrollIntoView({block:'nearest'});
+  }
+});
+
+// ---------------- 启动 ----------------
+const u0 = new URL(location);
+variant = (u0.searchParams.get('variant')||'A').toUpperCase();
+if(!RENDER[variant]) variant = 'A';
+theme = u0.searchParams.get('theme')==='light' ? 'light' : 'dark';
+document.body.className = 'theme-'+theme;
+render();
+</script>
+</body>
+</html>
