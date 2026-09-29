@@ -31,11 +31,11 @@ BEGIN_MESSAGE_MAP(CSidebar, CWnd)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-void CSidebar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
+BOOL CSidebar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
 {
 	m_dpi = dpi;
 	CRect rcInit(0, 0, 0, 0);
-	CWnd::Create(NULL, NULL, WS_CHILD | WS_CLIPCHILDREN, rcInit, pParent, nID);
+	return CWnd::Create(NULL, NULL, WS_CHILD | WS_CLIPCHILDREN, rcInit, pParent, nID);
 }
 
 void CSidebar::SetDpiInfo(CDPI *dpi)

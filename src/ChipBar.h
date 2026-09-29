@@ -12,7 +12,7 @@ class CChipBar : public CWnd
 public:
 	CChipBar();
 
-	void Create(CWnd *pParent, UINT nID, CDPI *dpi);
+	BOOL Create(CWnd *pParent, UINT nID, CDPI *dpi);
 	void SetDpiInfo(CDPI *dpi);
 
 	void SetChips(const std::vector<CString> &csLabels);

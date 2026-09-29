@@ -443,7 +443,11 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_lstHeader.ShowWindow(SW_SHOW);
 
 	// type filter chips under the search box (ui-redesign)
-	m_chipBar.Create(this, ID_CHIP_BAR, &m_DittoWindow.m_dpi);
+	if (!m_chipBar.Create(this, ID_CHIP_BAR, &m_DittoWindow.m_dpi))
+	{
+		ASSERT(FALSE);
+		return -1;
+	}
 	m_chipBar.SetDpiInfo(&m_DittoWindow.m_dpi);
 	{
 		std::vector<CString> csChips;
@@ -474,7 +478,11 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	);
 
 	// docked left sidebar (ui-redesign)
-	m_sidebar.Create(this, ID_SIDEBAR, &m_DittoWindow.m_dpi);
+	if (!m_sidebar.Create(this, ID_SIDEBAR, &m_DittoWindow.m_dpi))
+	{
+		ASSERT(FALSE);
+		return -1;
+	}
 	m_sidebar.SetDpiInfo(&m_DittoWindow.m_dpi);
 	{
 		std::vector<CString> csNav;
@@ -942,6 +950,12 @@ BOOL CQPasteWnd::HideQPasteWindow(bool releaseFocus, BOOL clearSearchData)
 		m_search.SetWindowText(_T(""));
 		m_bHandleSearchTextChange = true;
 		m_bShowStarredClips = false;
+		m_bShowStickyClips = false;
+		m_nChipFilter = 0;
+		if (::IsWindow(m_chipBar.m_hWnd))
+		{
+			m_chipBar.SetSelected(0);
+		}
 
 		if (m_strSQLSearch.IsEmpty() == FALSE || m_pendingRefresh)
 		{
@@ -1006,14 +1020,9 @@ BOOL CQPasteWnd::ShowQPasteWindow(BOOL bFillList)
 	// re-apply the selected sidebar view, view flags reset when the window hides (ui-redesign)
 	if (m_bSidebarVisible)
 	{
-		if (m_sidebar.GetSelectedNav() == 1)
-		{
-			m_bShowStarredClips = true;
-		}
-		else if (m_sidebar.GetSelectedNav() == 2)
-		{
-			m_bShowStickyClips = true;
-		}
+		int nNav = m_sidebar.GetSelectedNav();
+		m_bShowStarredClips = (nNav == 1);
+		m_bShowStickyClips = (nNav == 2);
 	}
 
 	Log(StrF(_T("Start - ShowQPasteWindow - Fill List: %d, array count: %d"), bFillList, m_listItems.size()));

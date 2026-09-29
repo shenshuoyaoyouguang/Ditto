@@ -13,7 +13,7 @@ class CSidebar : public CWnd
 public:
 	CSidebar();
 
-	void Create(CWnd *pParent, UINT nID, CDPI *dpi);
+	BOOL Create(CWnd *pParent, UINT nID, CDPI *dpi);
 	void SetDpiInfo(CDPI *dpi);
 	void SetNavItems(const std::vector<CString> &csLabels);
 	void SetBottomItems(const std::vector<CString> &csLabels);

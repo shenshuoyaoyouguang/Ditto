@@ -34,11 +34,11 @@ BEGIN_MESSAGE_MAP(CChipBar, CWnd)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-void CChipBar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
+BOOL CChipBar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
 {
 	m_dpi = dpi;
 	CRect rcInit(0, 0, 0, 0);
-	CWnd::Create(NULL, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_TABSTOP, rcInit, pParent, nID);
+	return CWnd::Create(NULL, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_TABSTOP, rcInit, pParent, nID);
 }
 
 void CChipBar::SetDpiInfo(CDPI *dpi)
