@@ -40,7 +40,7 @@ git checkout master && git pull myfork master
 git checkout -b task/01-remove-crash-backdoor
 rg -n "raise\(SIGSEGV\)" src/QPasteWnd.cpp      # 定位（清理前约 7316，合并后偏移）
 ```
-删除 `if (csText == _T("crash")) { if (CONTROL_PRESSED) { if (GetKeyState(VK_SHIFT) & 0x8000) { raise(SIGSEGV); } } }` 整块。
+删除 `if (csText == _T("crash")) { ... raise(SIGSEGV); }` 整块，并一并删除仅服务于该块的 `CString csText;` 和 `m_search.GetWindowText(csText);` 两行（现约 7294-7295 行）以及第 28 行的 `#include <signal.h>`，避免留下新的死代码。
 ```bash
 git add src/QPasteWnd.cpp
 git commit -m "fix: remove crash backdoor in OnNMClickList1"
@@ -65,7 +65,7 @@ gh run watch <run-id> --repo shenshuoyaoyouguang/Ditto --exit-status
 
 ## 1. 任务背景
 
-对 Ditto 主程序源码 `src/`（287 文件）做有界"反冗余"清理：删除死代码、未使用变量、注释残留、重复逻辑与零引用符号，**不改变运行时行为**。本轮已完成全部零风险删除并通过 CI；中/高风险重构项与行为修复项留作后续。
+对 Ditto 主程序源码 `src/`（顶层约 280+ 个 .cpp/.h）做有界"反冗余"清理：删除死代码、未使用变量、注释残留、重复逻辑与零引用符号，**不改变运行时行为**。本轮已完成全部零风险删除并通过 CI；中/高风险重构项与行为修复项留作后续。
 
 ## 2. 当前进度
 
@@ -89,16 +89,16 @@ gh run watch <run-id> --repo shenshuoyaoyouguang/Ditto --exit-status
 
 | # | 任务 | 文件:行（清理前） | 说明 | 风险 |
 |---|---|---|---|---|
-| 1 | 删除崩溃后门 | `QPasteWnd.cpp` `OnNMClickList1` 内 `raise(SIGSEGV)`（约 7316 行） | 搜索框输入 `crash` 且 Ctrl+Shift 时故意触发段错误，开发期后门 | 低（独立条件块，删除不影响正常点击逻辑） |
+| 1 | 删除崩溃后门 | `QPasteWnd.cpp` `OnNMClickList1` 内 `raise(SIGSEGV)`（约 7316 行） | 搜索框内容为 `crash` 且按住 Ctrl+Shift 时**单击结果列表**触发段错误——handler 挂在 `ID_LIST_HEADER` 的 `NM_CLICK` 上（消息映射约 287 行），开发期后门；删除时须连同仅服务该块的 `CString csText;`、`m_search.GetWindowText(csText);` 两行及第 28 行的 `#include <signal.h>` | 低（独立条件块，删除不影响正常点击逻辑） |
 
-**验证**：CI + 手动确认搜索框点击/双击/右键正常。
+**验证**：CI + 手动确认结果列表单击/双击/右键正常（该 handler 由列表 `NM_CLICK` 触发，搜索框不经过此路径）。
 
 ### P1 — 低风险清理（与已完成项同类，零行为变更）
 
 | # | 任务 | 文件:行（清理前） | 说明 | 风险 |
 |---|---|---|---|---|
 | 2 | 删裸 `OutputDebugString` | `QPasteWnd.cpp` `OnTimer` 约 6569、6587 行 | 发布版也会执行；建议删除或包 `#ifdef _DEBUG` | 低 |
-| 3 | 删未使用局部变量 | `CP_Main.cpp` 约 302-366（`ret`）、`SimpleBrowser.cpp` 多处（`result`）、`ProcessPaste.cpp:181`（`clipId`）、`Misc.cpp:265`（`bResult`） | 赋值后从未读取；保留其 `SendMessage`/`EnumWindows` 副作用调用，仅去变量 | 低 |
+| 3 | 删未使用局部变量 | `CP_Main.cpp` 约 302-366（`ret`）、`SimpleBrowser.cpp` 多处（`result`）、`ProcessPaste.cpp:181`（`clipId`）、`Misc.cpp:265`（`bResult`） | 赋值后从未读取；保留其 `SendMessage`/`EnumWindows` 副作用调用，仅去变量。例外：`clipId`（`ProcessPaste.cpp:181`）初始化后从未赋值，仅被 Timing `Log`（现约 279 行）读取一次，删变量须同时去掉该 Log 的 `ClipId: %d` 参数 | 低 |
 | 4 | 删恒真分支 | `HotKeys.cpp:409` `if(pKey != NULL)` | 前文 402-405 已保证非空 | 低 |
 | 5 | 删死分支 | `ClipEditThread.cpp:203-206` `if(pNotify == nullptr)` | 指针运算 + `NextEntryOffset>0` 保证非空 | 低 |
 | 6 | 删死函数链 | `Misc.cpp` `MyMonitorEnumProc`+`MONITOR_ENUM_PARAM`+`MONITOR_SEARCH_METOHD`（554-615）、`RemoveEscapes`/`GetEscapeChar`（189/209）、`IsRunningLimited`（1090）；`Misc.h:93-94,119,184` | 全仓零引用（已 grep 确证）；注意保留 `IsVista`（仍被 `ClipboardViewer` 使用） | 低 |
