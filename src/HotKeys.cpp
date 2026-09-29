@@ -406,14 +406,11 @@ BOOL CHotKeys::ValidateClip(int clipId, DWORD key, CString desc, CHotKey::HotKey
 	   
 	BOOL ret = FALSE;
 
-	if(pKey != NULL)
-	{
-		pKey->m_Key = key;
-		pKey->m_Name = desc;
-		pKey->m_clipId = clipId;
+	pKey->m_Key = key;
+	pKey->m_Name = desc;
+	pKey->m_clipId = clipId;
 
-		ret = CHotKey::ValidateHotKey(key);
-	}
+	ret = CHotKey::ValidateHotKey(key);
 
 	return ret;
 }
