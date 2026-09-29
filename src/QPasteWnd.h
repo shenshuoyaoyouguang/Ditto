@@ -213,6 +213,7 @@ public:
     void OnUpdateLinesPerRow(CCmdUI *pCmdUI, int nValue);
     void OnUpdateTransparency(CCmdUI *pCmdUI, int nValue);
 	void AddShowStarredClipsMenuItem(CMenu *pMenu);
+	void AddShowSidebarMenuItem(CMenu *pMenu);
     void SetMenuChecks(CMenu *pMenu);
     void SetSendToMenu(CMenu *pMenu, int nMenuID, int nArrayPos);
 	void SetFriendChecks(CMenu *pMenu);
@@ -497,6 +498,7 @@ protected:
 	afx_msg void OnMenuSearchFullText();
 	afx_msg void OnMenuSearchQuickPaste();
 	afx_msg void OnMenuShowStarredClips();
+	afx_msg void OnMenuShowSidebar();
 	afx_msg void OnMenuSimpleTextSearch();
 	afx_msg LRESULT OnPostOptions(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnMakeTopStickyClip();

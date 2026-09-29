@@ -433,6 +433,22 @@
 		<Item English_Text = "[Disconnected]" ID = "disconnected"></Item>
 		<Item English_Text = "Ditto is running minimized, Ditto can be opened by hot keys or by clicking the task tray icon" ID = "StartuMsg"></Item>
 		<Item English_Text = "There are no results for" ID = "NoSearchResults"></Item>
+		<Item English_Text = "All" ID = "ChipAll"></Item>
+		<Item English_Text = "Text" ID = "ChipText"></Item>
+		<Item English_Text = "Images" ID = "ChipImage"></Item>
+		<Item English_Text = "Files" ID = "ChipFile"></Item>
+		<Item English_Text = "Links" ID = "ChipLink"></Item>
+		<Item English_Text = "History" ID = "NavHistory"></Item>
+		<Item English_Text = "Saved" ID = "NavSaved"></Item>
+		<Item English_Text = "Sticky" ID = "NavSticky"></Item>
+		<Item English_Text = "Friends" ID = "NavFriends"></Item>
+		<Item English_Text = "Groups" ID = "GroupsSection"></Item>
+		<Item English_Text = "just now" ID = "RelativeNow"></Item>
+		<Item English_Text = "min ago" ID = "RelativeMinutesAgo"></Item>
+		<Item English_Text = "hr ago" ID = "RelativeHoursAgo"></Item>
+		<Item English_Text = "days ago" ID = "RelativeDaysAgo"></Item>
+		<Item English_Text = "Show Sidebar" ID = "ShowSidebar"></Item>
+		<Item English_Text = "There are no sticky clips" ID = "NoStickyClips"></Item>
 		<Item English_Text = "Warning this can take quite a long time and require up to double the hard drive space as your current database size, Continue?" ID = "CompactRepairWarning"></Item>
 		<Item English_Text = "Prompt For Name" ID = "prompt_for_name"></Item>
 		<Item English_Text = "(Follow windows light/dark themes)" ID = "FollowWindowsTheme"></Item>

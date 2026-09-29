@@ -240,6 +240,7 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_COMMAND(ID_MENU_SEARCHFULLTEXT, OnMenuSearchFullText)
 	ON_COMMAND(ID_MENU_SEARCHQUICKPASTE, OnMenuSearchQuickPaste)
 	ON_COMMAND(ID_MENU_SHOWSTARREDCLIPS, OnMenuShowStarredClips)
+	ON_COMMAND(ID_MENU_SHOWSIDEBAR, OnMenuShowSidebar)
 	ON_COMMAND(ID_MENU_CONTAINSTEXTSEARCHONLY, OnMenuSimpleTextSearch)
 
 	ON_COMMAND(ID_QUICKOPTIONS_SHOWINTASKBAR, &CQPasteWnd::OnQuickoptionsShowintaskbar)
@@ -1815,12 +1816,18 @@ void CQPasteWnd::ShowRightClickMenu()
 		}
 
 		AddShowStarredClipsMenuItem(cmSubMenu);
+		AddShowSidebarMenuItem(cmSubMenu);
 
 		theApp.m_Language.UpdateRightClickMenu(cmSubMenu);
 
 		if (m_bShowStarredClips)
 		{
 			cmSubMenu->CheckMenuItem(ID_MENU_SHOWSTARREDCLIPS, MF_CHECKED);
+		}
+
+		if (m_bSidebarVisible)
+		{
+			cmSubMenu->CheckMenuItem(ID_MENU_SHOWSIDEBAR, MF_CHECKED);
 		}
 
 		cmSubMenu->TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON, pp.x, pp.y, this, NULL);
@@ -1862,6 +1869,33 @@ void CQPasteWnd::AddShowStarredClipsMenuItem(CMenu* pMenu)
 	{
 		pParentMenu->InsertMenu(nPos + 1, MF_BYPOSITION | MF_STRING, ID_MENU_SHOWSTARREDCLIPS, csText);
 	}
+}
+
+void CQPasteWnd::AddShowSidebarMenuItem(CMenu* pMenu)
+{
+	if (pMenu == NULL ||
+		pMenu->GetMenuState(ID_MENU_SHOWSIDEBAR, MF_BYCOMMAND) != 0xFFFFFFFF)
+	{
+		return;
+	}
+
+	CString csText = theApp.m_Language.GetString(_T("ShowSidebar"), _T("Show Sidebar"));
+
+	CString csFilterOn(_T("Filter On Selected Clip"));
+	int nPos = -1;
+	CMenu* pParentMenu = CMultiLanguage::GetMenuPos(pMenu, csFilterOn, nPos);
+	if (pParentMenu != NULL &&
+		nPos >= 0)
+	{
+		// insert below the starred clips entry added by AddShowStarredClipsMenuItem
+		pParentMenu->InsertMenu(nPos + 2, MF_BYPOSITION | MF_STRING, ID_MENU_SHOWSIDEBAR, csText);
+	}
+}
+
+void CQPasteWnd::OnMenuShowSidebar()
+{
+	ShowSidebar(!m_bSidebarVisible);
+	CGetSetOptions::SetShowSidebar(m_bSidebarVisible);
 }
 
 void CQPasteWnd::SetFriendChecks(CMenu* pMenu)
@@ -6399,12 +6433,17 @@ LRESULT CQPasteWnd::OnSetListCount(WPARAM wParam, LPARAM lParam)
 	m_lstHeader.SetItemCountEx((int)wParam);
 
 	if ((int)wParam == 0 &&
-		(m_strSearch != _T("") || m_bShowStarredClips))
+		(m_strSearch != _T("") || m_bShowStarredClips || m_bShowStickyClips))
 	{
 		m_noSearchResults = true;
 		if (m_bShowStarredClips && m_strSearch == _T(""))
 		{
 			CString text = theApp.m_Language.GetString("NoStarredClips", "There are no starred clips");
+			m_noSearchResultsStatic.SetWindowText(text);
+		}
+		else if (m_bShowStickyClips && m_strSearch == _T(""))
+		{
+			CString text = theApp.m_Language.GetString(_T("NoStickyClips"), _T("There are no sticky clips"));
 			m_noSearchResultsStatic.SetWindowText(text);
 		}
 		else
