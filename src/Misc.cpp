@@ -186,49 +186,6 @@ CString StrF(const TCHAR * pszFormat, ...)
 	return str;
 }
 
-BYTE GetEscapeChar( BYTE ch )
-{
-	switch(ch)
-	{
-	case '\'':	return '\''; // Single quotation mark (') = 39 or 0x27
-	case '\"':	return '\"'; // Double quotation mark (") = 34 or 0x22
-	case '?':	return '\?'; // Question mark (?) = 63 or 0x3f
-	case '\\':	return '\\'; // Backslash (\) = 92 or 0x5c
-	case 'a':	return '\a'; // Alert (BEL) = 7
-	case 'b':	return '\b'; // Backspace (BS) = 8
-	case 'f':	return '\f'; // Formfeed (FF) = 12 or 0x0c
-	case 'n':	return '\n'; // Newline (NL or LF) = 10 or 0x0a
-	case 'r':	return '\r'; // Carriage Return (CR) = 13 or 0x0d
-	case 't':	return '\t'; // Horizontal tab (HT) = 9
-	case 'v':	return '\v'; // Vertical tab (VT) = 11 or 0x0b
-	case '0':	return '\0'; // Null character (NUL) = 0
-	}
-	return 0; // invalid
-}
-
-CString RemoveEscapes( const TCHAR* str )
-{
-	ASSERT( str );
-	CString ret;
-	TCHAR* pSrc = (TCHAR*) str;
-	TCHAR* pDest = ret.GetBuffer((int)STRLEN(pSrc));
-	TCHAR* pStart = pDest;
-	while( *pSrc != '\0' )
-	{
-		if( *pSrc == '\\' )
-		{
-			pSrc++;
-                       *pDest = GetEscapeChar((BYTE)*pSrc );
-		}
-		else
-			*pDest = *pSrc;
-		pSrc++;
-		pDest++;
-	}
-	ret.ReleaseBuffer((int)(pDest - pStart));
-	return ret;
-}
-
 CString GetWndText(HWND hWnd)
 {
 	TCHAR cWindowText[200];
@@ -550,69 +507,6 @@ CString GetFileName(CString csFileName)
 	return csFileName;
 }
 
-
-/****************************************************************************************************
-BOOL CALLBACK MyMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
-***************************************************************************************************/
-typedef struct
-{
-	long	lFlags;				// Flags
-	LPRECT	pVirtualRect;		// Ptr to rect that receives the results, or the src of the monitor search method
-	int		iMonitor;			// Ndx to the mointor to look at, -1 for all, -or- result of the monitor search method
-	int		nMonitorCount;		// Total number of monitors found, -1 for monitor search method
-}	MONITOR_ENUM_PARAM;
-#define	MONITOR_SEARCH_METOHD	0x00000001
-BOOL CALLBACK MyMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
-{
-	// Typecast param
-	MONITOR_ENUM_PARAM* pParam = (MONITOR_ENUM_PARAM*)dwData;
-	if(pParam)
-	{
-		// If a dest rect was passed
-		if(pParam->pVirtualRect)
-		{
-			// If MONITOR_SEARCH_METOHD then we are being asked for the index of the monitor
-			// that the rect falls inside of
-			if(pParam->lFlags & MONITOR_SEARCH_METOHD)
-			{
-				if(	(pParam->pVirtualRect->right	< lprcMonitor->left)	||
-					(pParam->pVirtualRect->left		> lprcMonitor->right)	||
-					(pParam->pVirtualRect->bottom	< lprcMonitor->top)		||
-					(pParam->pVirtualRect->top		> lprcMonitor->bottom))
-				{
-					// Nothing
-				}
-				else
-				{
-					// This is the one
-					pParam->iMonitor = pParam->nMonitorCount;
-					
-					// Stop the enumeration
-					return FALSE;
-				}
-			}
-			else
-			{
-				if(pParam->iMonitor == pParam->nMonitorCount)
-				{
-					*pParam->pVirtualRect = *lprcMonitor;
-				}
-				else
-					if(pParam->iMonitor == -1)
-					{
-						pParam->pVirtualRect->left = min(pParam->pVirtualRect->left, lprcMonitor->left);
-						pParam->pVirtualRect->top = min(pParam->pVirtualRect->top, lprcMonitor->top);
-						pParam->pVirtualRect->right = max(pParam->pVirtualRect->right, lprcMonitor->right);
-						pParam->pVirtualRect->bottom = max(pParam->pVirtualRect->bottom, lprcMonitor->bottom);
-					}
-			}
-		}
-		
-		// Up the count if necessary
-		pParam->nMonitorCount++;
-	}
-	return TRUE;
-}
 
 int GetScreenWidth(void)
 {
@@ -1085,36 +979,6 @@ BOOL IsVista()
 	}
 
 	return FALSE;
-}
-
-bool IsRunningLimited()
-{
-	LPCTSTR pszSubKey = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System");
-	LPCTSTR pszValue = _T("EnableLUA");
-	DWORD dwType = 0;
-	DWORD dwValue = 0;
-	DWORD dwValueSize = sizeof(DWORD);
-
-	if(ERROR_SUCCESS != SHGetValue(HKEY_LOCAL_MACHINE, pszSubKey, pszValue, &dwType, &dwValue, &dwValueSize))
-	{
-		//failed to read the reg key, either it's not there or we don't have access to the registry
-		//If we are vista then assume we don't have access and we are running as a limited app
-		//otherwise we are xp and the reg key probably doesn't exist and we are not a limited running app
-		if(IsVista())
-		{
-			OutputDebugString(_T("Ditto - Failed to read registry entry finding UAC, Running as limited application"));
-			return true;
-		}
-	}
-
-	if(dwValue == 1)
-	{
-		OutputDebugString(_T("Ditto - UAC ENABLED, Running as limited application"));
-		return true;
-	}
-
-	OutputDebugString(_T("Ditto - Running as standard application"));	
-	return false;
 }
 
 void DeleteDittoTempFiles(BOOL checkFileLastAccess)
