@@ -115,6 +115,7 @@ std::wstring slugify(std::wstring input, std::wstring separator)
 	std::wregex e2(_T("\\s+"));
 	input = std::regex_replace(input, e2, _T(" "));
 
+	trim(input);
 
 	auto replaceSpacesAndSep = _T("[") + separator + _T("\\s]+");
 
