@@ -20,7 +20,7 @@ public:
 	void DrawCloseBtn(CWindowDC &dc, CWnd *pWnd);
 	void DrawMaximizeBtn(CWindowDC &dc, CWnd *pWnd);
 	void DrawMinimizeBtn(CWindowDC &dc, CWnd *pWnd);
-	void DrawWindowIcon(CWindowDC &dc, CWnd *pWnd);
+
 
 	void DoCreate(CWnd *pWnd);
 	void DoNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp);

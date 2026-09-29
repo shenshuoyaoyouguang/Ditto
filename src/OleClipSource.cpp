@@ -540,9 +540,6 @@ void COleClipSource::Capitalize(CClip &clip)
 		unicodeTextFormat->Data(hGlobal);
 	}
 
-	//my change
-	//test
-	//second test
 
 	IClipFormat *asciiTextFormat = clip.m_Formats.FindFormatEx(CF_TEXT);
 	if (asciiTextFormat != NULL)

@@ -1606,7 +1606,4 @@ void CMainFrame::OnSetFocus(CWnd* pOldWnd)
 {
 	CFrameWnd::OnSetFocus(pOldWnd);
 
-	//int nRet = MessageBox(_T("focused"), _T("Ditto"), MB_YESNO | MB_TOPMOST);
-
-	// TODO: Add your message handler code here
 }

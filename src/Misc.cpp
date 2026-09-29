@@ -133,7 +133,7 @@ CString GetErrorString( int err )
 		);
 	str = (LPCTSTR) lpMsgBuf;
 	// Display the string.
-	//  ::MessageBox( NULL, lpMsgBuf, "GetLastError", MB_OK|MB_ICONINFORMATION );
+
 	::LocalFree( lpMsgBuf );
 	return str;
 }
@@ -1214,8 +1214,7 @@ int FindNoCaseAndInsert(CString& mainStr, CString& findStr, CString preInsert, C
 		int preLength = preInsert.GetLength();
 		int postLength = postInsert.GetLength();
 
-		int x = mainLow.Find(findLow, 0);
-		
+
 		while(TRUE)
 		{
 			foundPos = mainLow.Find(findLow, startFindPos);

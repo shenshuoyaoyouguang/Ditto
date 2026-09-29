@@ -453,7 +453,7 @@ void CDittoWindow::DoNcPaint(CWnd *pWnd)
 	dc.SelectObject(pOldFont);
 	dc.SetBkMode(nOldBKMode);
 
-	DrawWindowIcon(dc, pWnd);
+
 	DrawChevronBtn(dc, pWnd);
 	DrawCloseBtn(dc, pWnd);
 	DrawMaximizeBtn(dc, pWnd);
@@ -475,11 +475,6 @@ void CDittoWindow::DrawChevronBtn(CWindowDC &dc, CWnd *pWnd)
 	{
 		m_chevronRightButton.Draw(&dc, m_dpi, pWnd, m_crChevronBT, m_bMouseOverChevron, m_bMouseDownOnChevron);
 	}
-}
-
-void CDittoWindow::DrawWindowIcon(CWindowDC &dc, CWnd *pWnd)
-{
-	//m_windowIcon.Draw(&dc, pWnd, m_crWindowIconBT.left, m_crWindowIconBT.top, false, false);
 }
 
 void CDittoWindow::DrawCloseBtn(CWindowDC &dc, CWnd *pWnd)

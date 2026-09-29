@@ -21,7 +21,7 @@ public:
 	{
 		m_pPopup = NULL;
 		m_pClipList = NULL;
-		m_pPopup = NULL;
+
 		m_manualSend = false;
 	}
 	~CSendToFriendInfo()
@@ -66,7 +66,5 @@ protected:
 };
 
 BOOL SendToFriend(CSendToFriendInfo &Info);
-
-UINT  SendClientThread(LPVOID pParam);
 
 #endif // !defined(AFX_CLIENT_H__E9B55197_85B2_4ABF_92FF_E6301F346404__INCLUDED_)

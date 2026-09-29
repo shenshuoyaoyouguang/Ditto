@@ -221,7 +221,7 @@ public:
     void SetKeyModiferState(bool bActive);
 	void SaveWindowSize();
 	void SelectFocusID();
-	void SetSearchImages();
+
 	void RemoveStickyInternal(int id, bool &sort);
 
 	DROPEFFECT OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState, CPoint point);
