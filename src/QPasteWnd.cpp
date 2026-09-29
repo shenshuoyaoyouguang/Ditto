@@ -25,7 +25,6 @@
 #include "QPasteWnd.h"
 #include "SendMail.h"
 #include <algorithm>
-#include <signal.h>
 #include "CreateQRCodeImage.h"
 #include "QRCodeViewer.h"
 
@@ -7291,19 +7290,6 @@ void CQPasteWnd::OnUpdateSpecialpasteTypoglycemia(CCmdUI* pCmdUI)
 
 void CQPasteWnd::OnNMClickList1(NMHDR* pNMHDR, LRESULT* pResult)
 {
-	CString csText;
-	m_search.GetWindowText(csText);
-	if (csText == _T("crash"))
-	{
-		if (CONTROL_PRESSED)
-		{
-			if (GetKeyState(VK_SHIFT) & 0x8000)
-			{
-				raise(SIGSEGV);
-			}
-		}
-	}
-
 	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 	MSG msg;
 	msg.lParam = 0;
