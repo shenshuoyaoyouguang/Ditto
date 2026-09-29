@@ -43,20 +43,15 @@ static char THIS_FILE[] = __FILE__;
 CGdipButton::CGdipButton()
 {
 	m_pStdImage = NULL;
-	m_pAltImage = NULL;
 
 	m_bHaveBitmaps = FALSE;
-	m_bHaveAltImage = FALSE;
 
 	m_pCurBtn = NULL;
 
 	m_bIsDisabled = FALSE;
-	m_bIsToggle = FALSE;
 
 	m_bIsHovering = FALSE;
 	m_bIsTracking = FALSE;
-
-	m_nCurType = STD_TYPE;
 
 	m_pToolTip = NULL;
 
@@ -65,7 +60,6 @@ CGdipButton::CGdipButton()
 CGdipButton::~CGdipButton()
 {
 	if(m_pStdImage) delete m_pStdImage;
-	if(m_pAltImage) delete m_pAltImage;
 	if(m_pToolTip)	delete m_pToolTip;
 }
 
@@ -164,13 +158,10 @@ void CGdipButton::Reset()
 {
 	delete m_pStdImage;
 	m_pStdImage = NULL;
-	delete m_pAltImage;
-	m_pAltImage = NULL;
 	delete m_pToolTip;
 	m_pToolTip = NULL;
 
 	m_bHaveBitmaps = FALSE;
-	m_bHaveAltImage = FALSE;
 
 	m_dcStd.DeleteDC();
 	m_dcStdP.DeleteDC();
@@ -183,32 +174,6 @@ void CGdipButton::Test(CString c)
 	m_pStdImage = new CGdiPlusBitmapResource;
 	m_pStdImage->Loads(c);
 }
-
-//=============================================================================
-//
-// LoadAltImage()
-//
-// Purpose:     The LoadAltImage() Loads the altername image for the button.  
-//				This function call is optional
-// Parameters:  
-//		[IN]	id
-//				resource id, one of the resources already imported with the 
-//				resource editor, usually begins with IDR_  
-//
-//		[IN]	pType
-//				pointer to string describing the resource type
-//				
-// Returns:     BOOL
-//				Non zero if successful, otherwise zero
-//
-//=============================================================================
-BOOL CGdipButton::LoadAltImage(UINT id, LPCTSTR pType)
-{
-	m_bHaveAltImage = TRUE;
-	m_pAltImage = new CGdiPlusBitmapResource;
-	return (m_pAltImage->Load(id, pType));
-}
-
 
 //=============================================================================
 //
@@ -366,62 +331,6 @@ HBRUSH CGdipButton::CtlColor(CDC* pScreenDC, UINT nCtlColor)
 			}
 		}
 
-		// alternate image
-		if( (m_dcAlt.m_hDC == NULL) && m_bHaveAltImage )
-		{
-			PaintBk(pDC);
-
-			graphics.DrawImage(*m_pAltImage, 0, 0);
-		
-			m_dcAlt.CreateCompatibleDC(pDC);
-			bmp.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());
-			pOldBitmap = m_dcAlt.SelectObject(&bmp);
-			m_dcAlt.BitBlt(0, 0, rect.Width(), rect.Height(), pDC, 0, 0, SRCCOPY);
-			bmp.DeleteObject();
-
-			// alternate image pressed
-			if( (m_dcAltP.m_hDC == NULL) && m_bHaveAltImage )
-			{
-				PaintBk(pDC);
-
-				graphics.DrawImage(*m_pAltImage, 1, 1);
-			
-				m_dcAltP.CreateCompatibleDC(pDC);
-				bmp.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());
-				pOldBitmap = m_dcAltP.SelectObject(&bmp);
-				m_dcAltP.BitBlt(0, 0, rect.Width(), rect.Height(), pDC, 0, 0, SRCCOPY);
-				bmp.DeleteObject();
-			}
-
-			// alternate image hot
-			if(m_dcAltH.m_hDC == NULL)
-			{
-				PaintBk(pDC);
-
-				ColorMatrix HotMat = {	1.05f, 0.00f, 0.00f, 0.00f, 0.00f,
-										0.00f, 1.05f, 0.00f, 0.00f, 0.00f,
-										0.00f, 0.00f, 1.05f, 0.00f, 0.00f,
-										0.00f, 0.00f, 0.00f, 1.00f, 0.00f,
-										0.05f, 0.05f, 0.05f, 0.00f, 1.00f	};
-
-				ImageAttributes ia;
-				ia.SetColorMatrix(&HotMat);
-
-				float width = (float)m_pStdImage->m_pBitmap->GetWidth();
-				float height = (float)m_pStdImage->m_pBitmap->GetHeight();
-
-				RectF grect; grect.X=0, grect.Y=0; grect.Width = width; grect.Height = height;
-
-				graphics.DrawImage(*m_pAltImage, grect, 0, 0, width, height, UnitPixel, &ia);
-
-				m_dcAltH.CreateCompatibleDC(pDC);
-				bmp.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());
-				pOldBitmap = m_dcAltH.SelectObject(&bmp);
-				m_dcAltH.BitBlt(0, 0, rect.Width(), rect.Height(), pDC, 0, 0, SRCCOPY);
-				bmp.DeleteObject();
-			}
-		}
-
 		if(m_pCurBtn == NULL)
 		{
 			m_pCurBtn = &m_dcStd;
@@ -451,34 +360,6 @@ void CGdipButton::PaintBtn(CDC *pDC)
 	CRect rect;
 	GetClientRect(rect);
 	pDC->BitBlt(0, 0, rect.Width(), rect.Height(), m_pCurBtn, 0, 0, SRCCOPY);
-}
-
-//=============================================================================
-// enables the toggle mode
-// returns if it doesn't have the alternate image
-//=============================================================================
-void CGdipButton::EnableToggle(BOOL bEnable)
-{
-	if(!m_bHaveAltImage) return;
-
-	m_bIsToggle = bEnable; 
-
-	// this actually makes it start in the std state since toggle is called before paint
-	if(bEnable)	m_pCurBtn = &m_dcAlt;
-	else		m_pCurBtn = &m_dcStd;
-
-}
-
-//=============================================================================
-// sets the image type and disabled state then repaints
-//=============================================================================
-void CGdipButton::SetImage(int type)
-{
-	m_nCurType = type;
-
-	(type == DIS_TYPE) ? m_bIsDisabled = TRUE : m_bIsDisabled = FALSE;
-
-	Invalidate();
 }
 
 //=============================================================================
@@ -537,33 +418,17 @@ void CGdipButton::DrawItem(LPDRAWITEMSTRUCT lpDIS)
 
 	BOOL bIsPressed = (lpDIS->itemState & ODS_SELECTED);
 
-	// handle toggle button
-	if(m_bIsToggle && bIsPressed)
-	{
-		(m_nCurType == STD_TYPE) ? m_nCurType = ALT_TYPE : m_nCurType = STD_TYPE;
-	}
-
 	if(bIsPressed)
 	{
-		if(m_nCurType == STD_TYPE)
-			m_pCurBtn = &m_dcStdP;
-		else
-			m_pCurBtn = &m_dcAltP;
+		m_pCurBtn = &m_dcStdP;
 	}
 	else if(m_bIsHovering)
 	{
-
-		if(m_nCurType == STD_TYPE)
-			m_pCurBtn = &m_dcStdH;
-		else
-			m_pCurBtn = &m_dcAltH;
+		m_pCurBtn = &m_dcStdH;
 	}
 	else
 	{
-		if(m_nCurType == STD_TYPE)
-			m_pCurBtn = &m_dcStd;
-		else
-			m_pCurBtn = &m_dcAlt;
+		m_pCurBtn = &m_dcStd;
 	}
 
 	// paint the button

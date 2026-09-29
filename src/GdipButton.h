@@ -40,27 +40,13 @@ public:
 	CGdipButton();
 	virtual ~CGdipButton();
 
-	// image types
-	enum	{
-				STD_TYPE	= 0,
-				ALT_TYPE,
-				DIS_TYPE
-			};
-
-	// sets the image type
-	void SetImage(int type);
-
 	void CGdipButton::Test(CString c);
-	BOOL LoadAltImage(UINT id, LPCTSTR pType);
 	BOOL LoadStdImage(UINT id, LPCTSTR pType);
 
 	BOOL LoadStdImageDPI(int dpi, UINT id96, UINT id120, UINT id144, UINT id168, UINT id192, LPCTSTR pType, UINT id225 = 0, UINT id250 = 0, UINT id275 = 0, UINT id300 = 0, UINT id325 = 0, UINT id350 = 0);
 
 	// if false, disables the press state and uses grayscale image if it exists
 	void EnableButton(BOOL bEnable = TRUE) { m_bIsDisabled = !bEnable; }
-
-	// in toggle mode each press toggles between std and alt images
-	void EnableToggle(BOOL bEnable = TRUE);
 
 	// return the enable/disable state
 	BOOL IsDisabled(void) {return (m_bIsDisabled == TRUE); }
@@ -80,17 +66,12 @@ protected:
 	void PaintBk(CDC* pDC);
 	void PaintBtn(CDC* pDC);
 
-	BOOL	m_bHaveAltImage;
 	BOOL	m_bHaveBitmaps;
 
 	BOOL	m_bIsDisabled;
-	BOOL	m_bIsToggle;
 	BOOL	m_bIsHovering;
 	BOOL	m_bIsTracking;
 
-	int		m_nCurType;
-
-	CGdiPlusBitmapResource* m_pAltImage;
 	CGdiPlusBitmapResource* m_pStdImage;
 
 	CString			m_tooltext;
@@ -119,10 +100,6 @@ private:
 	CDC		m_dcStd;		// standard button
 	CDC		m_dcStdP;		// standard button pressed
 	CDC		m_dcStdH;		// standard button hot
-
-	CDC		m_dcAlt;		// alternate button
-	CDC		m_dcAltP;		// alternate button pressed
-	CDC		m_dcAltH;		// alternate button hot
 
 	CDC		m_dcGS;			// grayscale button (does not have a hot or pressed state)
 
