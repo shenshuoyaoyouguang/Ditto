@@ -5,6 +5,7 @@
 #include "Options.h"
 #include "..\Shared\Tokenizer.h"
 #include "CP_Main.h"
+#include <cmath>
 
 CTheme::CTheme(void)
 {
@@ -216,38 +217,50 @@ void CTheme::LoadWindowsAccentColor()
 	}
 }
 
-COLORREF HslToRgb(float h, float s, float l)
+COLORREF HslToRgb(double h, double s, double l)
 {
-	if (s == 0.0f)
+	// Input h(0-360), s(0-1), l(0-1)
+	// Output COLORREF (RGB)
+
+	double r, g, b;
+
+	if (s == 0)
 	{
-		// Grayscale, achromatic
-		BYTE gray = static_cast<BYTE>(l * 255.0f + 0.5f);
-		return RGB(gray, gray, gray);
+		r = g = b = l; // Achromatic (gray)
+	}
+	else
+	{
+		auto hue2rgb = [&](double p, double q, double t)
+			{
+				if (t < 0) t += 1;
+				if (t > 1) t -= 1;
+				if (t < 1.0 / 6.0) return p + (q - p) * 6 * t;
+				if (t < 1.0 / 2.0) return q;
+				if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6;
+				return p;
+			};
+
+		// Normalize h to 0-1 range
+		double h_norm = h / 360.0;
+
+		double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		double p = 2 * l - q;
+		r = hue2rgb(p, q, h_norm + 1.0 / 3.0);
+		g = hue2rgb(p, q, h_norm);
+		b = hue2rgb(p, q, h_norm - 1.0 / 3.0);
 	}
 
-	auto hueToRgb = [](float p, float q, float t) -> float
-	{
-		if (t < 0.0f) t += 1.0f;
-		if (t > 1.0f) t -= 1.0f;
-		if (t < 1.0f / 6.0f) return p + (q - p) * 6.0f * t;
-		if (t < 1.0f / 2.0f) return q;
-		if (t < 2.0f / 3.0f) return p + (q - p) * (2.0f / 3.0f - t) * 6.0f;
-		return p;
-	};
+	// Scale RGB values to 0-255 and round
+	int R = static_cast<int>(std::round(r * 255));
+	int G = static_cast<int>(std::round(g * 255));
+	int B = static_cast<int>(std::round(b * 255));
 
-	float q = l < 0.5f ? l * (1.0f + s) : l + s - l * s;
-	float p = 2.0f * l - q;
-	float h_norm = h / 360.0f;
+	// Clamp values to 0-255 just in case of floating point inaccuracies
+	R = max(0, min(255, R));
+	G = max(0, min(255, G));
+	B = max(0, min(255, B));
 
-	float r_f = hueToRgb(p, q, h_norm + 1.0f / 3.0f);
-	float g_f = hueToRgb(p, q, h_norm);
-	float b_f = hueToRgb(p, q, h_norm - 1.0f / 3.0f);
-
-	BYTE r = static_cast<BYTE>(r_f * 255.0f + 0.5f);
-	BYTE g = static_cast<BYTE>(g_f * 255.0f + 0.5f);
-	BYTE b = static_cast<BYTE>(b_f * 255.0f + 0.5f);
-
-	return RGB(r, g, b);
+	return RGB(R, G, B);
 }
 
 bool CTheme::LoadColor(TiXmlElement *pParent, CStringA csNode, COLORREF &Color)

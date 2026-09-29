@@ -118,3 +118,5 @@ protected:
 
 	void LoadDefaults();
 };
+
+COLORREF HslToRgb(double h, double s, double l);
