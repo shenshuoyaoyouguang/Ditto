@@ -639,18 +639,26 @@ void CQPasteWnd::MoveControls()
 	int cx = crRect.Width();
 	int cy = crRect.Height();
 
-	//Hide the two pixels of space at the top, not sure where this is coming from
-	int topOfListBox = 0;
+	// Search row sits at the top of the window, the list fills everything below it (ui-redesign)
+	int searchRowTop = m_DittoWindow.m_dpi.Scale(5);
+	int searchRowHeight = m_DittoWindow.m_dpi.Scale(25);
+	int topOfListBox = searchRowTop + searchRowHeight + m_DittoWindow.m_dpi.Scale(4);
+
+	m_search.MoveWindow(m_DittoWindow.m_dpi.Scale(34), searchRowTop, cx - m_DittoWindow.m_dpi.Scale(70), searchRowHeight);
+
+	m_systemMenu.MoveWindow(cx - m_DittoWindow.m_dpi.Scale(30), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
+
+	m_ShowGroupsFolderBottom.MoveWindow(m_DittoWindow.m_dpi.Scale(4), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
 
 	if (theApp.m_GroupID > 0 && m_bShowStarredClips == false)
 	{
 		m_stGroup.ShowWindow(SW_SHOW);
 		m_BackButton.ShowWindow(SW_SHOW);
 
-		m_BackButton.MoveWindow(m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
-		m_stGroup.MoveWindow(m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(2), cx - m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(16));
+		m_BackButton.MoveWindow(m_DittoWindow.m_dpi.Scale(4), topOfListBox, m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
+		m_stGroup.MoveWindow(m_DittoWindow.m_dpi.Scale(24), topOfListBox, cx - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(16));
 
-		topOfListBox = m_DittoWindow.m_dpi.Scale(20);
+		topOfListBox += m_DittoWindow.m_dpi.Scale(20);
 	}
 	else
 	{
@@ -658,15 +666,8 @@ void CQPasteWnd::MoveControls()
 		m_stGroup.ShowWindow(SW_HIDE);
 	}
 
-	int searchRowStart = 33;
-
-	/*if(CGetSetOptions::m_bShowPersistent)
-	{
-		searchRowStart = 41;
-	}*/
-
 	int nWidth = cx;
-	int listBoxBottomOffset = m_DittoWindow.m_dpi.Scale(searchRowStart);
+	int listBoxBottomOffset = m_DittoWindow.m_dpi.Scale(0);
 
 	int extraSize = 0;
 
@@ -734,12 +735,6 @@ void CQPasteWnd::MoveControls()
 			m_modernScrollBarHorz.Hide(false);
 		}
 	}
-	m_search.MoveWindow(m_DittoWindow.m_dpi.Scale(34), cy - m_DittoWindow.m_dpi.Scale(searchRowStart - 5), cx - m_DittoWindow.m_dpi.Scale(70), m_DittoWindow.m_dpi.Scale(25));
-
-	m_systemMenu.MoveWindow(cx - m_DittoWindow.m_dpi.Scale(30), cy - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(24));
-
-	m_ShowGroupsFolderBottom.MoveWindow(m_DittoWindow.m_dpi.Scale(4), cy - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(24));
-
 	/*if (CGetSetOptions::m_bShowPersistent &&
 		CGetSetOptions::m_bShowAlwaysOnTopWarning)
 	{
@@ -985,6 +980,11 @@ BOOL CQPasteWnd::ShowQPasteWindow(BOOL bFillList)
 	if (CGetSetOptions::GetShowPersistent())
 	{
 		::SetWindowPos(m_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
+	}
+
+	if (::IsWindow(m_search.m_hWnd))
+	{
+		m_search.SetFocus();
 	}
 
 	//SetKeyModiferState(true);
