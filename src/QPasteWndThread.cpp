@@ -89,9 +89,9 @@ void CQPasteWndThread::OnSetListCount(void *param)
             _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')"),
             _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')"),
             _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')"),
-            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%'"
-                _T(" OR Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*'"
-                _T(" OR Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')))"),
+            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')")
+                _T(" OR Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*'")
+                _T(" OR Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%'))"),
         };
 
         int *pCounts = new int[4];
