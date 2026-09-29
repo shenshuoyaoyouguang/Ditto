@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QListCtrl.h"
+#include "ChipBar.h"
 #include "SearchEditBox.h"
 #include "WndEx.h"
 #include "GroupStatic.h"
@@ -130,6 +131,8 @@ public:
 
     //protected:
     CQListCtrl m_lstHeader;
+    CChipBar m_chipBar;
+    int m_nChipFilter;
 
     CAlphaBlend m_Alpha;
 	//CEditWithButton m_search;
@@ -138,6 +141,7 @@ public:
     bool m_bHideWnd;
     CString m_strSQLSearch;
 	CString m_strSearch;
+	CString m_csBaseFilter;
     CGroupStatic m_stGroup;
     CFont m_groupFont;
     CString m_Title;
@@ -450,6 +454,9 @@ protected:
     afx_msg LRESULT OnFillRestOfList(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnRefeshRow(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSetListCount(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSetTypeCounts(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnTypeFilterChanged(WPARAM wParam, LPARAM lParam);
+	CString GetTypeFilterSql(int nChip);
     afx_msg HBRUSH CtlColor(CDC *pDC, UINT nCtlColor);
     afx_msg void OnNcLButtonDblClk(UINT nHitTest, CPoint point);
     afx_msg void OnViewcaptionbaronRight();

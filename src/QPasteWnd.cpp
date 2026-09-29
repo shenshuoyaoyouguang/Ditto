@@ -48,6 +48,7 @@ static char THIS_FILE[] = __FILE__;
 #define ON_TOP_WARNING 0x209
 #define ID_SYSTEM_BUTTON		0x210
 #define ID_NO_SEARCH_RESULTS	0x211
+#define ID_CHIP_BAR				0x212
 
 
 #define QPASTE_WIDTH			200
@@ -87,6 +88,7 @@ CQPasteWnd::CQPasteWnd()
 	m_lastDbWrite = 0;
 	m_pendingRefresh = false;
 	m_lastNonActiveMouseMove = 0;
+	m_nChipFilter = 0;
 }
 
 CQPasteWnd::~CQPasteWnd()
@@ -211,6 +213,8 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_MESSAGE(CB_UPDOWN, OnUpDown)
 	ON_MESSAGE(NM_INACTIVE_TOOLTIPWND, OnToolTipWndInactive)
 	ON_MESSAGE(NM_SET_LIST_COUNT, OnSetListCount)
+	ON_MESSAGE(NM_SET_TYPE_COUNTS, OnSetTypeCounts)
+	ON_MESSAGE(NM_TYPE_FILTER_CHANGED, OnTypeFilterChanged)
 	ON_MESSAGE(NM_REFRESH_ROW, OnRefeshRow)
 	ON_MESSAGE(NM_ITEM_DELETED, OnItemDeleted)
 	ON_WM_TIMER()
@@ -433,6 +437,19 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_lstHeader.SetDpiInfo(&m_DittoWindow.m_dpi);
 	m_lstHeader.ShowWindow(SW_SHOW);
 
+	// type filter chips under the search box (ui-redesign)
+	m_chipBar.Create(this, ID_CHIP_BAR, &m_DittoWindow.m_dpi);
+	m_chipBar.SetDpiInfo(&m_DittoWindow.m_dpi);
+	{
+		std::vector<CString> csChips;
+		csChips.push_back(theApp.m_Language.GetString(_T("ChipAll"), _T("All")));
+		csChips.push_back(theApp.m_Language.GetString(_T("ChipText"), _T("Text")));
+		csChips.push_back(theApp.m_Language.GetString(_T("ChipImage"), _T("Images")));
+		csChips.push_back(theApp.m_Language.GetString(_T("ChipFile"), _T("Files")));
+		csChips.push_back(theApp.m_Language.GetString(_T("ChipLink"), _T("Links")));
+		m_chipBar.SetChips(csChips);
+	}
+
 	// Create modern scrollbar overlay (vertical)
 	m_modernScrollBar.Create(this, &m_lstHeader, ScrollBarOrientation::Vertical);
 	m_modernScrollBar.SetDPI(&m_DittoWindow.m_dpi);
@@ -640,16 +657,20 @@ void CQPasteWnd::MoveControls()
 	int cx = crRect.Width();
 	int cy = crRect.Height();
 
-	// Search row sits at the top of the window, the list fills everything below it (ui-redesign)
+	// Search row sits at the top of the window, chips below it, the list fills the rest (ui-redesign)
 	int searchRowTop = m_DittoWindow.m_dpi.Scale(5);
 	int searchRowHeight = m_DittoWindow.m_dpi.Scale(25);
-	int topOfListBox = searchRowTop + searchRowHeight + m_DittoWindow.m_dpi.Scale(4);
+	int chipRowTop = searchRowTop + searchRowHeight + m_DittoWindow.m_dpi.Scale(2);
+	int chipRowHeight = m_chipBar.GetBarHeight();
+	int topOfListBox = chipRowTop + chipRowHeight + m_DittoWindow.m_dpi.Scale(4);
 
 	m_search.MoveWindow(m_DittoWindow.m_dpi.Scale(34), searchRowTop, cx - m_DittoWindow.m_dpi.Scale(70), searchRowHeight);
 
 	m_systemMenu.MoveWindow(cx - m_DittoWindow.m_dpi.Scale(30), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
 
 	m_ShowGroupsFolderBottom.MoveWindow(m_DittoWindow.m_dpi.Scale(4), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
+
+	m_chipBar.MoveWindow(0, chipRowTop, cx, chipRowHeight);
 
 	if (theApp.m_GroupID > 0 && m_bShowStarredClips == false)
 	{
@@ -1642,6 +1663,29 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 		m_strSearch = csSQLSearch;
 	}
 
+	// remember the base filter so chip counts can be computed without the chip filter (ui-redesign)
+	if (strFilter.GetLength() > 0 && strFilter != _T("()"))
+	{
+		m_csBaseFilter = strFilter;
+	}
+	else
+	{
+		m_csBaseFilter = _T("1");
+	}
+
+	// type chips filter (ui-redesign)
+	if (m_nChipFilter > 0)
+	{
+		CString csTypeFilter = GetTypeFilterSql(m_nChipFilter);
+		if (csTypeFilter.GetLength() > 0)
+		{
+			if (strFilter.GetLength() > 0 && strFilter != _T("()"))
+				strFilter = _T("(") + strFilter + _T(") AND (") + csTypeFilter + _T(")");
+			else
+				strFilter = _T("(") + csTypeFilter + _T(")");
+		}
+	}
+
 	CString sql;
 	CString countSql;
 
@@ -1667,7 +1711,8 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 	CPoint loadItem(-1, m_lstHeader.GetCountPerPage() + 2);
 	m_loadItems.push_back(loadItem);
 
-	m_thread.SetSearchSql(sql, countSql);
+	m_thread.SetSearchSql(sql, countSql, m_csBaseFilter,
+		StrF(_T("SELECT COUNT(%s Main.lID) FROM Main %s where"), IsDistinct, dataJoin));
 	m_thread.FireLoadItems(true);
 
 	MoveControls();
@@ -6324,6 +6369,48 @@ LRESULT CQPasteWnd::OnSetListCount(WPARAM wParam, LPARAM lParam)
 	MoveControls();
 
 	return TRUE;
+}
+
+LRESULT CQPasteWnd::OnSetTypeCounts(WPARAM wParam, LPARAM lParam)
+{
+	int *pCounts = (int*)wParam;
+	if (pCounts != NULL)
+	{
+		// array order: image, file, link, text; chip order: all, text, image, file, link
+		m_chipBar.SetChipCount(1, pCounts[3]);
+		m_chipBar.SetChipCount(2, pCounts[0]);
+		m_chipBar.SetChipCount(3, pCounts[1]);
+		m_chipBar.SetChipCount(4, pCounts[2]);
+		delete[] pCounts;
+	}
+	return 0;
+}
+
+LRESULT CQPasteWnd::OnTypeFilterChanged(WPARAM wParam, LPARAM lParam)
+{
+	if ((int)wParam != m_nChipFilter)
+	{
+		m_nChipFilter = (int)wParam;
+		FillList(m_strSearch);
+	}
+	return 0;
+}
+
+CString CQPasteWnd::GetTypeFilterSql(int nChip)
+{
+	// keep these in sync with CRowIcons::Classify (ui-redesign)
+	const TCHAR *csImage = _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')");
+	const TCHAR *csFile = _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')");
+	const TCHAR *csLink = _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')");
+
+	switch (nChip)
+	{
+	case 2: return csImage;
+	case 3: return csFile;
+	case 4: return csLink;
+	case 1: return StrF(_T("(NOT (%s OR %s OR %s))"), csImage, csFile, csLink);
+	default: return _T("");
+	}
 }
 
 LRESULT CQPasteWnd::OnItemDeleted(WPARAM wParam, LPARAM lParam)

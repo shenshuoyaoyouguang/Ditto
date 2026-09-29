@@ -45,7 +45,13 @@ public:
     HANDLE m_SearchingEvent;
 
 	void SetRowHeight(int height) { m_rowHeight = height; }
-    void SetSearchSql(CString sql, CString countSql) { m_sql = sql; m_countSql = countSql; }
+    void SetSearchSql(CString sql, CString countSql, CString baseFilter = _T(""), CString countPrefix = _T(""))
+    {
+        m_sql = sql;
+        m_countSql = countSql;
+        m_baseFilter = baseFilter;
+        m_countPrefix = countPrefix;
+    }
 
 protected:
     virtual void OnEvent(int eventId, void *param);
@@ -64,4 +70,6 @@ protected:
 
     CString m_sql;
     CString m_countSql;
+    CString m_baseFilter;
+    CString m_countPrefix;
 };

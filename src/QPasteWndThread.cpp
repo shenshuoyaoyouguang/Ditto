@@ -78,7 +78,38 @@ void CQPasteWndThread::OnSetListCount(void *param)
         lRecordCount = theApp.m_db.execScalar(countSQL);
         ::PostMessage(pasteWnd->m_hWnd, NM_SET_LIST_COUNT, lRecordCount, 0);
     }
-    CATCH_SQLITE_EXCEPTION 
+    CATCH_SQLITE_EXCEPTION
+
+    // per chip counts for the type filter bar, base filter without the chip filter applied (ui-redesign)
+    if (m_countPrefix.GetLength() > 0 && m_baseFilter.GetLength() > 0)
+    {
+        const TCHAR *csConds[4] =
+        {
+            // image, file, link, text = everything else, keep in sync with CRowIcons::Classify
+            _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')"),
+            _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')"),
+            _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')"),
+            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%'"
+                _T(" OR Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*'"
+                _T(" OR Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')))"),
+        };
+
+        int *pCounts = new int[4];
+
+        try
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                CString csChipSql;
+                csChipSql.Format(_T("%s (%s) AND %s"), m_countPrefix, m_baseFilter, csConds[i]);
+                pCounts[i] = (int)theApp.m_db.execScalar(csChipSql);
+            }
+        }
+        CATCH_SQLITE_EXCEPTION
+
+        // the receiver frees the array
+        ::PostMessage(pasteWnd->m_hWnd, NM_SET_TYPE_COUNTS, (WPARAM)pCounts, 0);
+    } 
 
     SetEvent(m_SearchingEvent);
 
