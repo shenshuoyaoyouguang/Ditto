@@ -13,6 +13,56 @@
 
 > **行号说明**：下文剩余任务的行号基于**清理前**的原始代码快照。PR #3 已删除约 460 行，合并后行号整体前移。执行任何剩余项前，请在合并 PR #3 后的代码上重新 `grep`/`rg` 定位。
 
+## 快速上手（5 分钟读完即可动手）
+
+### 一句话总览
+PR #3 已完成 30 文件零风险清理并通过 CI；剩余 **19 项**分 P0/P1/P2/P3 四档，按序执行，每项独立分支 + CI 验证。
+
+### 标准执行流程（每项重复 6 步）
+```bash
+# 1. 基于最新 master 建分支（PR #3 合入后行号会偏移，务必重新定位）
+git checkout master && git pull myfork master
+git checkout -b task/<编号>-<简述>
+# 2. 用 rg 定位（文档行号仅参考，勿直接用）
+rg -n "<模式>" src/<文件>
+# 3. 编辑删除
+# 4. 提交推送
+git add src/ && git commit -m "<message>" && git push -u myfork task/<编号>-<简述>
+# 5. 发 PR + 监控 CI
+gh pr create --repo shenshuoyaoyouguang/Ditto --base master --head task/<编号>-<简述>
+gh run watch <run-id> --repo shenshuoyaoyouguang/Ditto --exit-status
+# 6. CI 绿后手动冒烟：复制/粘贴/搜索/排序/特殊粘贴/网络发送/主题切换
+```
+
+### 立即开始：P0 崩溃后门（5 分钟可完成）
+```bash
+git checkout master && git pull myfork master
+git checkout -b task/01-remove-crash-backdoor
+rg -n "raise\(SIGSEGV\)" src/QPasteWnd.cpp      # 定位（清理前约 7316，合并后偏移）
+```
+删除 `if (csText == _T("crash")) { if (CONTROL_PRESSED) { if (GetKeyState(VK_SHIFT) & 0x8000) { raise(SIGSEGV); } } }` 整块。
+```bash
+git add src/QPasteWnd.cpp
+git commit -m "fix: remove crash backdoor in OnNMClickList1"
+git push -u myfork task/01-remove-crash-backdoor
+gh pr create --repo shenshuoyaoyouguang/Ditto --base master --head task/01-remove-crash-backdoor \
+  --title "Remove crash backdoor (P0)" --body "See docs/handoff.md §3 P0"
+gh run watch <run-id> --repo shenshuoyaoyouguang/Ditto --exit-status
+```
+**冒烟**：搜索框输入文字 → 单击/双击/右键列表项 → 确认无崩溃、无行为异常。
+
+### 任务认领顺序
+| 档 | 项数 | 预计 | 说明 |
+|---|---|---|---|
+| **P0** | 1 | 5 分钟 | 崩溃后门，立即做 |
+| **P1** | 7 | 每项≤10 分钟 | 低风险清理，可合并一个 PR |
+| **P2** | 9 | 每项需回归 | 中/高风险重构，每项独立 PR |
+| **P3** | 2 | 需产品确认 | 行为修复，非纯清理 |
+
+详细任务说明见下文 §3。
+
+---
+
 ## 1. 任务背景
 
 对 Ditto 主程序源码 `src/`（287 文件）做有界"反冗余"清理：删除死代码、未使用变量、注释残留、重复逻辑与零引用符号，**不改变运行时行为**。本轮已完成全部零风险删除并通过 CI；中/高风险重构项与行为修复项留作后续。
