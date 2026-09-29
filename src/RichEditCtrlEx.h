@@ -51,36 +51,10 @@ public:
 
 // Implementation
 public:
-	long GetSelectionFontSize();
-	CString GetSelectionFontName();
 	CStringArray m_saFontList;
-	void GetSystemFonts(CStringArray &saFontList);
 	void SetFontSize(int nPointSize);
 	void SetFontName(CString sFontName);
-	void SelectColor();
-	bool ParagraphIsBulleted();
-	void SetParagraphBulleted();
-	
-	PARAFORMAT GetParagraphFormat();
-	
-	bool ParagraphIsRight();
-	bool ParagraphIsLeft();
-	bool ParagraphIsCentered();
-	
-	void SetParagraphRight();
-	void SetParagraphLeft();
-	void SetParagraphCenter();
-	
 	CHARFORMAT GetCharFormat(DWORD dwMask = CFM_COLOR | CFM_FACE | CFM_SIZE | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE);
-	
-	bool SelectionIsBold();
-	bool SelectionIsItalic();
-	bool SelectionIsUnderlined();
-
-	void SetSelectionBold();
-	void SetSelectionItalic();
-	void SetSelectionUnderlined();
-
 	void SetRTF(CStringA sRTF);
 	void SetRTF(const char *pRTF);
 	CString GetRTF();
@@ -98,10 +72,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 private:
-		void SetCharStyle(int MASK, int STYLE, int nStart, int nEnd);
 		static DWORD CALLBACK CBStreamIn(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
 		static DWORD CALLBACK CBStreamOut(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
-		static BOOL CALLBACK CBEnumFonts(LPLOGFONT lplf, LPTEXTMETRIC lptm, DWORD dwType, LPARAM lpData);
 };
 
 /////////////////////////////////////////////////////////////////////////////
