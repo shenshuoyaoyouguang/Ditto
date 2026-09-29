@@ -64,7 +64,6 @@ void CTheme::LoadDefaults()
 	m_chipBG = RGB(233, 233, 233);
 	m_chipSelectedBG = RGB(211, 229, 247);
 	m_rowHoverBG = RGB(236, 236, 236);
-	m_accent = RGB(0, 103, 192);
 	m_subText = RGB(110, 110, 110);
 	m_faintText = RGB(154, 154, 154);
 	m_separatorLine = RGB(227, 227, 227);
@@ -194,6 +193,26 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadColor(ItemHeader, "GroupTreeBG", m_groupTreeBG);
 	LoadColor(ItemHeader, "GroupTreeText", m_groupTreeText);
 
+	// Themes predating the compact UI inherit their existing palette. Apply these
+	// fallbacks before the optional tokens below so explicit values still win.
+	auto blend = [](COLORREF background, COLORREF foreground, int foregroundPercent)
+	{
+		return RGB(
+			(GetRValue(background) * (100 - foregroundPercent) + GetRValue(foreground) * foregroundPercent) / 100,
+			(GetGValue(background) * (100 - foregroundPercent) + GetGValue(foreground) * foregroundPercent) / 100,
+			(GetBValue(background) * (100 - foregroundPercent) + GetBValue(foreground) * foregroundPercent) / 100);
+	};
+	m_sidebarBG = m_mainWindowBG;
+	m_sidebarText = m_ListBoxOddRowsText;
+	m_searchBoxBG = m_searchTextBoxFocusBG;
+	m_searchBoxBorder = m_Border;
+	m_chipBG = blend(m_mainWindowBG, m_ListBoxOddRowsText, 8);
+	m_chipSelectedBG = blend(m_mainWindowBG, m_ListBoxOddRowsText, 20);
+	m_rowHoverBG = blend(m_ListBoxOddRowsBG, m_ListBoxOddRowsText, 8);
+	m_subText = blend(m_mainWindowBG, m_ListBoxOddRowsText, 80);
+	m_faintText = blend(m_ListBoxOddRowsBG, m_ListBoxOddRowsText, 60);
+	m_separatorLine = m_Border;
+
 	// Compact UI tokens (ui-redesign)
 	LoadColor(ItemHeader, "SidebarBG", m_sidebarBG);
 	LoadColor(ItemHeader, "SidebarText", m_sidebarText);
@@ -202,7 +221,6 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadColor(ItemHeader, "ChipBG", m_chipBG);
 	LoadColor(ItemHeader, "ChipSelectedBG", m_chipSelectedBG);
 	LoadColor(ItemHeader, "RowHoverBG", m_rowHoverBG);
-	LoadColor(ItemHeader, "Accent", m_accent);
 	LoadColor(ItemHeader, "SubText", m_subText);
 	LoadColor(ItemHeader, "FaintText", m_faintText);
 	LoadColor(ItemHeader, "SeparatorLine", m_separatorLine);

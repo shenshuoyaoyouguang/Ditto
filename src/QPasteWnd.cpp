@@ -1508,6 +1508,7 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 	CString strFilter;
 	CString strParentFilter;
 	CString strStarredFilter = _T("Main.bIsGroup = 0 AND Main.lDontAutoDelete > 0");
+	CString strStickyFilter = StrF(_T("Main.bIsGroup = 0 AND Main.stickyClipOrder != %d"), INVALID_STICKY);
 	CString csSort;
 
 	// History Groupiter->m_stickyClipGroupOrder = clip.m_stickyClipGroupOrder;
@@ -1516,7 +1517,11 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 		csSort = "Main.paste_count DESC, "
 			"Main.lDate DESC";
 
-		if (m_bShowStarredClips)
+		if (m_bShowStickyClips)
+		{
+			strFilter = strStickyFilter;
+		}
+		else if (m_bShowStarredClips)
 		{
 			strFilter = strStarredFilter;
 		}
@@ -1536,7 +1541,7 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 			"Main.bIsGroup ASC, "
 			"Main.clipOrder DESC";
 
-		strFilter.Format(_T("(Main.bIsGroup = 0 AND Main.stickyClipOrder != %d)"), INVALID_STICKY);
+		strFilter = strStickyFilter;
 	}
 	else if (m_bShowStarredClips)
 	{
@@ -1709,6 +1714,11 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 			strFilter += " AND (";
 			strFilter += strStarredFilter;
 			strFilter += ")";
+		}
+
+		if (m_bShowStickyClips)
+		{
+			strFilter += _T(" AND (") + strStickyFilter + _T(")");
 		}
 
 		m_strSQLSearch = strFilter;
@@ -6466,7 +6476,8 @@ LRESULT CQPasteWnd::OnSetTypeCounts(WPARAM wParam, LPARAM lParam)
 	int *pCounts = (int*)wParam;
 	if (pCounts != NULL)
 	{
-		// array order: image, file, link, text; chip order: all, text, image, file, link
+		// array order: image, file, link, text, all; chip order: all, text, image, file, link
+		m_chipBar.SetChipCount(0, pCounts[4]);
 		m_chipBar.SetChipCount(1, pCounts[3]);
 		m_chipBar.SetChipCount(2, pCounts[0]);
 		m_chipBar.SetChipCount(3, pCounts[1]);
@@ -6534,7 +6545,15 @@ LRESULT CQPasteWnd::OnSidebarNav(WPARAM wParam, LPARAM lParam)
 	m_search.SetWindowText(_T(""));
 	m_bHandleSearchTextChange = true;
 
-	theApp.EnterGroupID(-1);
+	if (theApp.m_GroupID == -1)
+	{
+		// EnterGroupID does not refresh when History is already open.
+		theApp.RefreshView();
+	}
+	else
+	{
+		theApp.EnterGroupID(-1);
+	}
 	return 0;
 }
 

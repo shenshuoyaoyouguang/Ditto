@@ -83,22 +83,23 @@ void CQPasteWndThread::OnSetListCount(void *param)
     // per chip counts for the type filter bar, base filter without the chip filter applied (ui-redesign)
     if (m_countPrefix.GetLength() > 0 && m_baseFilter.GetLength() > 0)
     {
-        const TCHAR *csConds[4] =
+        const TCHAR *csConds[5] =
         {
             // image, file, link, text = everything else, keep in sync with CRowIcons::Classify
             _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')"),
             _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')"),
             _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')"),
-            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')")
+            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%'")
                 _T(" OR Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*'")
                 _T(" OR Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%'))"),
+            _T("1"), // all clips matching the base filter, independent of the selected chip
         };
 
-        int *pCounts = new int[4];
+        int *pCounts = new int[5]();
 
         try
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 5; i++)
             {
                 CString csChipSql;
                 csChipSql.Format(_T("%s (%s) AND %s"), m_countPrefix, m_baseFilter, csConds[i]);

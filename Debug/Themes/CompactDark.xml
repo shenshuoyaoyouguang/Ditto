@@ -40,7 +40,6 @@
 	<ChipBG>RGB(51,51,51)</ChipBG>
 	<ChipSelectedBG>RGB(58,76,90)</ChipSelectedBG>
 	<RowHoverBG>RGB(47,47,47)</RowHoverBG>
-	<Accent>RGB(76,194,255)</Accent>
 	<SubText>RGB(154,154,154)</SubText>
 	<FaintText>RGB(107,107,107)</FaintText>
 	<SeparatorLine>RGB(58,58,58)</SeparatorLine>

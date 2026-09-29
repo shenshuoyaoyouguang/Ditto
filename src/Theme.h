@@ -50,7 +50,6 @@ public:
 	COLORREF ChipBG() const { return m_chipBG; }
 	COLORREF ChipSelectedBG() const { return m_chipSelectedBG; }
 	COLORREF RowHoverBG() const { return m_rowHoverBG; }
-	COLORREF Accent() const { return m_accent; }
 	COLORREF SubText() const { return m_subText; }
 	COLORREF FaintText() const { return m_faintText; }
 	COLORREF SeparatorLine() const { return m_separatorLine; }
@@ -118,7 +117,6 @@ protected:
 	COLORREF m_chipBG;
 	COLORREF m_chipSelectedBG;
 	COLORREF m_rowHoverBG;
-	COLORREF m_accent;
 	COLORREF m_subText;
 	COLORREF m_faintText;
 	COLORREF m_separatorLine;

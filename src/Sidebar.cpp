@@ -26,11 +26,16 @@ BEGIN_MESSAGE_MAP(CSidebar, CWnd)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-void CSidebar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
+BOOL CSidebar::Create(CWnd *pParent, UINT nID, CDPI *dpi)
 {
+	if (dpi == NULL)
+	{
+		return FALSE;
+	}
+
 	m_dpi = dpi;
 	CRect rcInit(0, 0, 0, 0);
-	CWnd::Create(NULL, NULL, WS_CHILD | WS_CLIPCHILDREN, rcInit, pParent, nID);
+	return CWnd::Create(NULL, NULL, WS_CHILD | WS_CLIPCHILDREN, rcInit, pParent, nID);
 }
 
 void CSidebar::SetDpiInfo(CDPI *dpi)
@@ -102,8 +107,9 @@ void CSidebar::Layout()
 	y += m_dpi->Scale(8);
 	y += m_dpi->Scale(16);
 
-	int nBottomHeight = m_dpi->Scale(28) + m_dpi->Scale(8);
+	int nBottomHeight = (int)m_csBottomLabels.size() * nRowHeight + m_dpi->Scale(8);
 	int yBottom = rcClient.Height() - nBottomHeight;
+	m_rcTree = CRect(x - m_dpi->Scale(4), y, rcClient.Width() - m_dpi->Scale(2), yBottom - m_dpi->Scale(8));
 
 	for (size_t i = 0; i < m_csBottomLabels.size(); i++)
 	{
@@ -111,8 +117,6 @@ void CSidebar::Layout()
 		m_rcBottom.push_back(rc);
 		yBottom += nRowHeight;
 	}
-
-	m_rcTree = CRect(x - m_dpi->Scale(4), y, rcClient.Width() - m_dpi->Scale(2), yBottom - m_dpi->Scale(8));
 }
 
 CRect CSidebar::GetTreeRect()
@@ -181,6 +185,11 @@ BOOL CSidebar::OnEraseBkgnd(CDC* pDC)
 void CSidebar::OnPaint()
 {
 	CPaintDC dc(this);
+	if (m_dpi == NULL)
+	{
+		return;
+	}
+
 	CTheme &theme = CGetSetOptions::m_Theme;
 
 	CRect rcClient;

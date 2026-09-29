@@ -72,7 +72,7 @@ void CRowIcons::DrawIcon(Gdiplus::Graphics &graphics, ClipRowIcon icon, Gdiplus:
 		return;
 	}
 	case ClipRowIcon::Image:
-		path.AddLine(3.0f, 4.0f, 4.5f, 4.0f); path.StartFigure();
+		path.StartFigure();
 		path.AddLine(6.0f, 4.0f, 13.0f, 4.0f); path.AddLine(13.0f, 4.0f, 13.0f, 12.0f);
 		path.AddLine(13.0f, 12.0f, 3.0f, 12.0f); path.AddLine(3.0f, 12.0f, 3.0f, 4.0f);
 		path.StartFigure(); path.AddLine(4.5f, 10.0f, 6.5f, 7.5f); path.AddLine(6.5f, 7.5f, 8.5f, 9.5f);
@@ -126,7 +126,7 @@ ClipRowIcon CRowIcons::Classify(const CString &csDesc)
 		return ClipRowIcon::Image;
 	}
 
-	if (lower.Find(_T("cf_rtf")) == 0)
+	if (lower.Find(_T("cf_rtf")) == 0 || lower == _T("rich text format"))
 	{
 		return ClipRowIcon::RichText;
 	}

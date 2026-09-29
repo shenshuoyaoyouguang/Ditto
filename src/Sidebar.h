@@ -13,7 +13,7 @@ class CSidebar : public CWnd
 public:
 	CSidebar();
 
-	void Create(CWnd *pParent, UINT nID, CDPI *dpi);
+	BOOL Create(CWnd *pParent, UINT nID, CDPI *dpi);
 	void SetDpiInfo(CDPI *dpi);
 	void SetNavItems(const std::vector<CString> &csLabels);
 	void SetBottomItems(const std::vector<CString> &csLabels);
@@ -39,7 +39,6 @@ protected:
 	std::vector<CRect> m_rcNav;
 	std::vector<CString> m_csBottomLabels;
 	std::vector<CRect> m_rcBottom;
-	CString m_csGroupLabel;
 	CRect m_rcTree;
 	int m_nSelectedNav;
 	CDPI *m_dpi;

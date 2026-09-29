@@ -105,7 +105,10 @@ CString CMainTableFunctions::GetRelativeTime(__int64 nTime, __int64 nNow)
 
 	if (nDays < 7)
 	{
-		return StrF(_T("%d %s"), (int)nDays, theApp.m_Language.GetString(_T("RelativeDaysAgo"), _T("days ago")));
+		CString suffix = nDays == 1
+			? theApp.m_Language.GetString(_T("RelativeDayAgo"), _T("day ago"))
+			: theApp.m_Language.GetString(_T("RelativeDaysAgo"), _T("days ago"));
+		return StrF(_T("%d %s"), (int)nDays, suffix);
 	}
 
 	CTime time((time_t)nTime);
