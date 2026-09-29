@@ -200,11 +200,6 @@ void CClipEditThread::OnFileChanged()
 
 		pNotify = (FILE_NOTIFY_INFORMATION*)((BYTE*)pNotify + pNotify->NextEntryOffset);
 
-		if (pNotify == nullptr)
-		{
-			break;
-		}
-
 		loopCount++;
 	}
 
