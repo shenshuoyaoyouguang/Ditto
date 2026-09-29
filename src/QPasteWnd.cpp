@@ -661,7 +661,9 @@ void CQPasteWnd::OnSize(UINT nType, int cx, int cy)
 {
 	CWndEx::OnSize(nType, cx, cy);
 
-	if (!IsWindow(m_lstHeader.m_hWnd))
+	if (!IsWindow(m_lstHeader.m_hWnd) ||
+		!IsWindow(m_chipBar.m_hWnd) ||
+		!IsWindow(m_sidebar.m_hWnd))
 	{
 		return;
 	}
