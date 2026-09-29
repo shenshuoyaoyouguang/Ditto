@@ -40,6 +40,12 @@
     <ClCompile Include="src\ChaiScriptXml.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\ChipBar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sidebar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Client.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -292,6 +298,9 @@
     <ClCompile Include="src\QRCodeViewer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\RowIcons.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\QuickPaste.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -524,6 +533,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\ChaiScriptXml.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ChipBar.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sidebar.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Client.h">
@@ -788,6 +803,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\QListCtrl.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RowIcons.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\QPasteWnd.h">

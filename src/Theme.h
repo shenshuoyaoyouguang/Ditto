@@ -42,6 +42,19 @@ public:
 	COLORREF GroupTreeBG() const { return m_groupTreeBG; }
 	COLORREF GroupTreeText() const { return m_groupTreeText; }
 
+	// Compact UI tokens (ui-redesign)
+	COLORREF SidebarBG() const { return m_sidebarBG; }
+	COLORREF SidebarText() const { return m_sidebarText; }
+	COLORREF SearchBoxBG() const { return m_searchBoxBG; }
+	COLORREF SearchBoxBorder() const { return m_searchBoxBorder; }
+	COLORREF ChipBG() const { return m_chipBG; }
+	COLORREF ChipSelectedBG() const { return m_chipSelectedBG; }
+	COLORREF RowHoverBG() const { return m_rowHoverBG; }
+	COLORREF Accent() const { return m_accent; }
+	COLORREF SubText() const { return m_subText; }
+	COLORREF FaintText() const { return m_faintText; }
+	COLORREF SeparatorLine() const { return m_separatorLine; }
+
 	int GetCaptionSize() const { return m_captionSize; }
 	int GetCaptionFontSize() const { return m_captionFontSize; }
 
@@ -96,6 +109,19 @@ protected:
 
 	COLORREF m_groupTreeBG;
 	COLORREF m_groupTreeText;
+
+	// Compact UI tokens (ui-redesign)
+	COLORREF m_sidebarBG;
+	COLORREF m_sidebarText;
+	COLORREF m_searchBoxBG;
+	COLORREF m_searchBoxBorder;
+	COLORREF m_chipBG;
+	COLORREF m_chipSelectedBG;
+	COLORREF m_rowHoverBG;
+	COLORREF m_accent;
+	COLORREF m_subText;
+	COLORREF m_faintText;
+	COLORREF m_separatorLine;
 
 	COLORREF m_descriptionWindowBG;
 	COLORREF m_descriptionWindowText;

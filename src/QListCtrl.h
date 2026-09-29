@@ -45,6 +45,9 @@
 #define NM_FOCUS_ON_SEARCH			WM_USER+0x129
 #define NM_COPY_CLIP				WM_USER+0x130
 #define NM_UPDATE_SCROLLBAR			WM_USER+0x131
+#define NM_TYPE_FILTER_CHANGED		WM_USER+0x140
+#define NM_SET_TYPE_COUNTS			WM_USER+0x141
+#define NM_SIDEBAR_NAV				WM_USER+0x142
 
 
 
@@ -199,6 +202,8 @@ protected:
 	CAccels *m_pToolTipActions;
 	CRichEditCtrlEx m_rtfFormater;
 	CDPI *m_windowDpi;
+	int m_hoverItem;
+	bool m_bTrackingMouseLeave;
 
 
 	// Generated message map functions
@@ -218,6 +223,7 @@ protected:
 	afx_msg BOOL OnToolTipText(UINT id, NMHDR * pNMHDR, LRESULT * pResult);
 	afx_msg void MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnMouseLeave();
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnKillFocus(CWnd* pNewWnd);

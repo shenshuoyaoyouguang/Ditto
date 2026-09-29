@@ -56,6 +56,19 @@ void CTheme::LoadDefaults()
 	m_groupTreeBG = RGB(240, 240, 240);
 	m_groupTreeText = RGB(127, 127, 127);
 
+	// Compact UI tokens (ui-redesign) - defaults follow the classic light look
+	m_sidebarBG = RGB(240, 240, 240);
+	m_sidebarText = RGB(64, 64, 64);
+	m_searchBoxBG = RGB(255, 255, 255);
+	m_searchBoxBorder = RGB(200, 200, 200);
+	m_chipBG = RGB(233, 233, 233);
+	m_chipSelectedBG = RGB(211, 229, 247);
+	m_rowHoverBG = RGB(236, 236, 236);
+	m_accent = RGB(0, 103, 192);
+	m_subText = RGB(110, 110, 110);
+	m_faintText = RGB(154, 154, 154);
+	m_separatorLine = RGB(227, 227, 227);
+
 	m_descriptionWindowBG = RGB(240, 240, 240);// GetSysColor(COLOR_INFOBK);//RGB(240, 240, 240);//
 	/*int r = GetRValue(m_descriptionWindowBG);
 	int g = GetGValue(m_descriptionWindowBG);
@@ -180,6 +193,19 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 
 	LoadColor(ItemHeader, "GroupTreeBG", m_groupTreeBG);
 	LoadColor(ItemHeader, "GroupTreeText", m_groupTreeText);
+
+	// Compact UI tokens (ui-redesign)
+	LoadColor(ItemHeader, "SidebarBG", m_sidebarBG);
+	LoadColor(ItemHeader, "SidebarText", m_sidebarText);
+	LoadColor(ItemHeader, "SearchBoxBG", m_searchBoxBG);
+	LoadColor(ItemHeader, "SearchBoxBorder", m_searchBoxBorder);
+	LoadColor(ItemHeader, "ChipBG", m_chipBG);
+	LoadColor(ItemHeader, "ChipSelectedBG", m_chipSelectedBG);
+	LoadColor(ItemHeader, "RowHoverBG", m_rowHoverBG);
+	LoadColor(ItemHeader, "Accent", m_accent);
+	LoadColor(ItemHeader, "SubText", m_subText);
+	LoadColor(ItemHeader, "FaintText", m_faintText);
+	LoadColor(ItemHeader, "SeparatorLine", m_separatorLine);
 	
 	LoadInt(ItemHeader, "CaptionSize", m_captionSize);
 	LoadInt(ItemHeader, "CaptionFontSize", m_captionFontSize);

@@ -527,7 +527,7 @@ void CSymbolEdit::OnPaint()
 	}
 	else
 	{
-		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.MainWindowBG());
+		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SearchBoxBG());
 	}
 
 
@@ -955,9 +955,11 @@ void CSymbolEdit::OnNcPaint()
 	}
 	else
 	{
-		dc.FillSolidRect(t, CGetSetOptions::m_Theme.MainWindowBG());
-		dc.FillSolidRect(b, CGetSetOptions::m_Theme.MainWindowBG());
-	}	
+		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SearchBoxBG());
+		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SearchBoxBG());
+
+		c = CGetSetOptions::m_Theme.SearchBoxBorder();
+	}
 
 	//if ((text.GetLength() > 0 || this == GetFocus()) && m_windowDpi)
 	{

@@ -1,5 +1,6 @@
 #pragma once
 #include "EventThread.h"
+#include <afxmt.h>
 #include "sqlite/CppSQLite3.h"
 
 class CQPasteWndThread: public CEventThread
@@ -45,7 +46,21 @@ public:
     HANDLE m_SearchingEvent;
 
 	void SetRowHeight(int height) { m_rowHeight = height; }
-    void SetSearchSql(CString sql, CString countSql) { m_sql = sql; m_countSql = countSql; }
+    void SetSearchSql(CString sql, CString countSql, CString baseFilter = _T(""), CString countPrefix = _T(""))
+    {
+        ATL::CCritSecLock csLock(m_searchLock.m_sect);
+        ++m_searchGeneration;
+        m_sql = sql;
+        m_countSql = countSql;
+        m_baseFilter = baseFilter;
+        m_countPrefix = countPrefix;
+    }
+
+    bool IsCurrentSearch(UINT_PTR generation)
+    {
+        ATL::CCritSecLock csLock(m_searchLock.m_sect);
+        return generation == m_searchGeneration;
+    }
 
 protected:
     virtual void OnEvent(int eventId, void *param);
@@ -62,6 +77,10 @@ protected:
 
 	int m_rowHeight;
 
+    CCriticalSection m_searchLock;
+    UINT_PTR m_searchGeneration = 0;
     CString m_sql;
     CString m_countSql;
+    CString m_baseFilter;
+    CString m_countPrefix;
 };

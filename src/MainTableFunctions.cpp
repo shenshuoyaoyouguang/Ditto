@@ -66,6 +66,52 @@ void CMainTableFunctions::LoadAcceleratorKeys(CAccels& accels, CppSQLite3DB &db)
 	CATCH_SQLITE_EXCEPTION
 }
 
+CString CMainTableFunctions::GetRelativeTime(__int64 nTime, __int64 nNow)
+{
+	if (nTime <= 0)
+	{
+		return _T("");
+	}
+
+	if (nNow <= 0)
+	{
+		nNow = (__int64)CTime::GetCurrentTime().GetTime();
+	}
+
+	__int64 nDiff = nNow - nTime;
+	if (nDiff < 0)
+	{
+		nDiff = 0;
+	}
+
+	__int64 nMinutes = nDiff / 60;
+	__int64 nHours = nDiff / 3600;
+	__int64 nDays = nDiff / 86400;
+
+	if (nMinutes < 1)
+	{
+		return theApp.m_Language.GetString(_T("RelativeNow"), _T("just now"));
+	}
+
+	if (nHours < 1)
+	{
+		return StrF(_T("%d %s"), (int)nMinutes, theApp.m_Language.GetString(_T("RelativeMinutesAgo"), _T("min ago")));
+	}
+
+	if (nDays < 1)
+	{
+		return StrF(_T("%d %s"), (int)nHours, theApp.m_Language.GetString(_T("RelativeHoursAgo"), _T("hr ago")));
+	}
+
+	if (nDays < 7)
+	{
+		return StrF(_T("%d %s"), (int)nDays, theApp.m_Language.GetString(_T("RelativeDaysAgo"), _T("days ago")));
+	}
+
+	CTime time((time_t)nTime);
+	return time.Format(_T("%Y-%m-%d"));
+}
+
 CString CMainTableFunctions::GetDisplayText(int nMaxLines, const CString &OrigText)
 {
 	CString text = OrigText;

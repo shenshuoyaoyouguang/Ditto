@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Ditto_Theme_File Version="3" Author="ui-redesign" Notes="Compact Dark">
+	<CaptionLeft>RGB(32,32,32)</CaptionLeft>
+	<CaptionRight>RGB(32,32,32)</CaptionRight>
+	<CaptionLeftTopMost>RGB(32,32,32)</CaptionLeftTopMost>
+	<CaptionRightTopMost>RGB(32,32,32)</CaptionRightTopMost>
+	<CaptionLeftNotConnected>RGB(237,94,94)</CaptionLeftNotConnected>
+	<CaptionRightNotConnected>RGB(237,94,94)</CaptionRightNotConnected>
+	<CaptionTextColor>RGB(154,154,154)</CaptionTextColor>
+	<ListBoxOddRowsBG>RGB(32,32,32)</ListBoxOddRowsBG>
+	<ListBoxEvenRowsBG>RGB(32,32,32)</ListBoxEvenRowsBG>
+	<ListBoxOddRowsText>RGB(242,242,242)</ListBoxOddRowsText>
+	<ListBoxEvenRowsText>RGB(242,242,242)</ListBoxEvenRowsText>
+	<ListBoxSelectedBG>RGB(59,76,90)</ListBoxSelectedBG>
+	<ListBoxSelectedNoFocusBG>RGB(59,76,90)</ListBoxSelectedNoFocusBG>
+	<ListBoxSelectedText>RGB(255,255,255)</ListBoxSelectedText>
+	<ListBoxSelectedNoFocusText>RGB(242,242,242)</ListBoxSelectedNoFocusText>
+	<ClipPastedColor>RGB(245,226,169)</ClipPastedColor>
+	<MainWindowBG>RGB(32,32,32)</MainWindowBG>
+	<SearchTextBoxFocusBG>RGB(51,51,51)</SearchTextBoxFocusBG>
+	<SearchTextBoxFocusText>RGB(242,242,242)</SearchTextBoxFocusText>
+	<SearchTextBoxFocusBorder>RGB(58,58,58)</SearchTextBoxFocusBorder>
+	<SearchTextHighlight>RGB(76,194,255)</SearchTextHighlight>
+	<Border>RGB(58,58,58)</Border>
+	<BorderTopMost>RGB(58,58,58)</BorderTopMost>
+	<BorderNotConnected>RGB(237,94,94)</BorderNotConnected>
+	<GroupTreeBG>RGB(43,43,43)</GroupTreeBG>
+	<GroupTreeText>RGB(154,154,154)</GroupTreeText>
+	<CaptionSize>26</CaptionSize>
+	<CaptionFontSize>13</CaptionFontSize>
+	<DescriptionWindowBG>RGB(39,39,39)</DescriptionWindowBG>
+	<DescriptionWindowText>RGB(240,240,240)</DescriptionWindowText>
+	<ScrollBarThumb>RGB(74,74,74)</ScrollBarThumb>
+	<ScrollBarThumbHover>RGB(90,90,90)</ScrollBarThumbHover>
+	<ScrollBarTrack>RGB(43,43,43)</ScrollBarTrack>
+	<SidebarBG>RGB(43,43,43)</SidebarBG>
+	<SidebarText>RGB(154,154,154)</SidebarText>
+	<SearchBoxBG>RGB(51,51,51)</SearchBoxBG>
+	<SearchBoxBorder>RGB(58,58,58)</SearchBoxBorder>
+	<ChipBG>RGB(51,51,51)</ChipBG>
+	<ChipSelectedBG>RGB(58,76,90)</ChipSelectedBG>
+	<RowHoverBG>RGB(47,47,47)</RowHoverBG>
+	<Accent>RGB(76,194,255)</Accent>
+	<SubText>RGB(154,154,154)</SubText>
+	<FaintText>RGB(107,107,107)</FaintText>
+	<SeparatorLine>RGB(58,58,58)</SeparatorLine>
+</Ditto_Theme_File>

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "QListCtrl.h"
+#include "ChipBar.h"
+#include "Sidebar.h"
 #include "SearchEditBox.h"
 #include "WndEx.h"
 #include "GroupStatic.h"
@@ -130,6 +132,12 @@ public:
 
     //protected:
     CQListCtrl m_lstHeader;
+    CChipBar m_chipBar;
+    int m_nChipFilter;
+    static CString GetTypeFilterSql(int nChip);
+    CSidebar m_sidebar;
+    BOOL m_bSidebarVisible;
+    void ShowSidebar(BOOL bShow);
 
     CAlphaBlend m_Alpha;
 	//CEditWithButton m_search;
@@ -138,6 +146,7 @@ public:
     bool m_bHideWnd;
     CString m_strSQLSearch;
 	CString m_strSearch;
+	CString m_csBaseFilter;
     CGroupStatic m_stGroup;
     CFont m_groupFont;
     CString m_Title;
@@ -150,6 +159,7 @@ public:
 
     long m_lRecordCount;
     bool m_bStopQuery;
+    bool m_bShowStickyClips;
     bool m_bHandleSearchTextChange;
     bool m_bModifersMoveActive;
 
@@ -204,6 +214,7 @@ public:
     void OnUpdateLinesPerRow(CCmdUI *pCmdUI, int nValue);
     void OnUpdateTransparency(CCmdUI *pCmdUI, int nValue);
 	void AddShowStarredClipsMenuItem(CMenu *pMenu);
+	void AddShowSidebarMenuItem(CMenu *pMenu);
     void SetMenuChecks(CMenu *pMenu);
     void SetSendToMenu(CMenu *pMenu, int nMenuID, int nArrayPos);
 	void SetFriendChecks(CMenu *pMenu);
@@ -450,6 +461,9 @@ protected:
     afx_msg LRESULT OnFillRestOfList(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnRefeshRow(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSetListCount(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSetTypeCounts(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnTypeFilterChanged(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSidebarNav(WPARAM wParam, LPARAM lParam);
     afx_msg HBRUSH CtlColor(CDC *pDC, UINT nCtlColor);
     afx_msg void OnNcLButtonDblClk(UINT nHitTest, CPoint point);
     afx_msg void OnViewcaptionbaronRight();
@@ -484,6 +498,7 @@ protected:
 	afx_msg void OnMenuSearchFullText();
 	afx_msg void OnMenuSearchQuickPaste();
 	afx_msg void OnMenuShowStarredClips();
+	afx_msg void OnMenuShowSidebar();
 	afx_msg void OnMenuSimpleTextSearch();
 	afx_msg LRESULT OnPostOptions(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnMakeTopStickyClip();

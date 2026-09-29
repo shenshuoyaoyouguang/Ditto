@@ -433,6 +433,22 @@
 		<Item English_Text = "[Disconnected]" ID = "disconnected">[已断开连接]</Item>
 		<Item English_Text = "Ditto is running minimized, Ditto can be opened by hot keys or by clicking the task tray icon" ID = "StartupMsg">Ditto 正以最小化方式运行，可通过热键或单击任务栏图标打开</Item>
 		<Item English_Text = "There are no results for" ID = "NoSearchResults">搜索不到</Item>
+		<Item English_Text = "All" ID = "ChipAll">全部</Item>
+		<Item English_Text = "Text" ID = "ChipText">文本</Item>
+		<Item English_Text = "Images" ID = "ChipImage">图片</Item>
+		<Item English_Text = "Files" ID = "ChipFile">文件</Item>
+		<Item English_Text = "Links" ID = "ChipLink">链接</Item>
+		<Item English_Text = "History" ID = "NavHistory">历史</Item>
+		<Item English_Text = "Saved" ID = "NavSaved">收藏</Item>
+		<Item English_Text = "Sticky" ID = "NavSticky">便签</Item>
+		<Item English_Text = "Friends" ID = "NavFriends">好友同步</Item>
+		<Item English_Text = "Groups" ID = "GroupsSection">分组</Item>
+		<Item English_Text = "just now" ID = "RelativeNow">刚刚</Item>
+		<Item English_Text = "min ago" ID = "RelativeMinutesAgo">分钟前</Item>
+		<Item English_Text = "hr ago" ID = "RelativeHoursAgo">小时前</Item>
+		<Item English_Text = "days ago" ID = "RelativeDaysAgo">天前</Item>
+		<Item English_Text = "Show Sidebar" ID = "ShowSidebar">显示侧栏</Item>
+		<Item English_Text = "There are no sticky clips" ID = "NoStickyClips">没有便签条目</Item>
 		<Item English_Text = "Warning this can take quite a long time and require up to double the hard drive space as your current database size, Continue?" ID = "CompactRepairWarning">警告，这可能需要相当长的时间，并且需要两倍于你当前数据库大小的硬盘空间，是否继续？</Item>
 		<Item English_Text = "Prompt For Name" ID = "prompt_for_name">输入名字</Item>
 		<Item English_Text = "(Follow windows light/dark themes)" ID = "FollowWindowsTheme">（遵循 Windows 明/暗主题）</Item>
