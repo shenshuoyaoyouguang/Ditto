@@ -172,8 +172,7 @@ protected:
 	BOOL DrawRtfText(int nItem, CRect &crRect, CDC *pDC);
 	void StopHideScrollBarTimer();
 	bool IsHexString(const CString& str);
-    COLORREF HslToRgb(double h, double s, double l);
-		
+
 	void DrawCheckerboard(CDC* pDC, CRect rect);
 	WCHAR *m_pwchTip;
 	TCHAR *m_pchTip;
