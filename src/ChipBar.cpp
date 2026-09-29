@@ -11,6 +11,8 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+IMPLEMENT_DYNAMIC(CChipBar, CWnd)
+
 CChipBar::CChipBar()
 {
 	m_nSelected = 0;

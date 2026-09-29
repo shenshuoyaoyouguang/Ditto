@@ -11,6 +11,8 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+IMPLEMENT_DYNAMIC(CSidebar, CWnd)
+
 CSidebar::CSidebar()
 {
 	m_nSelectedNav = 0;
