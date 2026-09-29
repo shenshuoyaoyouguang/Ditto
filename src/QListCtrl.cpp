@@ -11,6 +11,7 @@
 #include <atlbase.h>
 #include "DrawHTML.h"
 #include "Theme.h"
+#include "RowIcons.h"
 #include "..\Shared\TextConvert.h"
 #include <cmath>
 #include <vector>
@@ -214,6 +215,8 @@ CQListCtrl::CQListCtrl()
 	m_showIfClipWasPasted = TRUE;
 	m_bShowTextForFirstTenHotKeys = true;
 	m_pToolTipActions = NULL;
+	m_hoverItem = -1;
+	m_bTrackingMouseLeave = false;
 }
 
 CQListCtrl::~CQListCtrl()
@@ -260,6 +263,7 @@ BEGIN_MESSAGE_MAP(CQListCtrl, CListCtrl)
 	ON_NOTIFY_REFLECT(LVN_KEYDOWN, OnKeydown)
 	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, OnCustomdrawList)
 	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSELEAVE()
 	ON_WM_SYSKEYDOWN()
 	ON_WM_ERASEBKGND()
 	ON_WM_CREATE()
@@ -421,11 +425,52 @@ void CQListCtrl::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 	GetTextMetrics(hDC, &tm);
 	if (m_windowDpi != NULL)
 	{
-		lpMeasureItemStruct->itemHeight = ((tm.tmHeight + tm.tmExternalLeading) * m_linesPerRow) + m_windowDpi->Scale(ROW_BOTTOM_BORDER);
+		if (m_linesPerRow == 1)
+		{
+			// compact single line rows use a fixed logical height (ui-redesign)
+			lpMeasureItemStruct->itemHeight = m_windowDpi->Scale(30);
+		}
+		else
+		{
+			lpMeasureItemStruct->itemHeight = ((tm.tmHeight + tm.tmExternalLeading) * m_linesPerRow) + m_windowDpi->Scale(ROW_BOTTOM_BORDER);
+		}
 		m_rowHeight = lpMeasureItemStruct->itemHeight;
 	}
 	SelectObject(hDC, hFontOld);
 	::ReleaseDC(NULL, hDC);
+}
+
+// pulls "<tag:value>" out of the symbols section of a row (ui-redesign)
+static CString ExtractTagValue(CString &csSymbols, const TCHAR *pszTag)
+{
+	CString csValue;
+	CString csTagStart;
+	csTagStart.Format(_T("<%s:"), pszTag);
+
+	int nStart = csSymbols.Find(csTagStart);
+	if (nStart >= 0)
+	{
+		int nValueStart = nStart + csTagStart.GetLength();
+		int nEnd = csSymbols.Find(_T('>'), nValueStart);
+		if (nEnd > nValueStart)
+		{
+			csValue = csSymbols.Mid(nValueStart, nEnd - nValueStart);
+			csSymbols = csSymbols.Left(nStart) + csSymbols.Mid(nEnd + 1);
+		}
+	}
+
+	return csValue;
+}
+
+static void FillRoundRect(CDC *pDC, const CRect &rc, COLORREF color, int nRadius)
+{
+	CBrush brush(color);
+	CPen pen(PS_SOLID, 1, color);
+	CBrush *pOldBrush = pDC->SelectObject(&brush);
+	CPen *pOldPen = pDC->SelectObject(&pen);
+	pDC->RoundRect(&rc, CPoint(nRadius, nRadius));
+	pDC->SelectObject(pOldBrush);
+	pDC->SelectObject(pOldPen);
 }
 
 void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
@@ -479,6 +524,24 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			csText = csText.Mid(nSymEnd + 1);
 		}
 
+		// meta tags carried in the symbols section: type icon, date, paste count (ui-redesign)
+		int nTypeIcon = -1;
+		__int64 nRowDate = 0;
+		int nRowCount = 0;
+		{
+			CString csValue = ExtractTagValue(strSymbols, _T("i"));
+			if (csValue.GetLength() > 0)
+				nTypeIcon = _ttoi(csValue);
+
+			csValue = ExtractTagValue(strSymbols, _T("d"));
+			if (csValue.GetLength() > 0)
+				nRowDate = _ttoi64(csValue);
+
+			csValue = ExtractTagValue(strSymbols, _T("c"));
+			if (csValue.GetLength() > 0)
+				nRowCount = _ttoi(csValue);
+		}
+
 		// Draw the background of the list item.  Colors are selected
 		// according to the item's state.
 		if (rItem.state & LVIS_SELECTED)
@@ -510,6 +573,26 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		}
 
 		pDC->FillSolidRect(rcItem, crBkgnd);
+
+		// compact rows paint selection and hover as rounded fills (ui-redesign)
+		if (m_windowDpi != NULL)
+		{
+			CRect rcRound(rcItem);
+			rcRound.DeflateRect(m_windowDpi->Scale(1), 0);
+			int nRadius = m_windowDpi->Scale(5);
+
+			if (rItem.state & LVIS_SELECTED)
+			{
+				COLORREF crRowBG = ((nItem % 2) == 0) ? CGetSetOptions::m_Theme.ListBoxOddRowsBG() : CGetSetOptions::m_Theme.ListBoxEvenRowsBG();
+				pDC->FillSolidRect(rcItem, crRowBG);
+				FillRoundRect(pDC, rcRound, crBkgnd, nRadius);
+			}
+			else if (nItem == m_hoverItem)
+			{
+				FillRoundRect(pDC, rcRound, CGetSetOptions::m_Theme.RowHoverBG(), nRadius);
+			}
+		}
+
 		nOldBKMode = pDC->SetBkMode(TRANSPARENT);
 
 		CRect rcText = rcItem;
@@ -540,6 +623,15 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		else
 		{
 			rcText.left += m_windowDpi->Scale(3);
+		}
+
+		// leading type icon (ui-redesign)
+		if (nTypeIcon >= 0 && m_windowDpi != NULL &&
+			!(nTypeIcon == (int)ClipRowIcon::Image && CGetSetOptions::m_bDrawThumbnail))
+		{
+			CRect rcIcon(rcText.left, rcItem.top, rcText.left + m_windowDpi->Scale(15), rcItem.bottom);
+			CRowIcons::Draw(pDC->m_hDC, *m_windowDpi, (ClipRowIcon)nTypeIcon, rcIcon, CGetSetOptions::m_Theme.SubText());
+			rcText.left = rcIcon.right + m_windowDpi->Scale(5);
 		}
 
 		bool drawInGroupIcon = true;
@@ -587,6 +679,40 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 				m_stickyImage.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
 				rcText.left += m_stickyImage.ImageWidth() + m_windowDpi->Scale(2);
 			}
+		}
+
+		// trailing meta: paste count and relative time (ui-redesign)
+		CString csMeta;
+		if (nRowCount > 1)
+		{
+			csMeta.Format(_T("\u00D7%d"), nRowCount);
+		}
+
+		if (nRowDate > 0)
+		{
+			CString csTime = CMainTableFunctions::GetRelativeTime(nRowDate);
+			if (csTime.GetLength() > 0)
+			{
+				if (!csMeta.IsEmpty())
+					csMeta += _T(" \u00B7 ");
+				csMeta += csTime;
+			}
+		}
+
+		if (csMeta.GetLength() > 0 && m_SmallFont != NULL && m_windowDpi != NULL)
+		{
+			HFONT hOldMetaFont = (HFONT)pDC->SelectObject(m_SmallFont);
+			CSize szMeta = pDC->GetTextExtent(csMeta);
+			int nMetaRight = rcItem.right - m_windowDpi->Scale(6);
+			CRect rcMeta(nMetaRight - szMeta.cx, rcItem.top, nMetaRight, rcItem.bottom);
+			COLORREF crOldMeta = pDC->SetTextColor(CGetSetOptions::m_Theme.FaintText());
+			pDC->DrawText(csMeta, rcMeta, DT_RIGHT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+			pDC->SetTextColor(crOldMeta);
+			pDC->SelectObject(hOldMetaFont);
+
+			int nMetaLeft = rcMeta.left - m_windowDpi->Scale(6);
+			if (rcText.right > nMetaLeft)
+				rcText.right = nMetaLeft;
 		}
 
 		if (DrawRtfText(nItem, rcText, pDC) == FALSE)
@@ -2095,7 +2221,54 @@ void CQListCtrl::OnMouseMove(UINT nFlags, CPoint point)
 		}
 	}
 
+	// track the hovered row so it gets the rounded hover fill (ui-redesign)
+	if (m_windowDpi != NULL)
+	{
+		if (!m_bTrackingMouseLeave)
+		{
+			TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, m_hWnd, 0 };
+			if (TrackMouseEvent(&tme))
+			{
+				m_bTrackingMouseLeave = true;
+			}
+		}
+
+		UINT nHitFlags = 0;
+		int nHoverItem = HitTest(point, &nHitFlags);
+		if (nHoverItem >= 0 && (nHitFlags & LVHT_ONITEM) == 0)
+		{
+			nHoverItem = -1;
+		}
+
+		if (nHoverItem != m_hoverItem)
+		{
+			int nOldHover = m_hoverItem;
+			m_hoverItem = nHoverItem;
+			if (nOldHover >= 0)
+			{
+				RedrawItems(nOldHover, nOldHover);
+			}
+			if (nHoverItem >= 0)
+			{
+				RedrawItems(nHoverItem, nHoverItem);
+			}
+		}
+	}
+
 	CListCtrl::OnMouseMove(nFlags, point);
+}
+
+void CQListCtrl::OnMouseLeave()
+{
+	m_bTrackingMouseLeave = false;
+	if (m_hoverItem >= 0)
+	{
+		int nOldHover = m_hoverItem;
+		m_hoverItem = -1;
+		RedrawItems(nOldHover, nOldHover);
+	}
+
+	CListCtrl::OnMouseLeave();
 }
 
 bool CQListCtrl::MouseInScrollBarArea(CRect crWindow, CPoint point)

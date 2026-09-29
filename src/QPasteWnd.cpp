@@ -18,6 +18,7 @@
 #include "htmlformataggregator.h"
 #include "HyperLink.h"
 #include "MainTableFunctions.h"
+#include "RowIcons.h"
 #include "Misc.h"
 #include "MoveToGroupDlg.h"
 #include "Path.h"
@@ -5623,6 +5624,14 @@ void CQPasteWnd::GetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 					if (m_listItems[pItem->iItem].m_dateCopied != m_listItems[pItem->iItem].m_datePasted)
 					{
 						cs += "<pasted>";
+					}
+
+					// row meta for the compact renderer: type icon, date, paste count (ui-redesign)
+					cs += StrF(_T("<i:%d>"), (int)CRowIcons::Classify(m_listItems[pItem->iItem].m_Desc));
+					cs += StrF(_T("<d:%I64d>"), m_listItems[pItem->iItem].m_dateCopied);
+					if (m_listItems[pItem->iItem].m_pasteCount > 1)
+					{
+						cs += StrF(_T("<c:%d>"), m_listItems[pItem->iItem].m_pasteCount);
 					}
 
 					// pipe is the "end of symbols" marker

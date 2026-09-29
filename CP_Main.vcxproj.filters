@@ -292,6 +292,9 @@
     <ClCompile Include="src\QRCodeViewer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\RowIcons.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\QuickPaste.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -788,6 +791,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\QListCtrl.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RowIcons.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\QPasteWnd.h">
