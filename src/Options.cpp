@@ -2405,24 +2405,9 @@ BOOL CGetSetOptions::GetShowGroupsInMainList()
 	return GetProfileLong(_T("ShowGroupsInMainList"), 0);
 }
 
-void CGetSetOptions::SetShowGroupsInMainList(BOOL val)
-{
-	SetProfileLong(_T("ShowGroupsInMainList"), val);
-}
-
-void CGetSetOptions::SetGroupDoubleClickTimeMS(int val)
-{
-	SetProfileLong(_T("GroupDoubleClickTimeMS"), val);
-}
-
 int CGetSetOptions::GetGroupDoubleClickTimeMS()
 {
 	return GetProfileLong(_T("GroupDoubleClickTimeMS"), 500);
-}
-
-void CGetSetOptions::SetSaveToGroupTimeoutMS(int val)
-{
-	SetProfileLong(_T("SaveToGroupTimeoutMS"), val);
 }
 
 int CGetSetOptions::GetSaveToGroupTimeoutMS()
@@ -2430,19 +2415,9 @@ int CGetSetOptions::GetSaveToGroupTimeoutMS()
 	return GetProfileLong(_T("SaveToGroupTimeoutMS"), 1000);
 }
 
-void CGetSetOptions::SetCopyReasonTimeoutMS(int val)
-{
-	SetProfileLong(_T("CopyReasonTimeoutMS"), val);
-}
-
 int CGetSetOptions::GetCopyReasonTimeoutMS()
 {
 	return GetProfileLong(_T("CopyReasonTimeoutMS"), 1000);
-}
-
-void CGetSetOptions::SetWindowsResumeDelayReOpenDbMS(int val)
-{
-	SetProfileLong(_T("WindowsResumeDelayReOpenDbMS"), val);
 }
 
 int CGetSetOptions::GetWindowsResumeDelayReOpenDbMS()
@@ -2453,11 +2428,6 @@ int CGetSetOptions::GetWindowsResumeDelayReOpenDbMS()
 BOOL CGetSetOptions::GetShowMsgWndOnCopyToGroup()
 {
 	return GetProfileLong("ShowMsgWndOnCopyToGroup", TRUE);
-}
-
-void CGetSetOptions::SetShowMsgWndOnCopyToGroup(BOOL val)
-{
-	SetProfileLong("ShowMsgWndOnCopyToGroup", val);
 }
 
 int CGetSetOptions::GetActionShortCutA(DWORD action, int pos, CString refData)
@@ -2533,20 +2503,9 @@ BOOL CGetSetOptions::GetShowAlwaysOnTopWarning()
 	return GetProfileLong(_T("ShowAlwaysOnTopWarning"), TRUE);
 }
 
-void CGetSetOptions::SetShowAlwaysOnTopWarning(BOOL show)
-{
-	m_bShowAlwaysOnTopWarning = show;
-	SetProfileLong(_T("ShowAlwaysOnTopWarning"), show);
-}
-
 BOOL CGetSetOptions::GetUseIPFromAccept()
 {
 	return GetProfileLong(_T("UseIPFromAccept"), TRUE);
-}
-
-void CGetSetOptions::SetUseIPFromAccept(BOOL useAccept)
-{
-	SetProfileLong(_T("UseIPFromAccept"), useAccept);
 }
 
 int CGetSetOptions::GetDragId()
@@ -2615,19 +2574,9 @@ int CGetSetOptions::GetDelayRenderLockout()
 	return GetProfileLong(_T("DelayRenderLockout"), 1000);
 }
 
-void CGetSetOptions::SetDelayRenderLockout(int val)
-{
-	SetProfileLong(_T("DelayRenderLockout"), val);
-}
-
 BOOL CGetSetOptions::GetAdjustClipsForCRC()
 {
 	return GetProfileLong(_T("AdjustClipsForCRC"), TRUE);
-}
-
-void CGetSetOptions::SetAdjustClipsForCRC(int val)
-{
-	SetProfileLong(_T("AdjustClipsForCRC"), val);
 }
 
 BOOL CGetSetOptions::GetCheckMd5OnFileTransfers()
@@ -2635,19 +2584,9 @@ BOOL CGetSetOptions::GetCheckMd5OnFileTransfers()
 	return GetProfileLong(_T("CheckMd5OnFileTransfers"), TRUE);
 }
 
-void CGetSetOptions::SetCheckMd5OnFileTransfers(int val)
-{
-	SetProfileLong(_T("CheckMd5OnFileTransfers"), val);
-}
-
 int CGetSetOptions::GetBalloonTimeout()
 {
 	return GetProfileLong(_T("BalloonTimeout"), 2500);
-}
-
-void CGetSetOptions::SetBalloonTimeout(int val)
-{
-	SetProfileLong(_T("BalloonTimeout"), val);
 }
 
 void CGetSetOptions::SetCustomSendToList(CString val)
@@ -2665,19 +2604,9 @@ int CGetSetOptions::GetMaxFileContentsSize()
 	return GetProfileLong(_T("MaxFileContentsSize"), 64000000);
 }
 
-void CGetSetOptions::SetMaxFileContentsSize(int val)
-{
-	SetProfileLong(_T("MaxFileContentsSize"), val);
-}
-
 int CGetSetOptions::GetErrorMsgPopupTimeout()
 {
 	return GetProfileLong(_T("ErrorMsgPopupTimeout"), 3500);
-}
-
-void CGetSetOptions::SetErrorMsgPopupTimeout(int val)
-{
-	SetProfileLong(_T("ErrorMsgPopupTimeout"), val);
 }
 
 void CGetSetOptions::SetRegexFilter(CString val, int pos)
@@ -2795,20 +2724,9 @@ BOOL CGetSetOptions::GetCleanRTFBeforeDrawing()
 	return GetProfileLong("CleanRTFBeforeDrawing", TRUE);
 }
 
-void CGetSetOptions::SetCleanRTFBeforeDrawing(BOOL val)
-{
-	m_cleanRTFBeforeDrawing = true;
-	SetProfileLong("CleanRTFBeforeDrawing", val);
-}
-
 BOOL CGetSetOptions::GetDisableExpireClipsConfig()
 {
 	return GetProfileLong("DisableExpireClipsConfig", FALSE);
-}
-
-void CGetSetOptions::SetDisableExpireClipsConfig(BOOL val)
-{
-	SetProfileLong("DisableExpireClipsConfig", val);
 }
 
 BOOL CGetSetOptions::GetRevertToTopLevelGroup()

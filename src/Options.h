@@ -516,22 +516,16 @@ public:
 	static int ReadRandomFileIdleMin();
 
 	static BOOL GetShowGroupsInMainList();
-	static void SetShowGroupsInMainList(BOOL val);
 
-	static void SetGroupDoubleClickTimeMS(int val);
 	static int GetGroupDoubleClickTimeMS();
 
-	static void SetSaveToGroupTimeoutMS(int val);
 	static int GetSaveToGroupTimeoutMS();
 
-	static void SetCopyReasonTimeoutMS(int val);
 	static int GetCopyReasonTimeoutMS();
 
-	static void SetWindowsResumeDelayReOpenDbMS(int val);
 	static int GetWindowsResumeDelayReOpenDbMS();
 
 	static BOOL GetShowMsgWndOnCopyToGroup();
-	static void SetShowMsgWndOnCopyToGroup(BOOL val);
 
 	static int GetActionShortCutA(DWORD action, int pos, CString refData = _T(""));
 	static void SetActionShortCutA(int action, DWORD shortcut, int pos, CString refData = _T(""));
@@ -541,10 +535,8 @@ public:
 
 	static BOOL	m_bShowAlwaysOnTopWarning;
 	static BOOL GetShowAlwaysOnTopWarning();
-	static void SetShowAlwaysOnTopWarning(BOOL show);
 	
 	static BOOL GetUseIPFromAccept();
-	static void SetUseIPFromAccept(BOOL useAccept);
 
 	static int GetDragId();
 	static void SetDragId(int id);
@@ -565,25 +557,19 @@ public:
 	static void SetUseUISelectedGroupForLastTenCopies(int val);
 
 	static int GetDelayRenderLockout();
-	static void SetDelayRenderLockout(int val);
 
 	static BOOL GetAdjustClipsForCRC();
-	static void SetAdjustClipsForCRC(int val);
 
 	static BOOL GetCheckMd5OnFileTransfers();
-	static void SetCheckMd5OnFileTransfers(int val);
 
 	static int GetBalloonTimeout();
-	static void SetBalloonTimeout(int val);
 
 	static void		SetCustomSendToList(CString val);
 	static CString	GetCustomSendToList();
 
 	static int GetMaxFileContentsSize();
-	static void SetMaxFileContentsSize(int val);
 
 	static int GetErrorMsgPopupTimeout();
-	static void SetErrorMsgPopupTimeout(int val);
 
 	static CRegExFilterHelper m_regexHelper;
 	static void		SetRegexFilter(CString val, int pos);
@@ -618,10 +604,8 @@ public:
 
 	static BOOL m_cleanRTFBeforeDrawing;
 	static BOOL GetCleanRTFBeforeDrawing();
-	static void SetCleanRTFBeforeDrawing(BOOL val);
 
 	static BOOL GetDisableExpireClipsConfig();
-	static void SetDisableExpireClipsConfig(BOOL val);
 
 	static BOOL GetRevertToTopLevelGroup();
 	static void SetRevertToTopLevelGroup(BOOL val);
