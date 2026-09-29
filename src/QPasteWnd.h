@@ -285,6 +285,7 @@ public:
 	bool DoMoveClipTOP();
 	bool DoMoveClipLast();
 	bool DoFilterOnSelectedClip();
+	bool OpenSelectionWithOption(bool CSpecialPasteOptions::* option);
 	bool DoPasteUpperCase();
 	bool DoPasteCamelCase();
 	bool DoPasteImagesVert();

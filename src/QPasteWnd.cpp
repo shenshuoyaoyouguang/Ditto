@@ -4910,188 +4910,88 @@ bool CQPasteWnd::DoFilterOnSelectedClip()
 	return ret;
 }
 
-bool CQPasteWnd::DoPasteUpperCase()
+bool CQPasteWnd::OpenSelectionWithOption(bool CSpecialPasteOptions::* option)
 {
 	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
 	{
 		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteUpperCase = true;
+		pasteOptions.*option = true;
 		OpenSelection(pasteOptions);
 		return true;
 	}
 
 	return false;
+}
+
+bool CQPasteWnd::DoPasteUpperCase()
+{
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteUpperCase);
 }
 
 bool CQPasteWnd::DoPasteCamelCase()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteCamelCase = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteCamelCase);
 }
 
 bool CQPasteWnd::DoPasteImagesHorz()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteImagesHorizontal = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteImagesHorizontal);
 }
 
 bool CQPasteWnd::DoPasteImagesVert()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteImagesVertically = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteImagesVertically);
 }
 
 bool CQPasteWnd::DoPasteAsciiOnly()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteAsciiOnly = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteAsciiOnly);
 }
 
 bool CQPasteWnd::DoPasteLowerCase()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteLowerCase = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteLowerCase);
 }
 
 bool CQPasteWnd::DoPasteCapitalize()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteCapitalize = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteCapitalize);
 }
 
 bool CQPasteWnd::DoPasteSentenceCase()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteSentenceCase = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteSentenceCase);
 }
 
 bool CQPasteWnd::DoInvertCase()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_invertCase = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_invertCase);
 }
 
 bool CQPasteWnd::DoPasteRemoveLineFeeds()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteRemoveLineFeeds = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteRemoveLineFeeds);
 }
 
 bool CQPasteWnd::DoPastePlusAddLineFeed()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteAddOneLineFeed = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteAddOneLineFeed);
 }
 
 bool CQPasteWnd::DoPasteAddTwoLineFeeds()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteAddTwoLineFeeds = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteAddTwoLineFeeds);
 }
 
 bool CQPasteWnd::DoPasteTypoglycemia()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteTypoglycemia = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteTypoglycemia);
 }
 
 bool CQPasteWnd::DoPasteAddCurrentTime()
 {
-	if (::GetFocus() == m_lstHeader.GetSafeHwnd())
-	{
-		CSpecialPasteOptions pasteOptions;
-		pasteOptions.m_pasteAddingDateTime = true;
-		OpenSelection(pasteOptions);
-		return true;
-	}
-
-	return false;
+	return OpenSelectionWithOption(&CSpecialPasteOptions::m_pasteAddingDateTime);
 }
-
 bool CQPasteWnd::OnShowFirstTenText()
 {
 	CGetSetOptions::SetShowTextForFirstTenHotKeys(!CGetSetOptions::GetShowTextForFirstTenHotKeys());
