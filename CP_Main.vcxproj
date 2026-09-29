@@ -625,11 +625,9 @@
     <ClCompile Include="src\OptionsCopyBuffers.cpp" />
     <ClCompile Include="src\OptionsGeneral.cpp" />
     <ClCompile Include="src\OptionsKeyBoard.cpp" />
-    <ClCompile Include="src\OptionsQuickPaste.cpp" />
     <ClCompile Include="src\OptionsSheet.cpp" />
     <ClCompile Include="src\OptionsStats.cpp" />
     <ClCompile Include="src\OptionsTypes.cpp" />
-    <ClCompile Include="src\OptionsUtilities.cpp" />
     <ClCompile Include="src\Path.cpp" />
     <ClCompile Include="src\PerfTimer.cpp" />
     <ClCompile Include="src\Popup.cpp" />
@@ -897,11 +895,9 @@
     <ClInclude Include="src\OptionsCopyBuffers.h" />
     <ClInclude Include="src\OptionsGeneral.h" />
     <ClInclude Include="src\OptionsKeyBoard.h" />
-    <ClInclude Include="src\OptionsQuickPaste.h" />
     <ClInclude Include="src\OptionsSheet.h" />
     <ClInclude Include="src\OptionsStats.h" />
     <ClInclude Include="src\OptionsTypes.h" />
-    <ClInclude Include="src\OptionsUtilities.h" />
     <ClInclude Include="src\Path.h" />
     <ClInclude Include="src\PerfTimer.h" />
     <ClInclude Include="src\Popup.h" />

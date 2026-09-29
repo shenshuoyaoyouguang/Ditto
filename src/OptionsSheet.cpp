@@ -6,7 +6,6 @@
 #include "OptionsSheet.h"
 #include "OptionsKeyBoard.h"
 #include "OptionsGeneral.h"
-#include "OptionsQuickPaste.h"
 #include "OptionsStats.h"
 #include "OptionsTypes.h"
 #include "About.h"
@@ -49,7 +48,6 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 
 	m_pGeneralOptions = new COptionsGeneral;
 	m_pKeyBoardOptions = new COptionsKeyBoard;
-	//m_pQuickPasteOptions = new COptionsQuickPaste;
 	m_pQuickPasteShortCuts = new CQuickPasteKeyboard;
 
 	m_pCopyBuffers = new COptionsCopyBuffers;
@@ -78,7 +76,6 @@ COptionsSheet::~COptionsSheet()
 {
 	delete m_pGeneralOptions;
 	delete m_pKeyBoardOptions;
-	//delete m_pQuickPasteOptions;
 	delete m_pCopyBuffers;
 	delete m_pStats;
 	delete m_pTypes;

@@ -253,9 +253,6 @@
     <ClCompile Include="src\OptionsKeyBoard.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\OptionsQuickPaste.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\OptionsSheet.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -263,9 +260,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\OptionsTypes.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\OptionsUtilities.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Path.cpp">
@@ -769,9 +763,6 @@
     <ClInclude Include="src\OptionsKeyBoard.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\OptionsQuickPaste.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\OptionsSheet.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -779,9 +770,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\OptionsTypes.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\OptionsUtilities.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Path.h">
