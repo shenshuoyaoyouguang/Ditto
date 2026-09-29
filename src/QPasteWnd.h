@@ -32,7 +32,8 @@ public:
 		m_bHasShortCut(false), 
 		m_bHasParent(false),
 		m_dateCopied(0),
-		m_datePasted(0)
+		m_datePasted(0),
+		m_pasteCount(0)
 	{
 
 	}
@@ -55,6 +56,7 @@ public:
 	double m_stickyClipGroupOrder;
 	__int64 m_dateCopied;
 	__int64 m_datePasted;
+	long m_pasteCount;
 
 	static bool SortDesc(const CMainTable& d1, const CMainTable& d2)
 	{
@@ -627,4 +629,16 @@ public:
 	afx_msg void OnUpdateSpecialpastePastenewguid(CCmdUI* pCmdUI);
 	afx_msg void OnSpecialpastePasteAsImage();
 	afx_msg void OnUpdateSpecialpastePasteAsImage(CCmdUI* pCmdUI);
+
+	enum class ClipSortMode
+	{
+		Default,
+		PasteCountDesc,
+	};
+
+	void SetSortMode(ClipSortMode mode);
+	ClipSortMode GetSortMode() const { return m_sortMode; }
+
+protected:
+	ClipSortMode m_sortMode = ClipSortMode::Default;
 };

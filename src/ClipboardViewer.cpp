@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "cp_main.h"
 #include "ClipboardViewer.h"
+#include "CopyThread.h"
 #include "Misc.h"
 #include "..\Shared\Tokenizer.h"
 #include "WildCardMatch.h"
