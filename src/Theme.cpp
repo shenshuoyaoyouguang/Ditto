@@ -23,44 +23,47 @@ CTheme::~CTheme(void)
 
 void CTheme::LoadDefaults()
 {
-	m_CaptionLeft = RGB(255, 255, 255);
-	m_CaptionRight = RGB(204, 204, 204);
+	// defaults follow the CompactLight look so the stock app is presentable
+	// without picking a theme file (ui-redesign)
+	m_CaptionLeft = RGB(243, 243, 243);
+	m_CaptionRight = RGB(243, 243, 243);
 
-	m_Border = RGB(204, 204, 204);
-	m_BorderTopMost = RGB(204, 204, 204);
-	m_BorderNotConnected = RGB(204, 204, 204);
+	m_Border = RGB(217, 217, 217);
+	m_BorderTopMost = RGB(217, 217, 217);
+	m_BorderNotConnected = RGB(237, 94, 94);
 
-	m_CaptionLeftTopMost = RGB(255, 255, 255);
-	m_CaptionRightTopMost = RGB(204, 204, 204);
-	
+	m_CaptionLeftTopMost = RGB(243, 243, 243);
+	m_CaptionRightTopMost = RGB(243, 243, 243);
+
 	m_CaptionLeftNotConnected = RGB(255, 255, 255);
 	m_CaptionRightNotConnected = RGB(255, 255, 0);
 
-	m_CaptionTextColor = RGB(191, 191, 191);
-	m_ListBoxOddRowsBG = RGB(255, 255, 255);
+	m_CaptionTextColor = RGB(110, 110, 110);
+	m_ListBoxOddRowsBG = RGB(243, 243, 243);
 	m_ListBoxEvenRowsBG = RGB(243, 243, 243);
-	m_ListBoxOddRowsText = RGB(0, 0, 0);
-	m_ListBoxEvenRowsText = RGB(0, 0, 0);
-	m_ListBoxSelectedBG = RGB(204, 204, 204);
-	m_ListBoxSelectedNoFocusBG = RGB(204, 204, 204);
-	m_ListBoxSelectedText = RGB(0, 0, 0);
-	m_ListBoxSelectedNoFocusText = RGB(0, 0, 0);
-	m_clipPastedColor = RGB(0, 255, 0);
-	m_listSmallQuickPasteIndexColor = RGB(180, 180, 180);
-	m_mainWindowBG = RGB(240, 240, 240);
+	m_ListBoxOddRowsText = RGB(27, 27, 27);
+	m_ListBoxEvenRowsText = RGB(27, 27, 27);
+	m_ListBoxSelectedBG = RGB(207, 228, 247);
+	m_ListBoxSelectedNoFocusBG = RGB(207, 228, 247);
+	m_ListBoxSelectedText = RGB(16, 35, 58);
+	m_ListBoxSelectedNoFocusText = RGB(27, 27, 27);
+	m_clipPastedColor = RGB(245, 226, 169);
+	m_listSmallQuickPasteIndexColor = RGB(154, 154, 154);
+	m_mainWindowBG = RGB(243, 243, 243);
 	m_searchTextBoxFocusBG = RGB(255, 255, 255);
-	m_searchTextBoxFocusText = RGB(0, 0, 0);
-	m_searchTextBoxFocusBorder = RGB(255, 255, 255);
-	m_searchTextHighlight = RGB(255, 0, 0);
+	m_searchTextBoxFocusText = RGB(27, 27, 27);
+	// focused border doubles as the focus cue, keep it clearly apart from SearchBoxBorder
+	m_searchTextBoxFocusBorder = RGB(0, 103, 192);
+	m_searchTextHighlight = RGB(0, 103, 192);
 
-	m_groupTreeBG = RGB(240, 240, 240);
-	m_groupTreeText = RGB(127, 127, 127);
+	m_groupTreeBG = RGB(251, 251, 251);
+	m_groupTreeText = RGB(110, 110, 110);
 
-	// Compact UI tokens (ui-redesign) - defaults follow the classic light look
-	m_sidebarBG = RGB(240, 240, 240);
-	m_sidebarText = RGB(64, 64, 64);
+	// Compact UI tokens (ui-redesign)
+	m_sidebarBG = RGB(251, 251, 251);
+	m_sidebarText = RGB(110, 110, 110);
 	m_searchBoxBG = RGB(255, 255, 255);
-	m_searchBoxBorder = RGB(200, 200, 200);
+	m_searchBoxBorder = RGB(227, 227, 227);
 	m_chipBG = RGB(233, 233, 233);
 	m_chipSelectedBG = RGB(211, 229, 247);
 	m_rowHoverBG = RGB(236, 236, 236);
@@ -69,17 +72,13 @@ void CTheme::LoadDefaults()
 	m_faintText = RGB(154, 154, 154);
 	m_separatorLine = RGB(227, 227, 227);
 
-	m_descriptionWindowBG = RGB(240, 240, 240);// GetSysColor(COLOR_INFOBK);//RGB(240, 240, 240);//
-	/*int r = GetRValue(m_descriptionWindowBG);
-	int g = GetGValue(m_descriptionWindowBG);
-	int b = GetBValue(m_descriptionWindowBG);*/
-
-	m_descriptionWindowText = RGB(0, 0, 0);
+	m_descriptionWindowBG = RGB(251, 251, 251);
+	m_descriptionWindowText = RGB(27, 27, 27);
 
 	// Modern scrollbar defaults - rounded look
-	m_scrollBarThumb = RGB(180, 180, 180);
-	m_scrollBarThumbHover = RGB(140, 140, 140);
-	m_scrollBarTrack = RGB(240, 240, 240);
+	m_scrollBarThumb = RGB(196, 196, 196);
+	m_scrollBarThumbHover = RGB(160, 160, 160);
+	m_scrollBarTrack = RGB(236, 236, 236);
 
 	m_captionSize = 25;
 	m_captionFontSize = 19;

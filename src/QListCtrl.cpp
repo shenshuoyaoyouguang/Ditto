@@ -578,8 +578,8 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		if (m_windowDpi != NULL)
 		{
 			CRect rcRound(rcItem);
-			rcRound.DeflateRect(m_windowDpi->Scale(1), 0);
-			int nRadius = m_windowDpi->Scale(5);
+			rcRound.DeflateRect(m_windowDpi->Scale(2), 0);
+			int nRadius = m_windowDpi->Scale(6);
 
 			if (rItem.state & LVIS_SELECTED)
 			{
@@ -721,15 +721,49 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		if (DrawRtfText(nItem, rcText, pDC) == FALSE)
 		{
 			auto highlightColor = CGetSetOptions::m_Theme.SearchTextHighlight();
+
+			bool bSingleLine = (m_linesPerRow == 1);
+			CSize szPlain(0, 0);
+
+			// single-line rows clip their overflow; DrawHTML has no ellipsis
+			// support and even grows its MaxWidth for long words, so truncate
+			// the plain text up front (ui-redesign)
+			if (bSingleLine && csText.GetLength() > 0)
+			{
+				int nFit = 0;
+				if (::GetTextExtentExPoint(pDC->GetSafeHdc(), csText, csText.GetLength(), rcText.Width(), &nFit, NULL, &szPlain) &&
+					nFit >= 0 && nFit < csText.GetLength())
+				{
+					if (nFit > 1)
+						csText = csText.Left(nFit - 1) + _T("\u2026");
+					else if (nFit == 1)
+						csText = csText.Left(1);
+					else
+						csText.Empty();
+				}
+			}
+
 			//use unprintable characters so it doesn't find copied html to convert
 			if (m_searchText.GetLength() > 0 &&
 				FindNoCaseAndInsert(csText, m_searchText, StrF(_T("\x01\x04 color='#%02x%02x%02x'\x02"), GetRValue(highlightColor), GetGValue(highlightColor), GetBValue(highlightColor)), _T("\x01\x03\x04\x02"), m_linesPerRow) > 0)
 			{
-				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcText, DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX);
+				CRect rcHTML = rcText;
+				if (bSingleLine)
+				{
+					// DrawHTML flows from the rect top and ignores DT_VCENTER,
+					// center the measured line manually (ui-redesign)
+					if (szPlain.cy == 0)
+						szPlain = pDC->GetTextExtent(csText);
+					rcHTML.top += max(0, (rcText.Height() - szPlain.cy) / 2);
+				}
+				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcHTML, DT_EXPANDTABS | DT_NOPREFIX);
 			}
 			else
 			{
-				pDC->DrawText(csText, rcText, DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX);
+				UINT nFlags = DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX;
+				if (bSingleLine)
+					nFlags |= DT_SINGLELINE | DT_END_ELLIPSIS;
+				pDC->DrawText(csText, rcText, nFlags);
 			}
 		}
 
@@ -766,10 +800,10 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.ListSmallQuickPasteIndexColor());
 			CPen* pOldPen = pDC->SelectObject(&pen);
 
-			pDC->DrawText(cs, crHotKey, DT_BOTTOM);
+			pDC->DrawText(cs, crHotKey, DT_SINGLELINE | DT_VCENTER);
 
-			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top));
-			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom));
+			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top + m_windowDpi->Scale(5)));
+			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom - m_windowDpi->Scale(5)));
 
 			pDC->SelectObject(hOldFont);
 			pDC->SetTextColor(localOldTextColor);

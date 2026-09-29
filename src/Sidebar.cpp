@@ -16,6 +16,9 @@ IMPLEMENT_DYNAMIC(CSidebar, CWnd)
 CSidebar::CSidebar()
 {
 	m_nSelectedNav = 0;
+	m_nHoverItem = -1;
+	m_bHoverBottom = false;
+	m_bTrackingLeave = false;
 	m_dpi = NULL;
 }
 
@@ -23,6 +26,8 @@ BEGIN_MESSAGE_MAP(CSidebar, CWnd)
 	ON_WM_PAINT()
 	ON_WM_ERASEBKGND()
 	ON_WM_LBUTTONDOWN()
+	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSELEAVE()
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
@@ -113,6 +118,14 @@ void CSidebar::Layout()
 	}
 
 	m_rcTree = CRect(x - m_dpi->Scale(4), y, rcClient.Width() - m_dpi->Scale(2), yBottom - m_dpi->Scale(8));
+
+	// rows moved under the cursor; the stored hover hit no longer matches it
+	if (m_nHoverItem >= 0)
+	{
+		m_nHoverItem = -1;
+		m_bHoverBottom = false;
+		Invalidate(FALSE);
+	}
 }
 
 CRect CSidebar::GetTreeRect()
@@ -144,15 +157,16 @@ int CSidebar::HitTest(CPoint point, bool &bBottom)
 	return -1;
 }
 
-void CSidebar::DrawRow(CDC *pDC, const CRect &rc, const CString &csLabel, bool bSelected)
+void CSidebar::DrawRow(CDC *pDC, const CRect &rc, const CString &csLabel, bool bSelected, bool bHover)
 {
 	CTheme &theme = CGetSetOptions::m_Theme;
 
-	if (bSelected)
+	if (bSelected || bHover)
 	{
 		int nRadius = m_dpi ? m_dpi->Scale(6) : 6;
-		CBrush brush(theme.ChipSelectedBG());
-		CPen pen(PS_SOLID, 1, theme.ChipSelectedBG());
+		COLORREF crBG = bSelected ? theme.ChipSelectedBG() : theme.RowHoverBG();
+		CBrush brush(crBG);
+		CPen pen(PS_SOLID, 1, crBG);
 		CBrush *pOldBrush = pDC->SelectObject(&brush);
 		CPen *pOldPen = pDC->SelectObject(&pen);
 		pDC->RoundRect(&rc, CPoint(nRadius, nRadius));
@@ -186,6 +200,10 @@ void CSidebar::OnPaint()
 	CRect rcClient;
 	GetClientRect(rcClient);
 
+	// hover changes invalidate without erasing, repaint the background here
+	// so the previous row highlight cannot stay on screen (ui-redesign)
+	dc.FillSolidRect(rcClient, theme.SidebarBG());
+
 	CFont *pFont = GetParent() ? GetParent()->GetFont() : GetFont();
 	CFont *pOldFont = dc.SelectObject(pFont);
 	int nOldBkMode = dc.SetBkMode(TRANSPARENT);
@@ -196,7 +214,8 @@ void CSidebar::OnPaint()
 	// main navigation
 	for (size_t i = 0; i < m_csNavLabels.size() && i < m_rcNav.size(); i++)
 	{
-		DrawRow(&dc, m_rcNav[i], m_csNavLabels[i], (int)i == m_nSelectedNav);
+		bool bHover = !m_bHoverBottom && (int)i == m_nHoverItem;
+		DrawRow(&dc, m_rcNav[i], m_csNavLabels[i], (int)i == m_nSelectedNav, bHover);
 	}
 
 	// group section header between nav and tree
@@ -209,7 +228,8 @@ void CSidebar::OnPaint()
 	// bottom entries
 	for (size_t i = 0; i < m_csBottomLabels.size() && i < m_rcBottom.size(); i++)
 	{
-		DrawRow(&dc, m_rcBottom[i], m_csBottomLabels[i], false);
+		bool bHover = m_bHoverBottom && (int)i == m_nHoverItem;
+		DrawRow(&dc, m_rcBottom[i], m_csBottomLabels[i], false, bHover);
 	}
 
 	dc.SetBkMode(nOldBkMode);
@@ -230,6 +250,42 @@ void CSidebar::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 
 	CWnd::OnLButtonDown(nFlags, point);
+}
+
+void CSidebar::OnMouseMove(UINT nFlags, CPoint point)
+{
+	if (m_dpi != NULL && !m_bTrackingLeave)
+	{
+		TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, m_hWnd, 0 };
+		if (TrackMouseEvent(&tme))
+		{
+			m_bTrackingLeave = true;
+		}
+	}
+
+	bool bBottom = false;
+	int nItem = HitTest(point, bBottom);
+	if (nItem != m_nHoverItem || bBottom != m_bHoverBottom)
+	{
+		m_nHoverItem = nItem;
+		m_bHoverBottom = bBottom;
+		Invalidate(FALSE);
+	}
+
+	CWnd::OnMouseMove(nFlags, point);
+}
+
+void CSidebar::OnMouseLeave()
+{
+	m_bTrackingLeave = false;
+	if (m_nHoverItem >= 0)
+	{
+		m_nHoverItem = -1;
+		m_bHoverBottom = false;
+		Invalidate(FALSE);
+	}
+
+	CWnd::OnMouseLeave();
 }
 
 void CSidebar::OnSize(UINT nType, int cx, int cy)

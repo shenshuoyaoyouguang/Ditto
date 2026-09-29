@@ -266,6 +266,7 @@ public:
 
 	static BOOL		GetFont(LOGFONT &font);
 	static void		SetFont(LOGFONT &font);
+	static void		SanitizeFont(LOGFONT &font);
 
 	static BOOL		m_bDrawThumbnail;
 	static void		SetDrawThumbnail(long bDraw);

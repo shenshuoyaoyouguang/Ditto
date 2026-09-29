@@ -149,6 +149,7 @@ public:
 	CString m_csBaseFilter;
     CGroupStatic m_stGroup;
     CFont m_groupFont;
+    CFont m_uiFont;
     CString m_Title;
     CGroupTree m_GroupTree;
     CGdipButton m_ShowGroupsFolderBottom;
