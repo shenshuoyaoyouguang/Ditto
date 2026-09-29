@@ -91,6 +91,7 @@ CQPasteWnd::CQPasteWnd()
 	m_lastNonActiveMouseMove = 0;
 	m_nChipFilter = 0;
 	m_bSidebarVisible = FALSE;
+	m_bShowStickyClips = false;
 }
 
 CQPasteWnd::~CQPasteWnd()
@@ -477,6 +478,8 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	{
 		std::vector<CString> csNav;
 		csNav.push_back(theApp.m_Language.GetString(_T("NavHistory"), _T("History")));
+		csNav.push_back(theApp.m_Language.GetString(_T("NavSaved"), _T("Saved")));
+		csNav.push_back(theApp.m_Language.GetString(_T("NavSticky"), _T("Sticky")));
 		m_sidebar.SetNavItems(csNav);
 
 		std::vector<CString> csBottom;
@@ -740,7 +743,7 @@ void CQPasteWnd::MoveControls()
 	}
 
 	if (m_noSearchResults &&
-		(m_strSearch != _T("") || m_bShowStarredClips))
+		(m_strSearch != _T("") || m_bShowStarredClips || m_bShowStickyClips))
 	{
 		m_lstHeader.ShowWindow(SW_HIDE);
 		m_noSearchResultsStatic.ShowWindow(SW_SHOW);
@@ -996,6 +999,19 @@ BOOL CQPasteWnd::ShowQPasteWindow(BOOL bFillList)
 
 	// restore the docked sidebar before the first layout (ui-redesign)
 	ShowSidebar(CGetSetOptions::GetShowSidebar());
+
+	// re-apply the selected sidebar view, view flags reset when the window hides (ui-redesign)
+	if (m_bSidebarVisible)
+	{
+		if (m_sidebar.GetSelectedNav() == 1)
+		{
+			m_bShowStarredClips = true;
+		}
+		else if (m_sidebar.GetSelectedNav() == 2)
+		{
+			m_bShowStickyClips = true;
+		}
+	}
 
 	Log(StrF(_T("Start - ShowQPasteWindow - Fill List: %d, array count: %d"), bFillList, m_listItems.size()));
 
@@ -1513,6 +1529,14 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 			strFilter = "(Main.bIsGroup = 0)";
 		}
 	}
+	else if (m_bShowStickyClips)
+	{
+		csSort = "Main.stickyClipOrder DESC, "
+			"Main.bIsGroup ASC, "
+			"Main.clipOrder DESC";
+
+		strFilter.Format(_T("(Main.bIsGroup = 0 AND Main.stickyClipOrder != %d)"), INVALID_STICKY);
+	}
 	else if (m_bShowStarredClips)
 	{
 		csSort = "Main.stickyClipOrder DESC, "
@@ -1575,7 +1599,7 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 
 	if (csSQLSearch == "")
 	{
-		m_strSQLSearch = m_bShowStarredClips ? strFilter : _T("");
+		m_strSQLSearch = (m_bShowStarredClips || m_bShowStickyClips) ? strFilter : _T("");
 		m_strSearch = "";
 	}
 	else
@@ -6449,15 +6473,29 @@ LRESULT CQPasteWnd::OnSidebarNav(WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	if ((int)wParam == 0)
+	switch ((int)wParam)
 	{
-		// history: leave any group back to the main list
-		m_bHandleSearchTextChange = false;
-		m_search.SetWindowText(_T(""));
-		m_bHandleSearchTextChange = true;
-
-		theApp.EnterGroupID(-1);
+	case 0:		// history
+		m_bShowStarredClips = false;
+		m_bShowStickyClips = false;
+		break;
+	case 1:		// saved clips
+		m_bShowStarredClips = true;
+		m_bShowStickyClips = false;
+		break;
+	case 2:		// sticky clips
+		m_bShowStarredClips = false;
+		m_bShowStickyClips = true;
+		break;
+	default:
+		return 0;
 	}
+
+	m_bHandleSearchTextChange = false;
+	m_search.SetWindowText(_T(""));
+	m_bHandleSearchTextChange = true;
+
+	theApp.EnterGroupID(-1);
 	return 0;
 }
 

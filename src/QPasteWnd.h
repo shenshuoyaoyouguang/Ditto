@@ -158,6 +158,7 @@ public:
 
     long m_lRecordCount;
     bool m_bStopQuery;
+    bool m_bShowStickyClips;
     bool m_bHandleSearchTextChange;
     bool m_bModifersMoveActive;
 
