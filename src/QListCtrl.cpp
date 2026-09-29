@@ -578,8 +578,8 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		if (m_windowDpi != NULL)
 		{
 			CRect rcRound(rcItem);
-			rcRound.DeflateRect(m_windowDpi->Scale(1), 0);
-			int nRadius = m_windowDpi->Scale(5);
+			rcRound.DeflateRect(m_windowDpi->Scale(2), 0);
+			int nRadius = m_windowDpi->Scale(6);
 
 			if (rItem.state & LVIS_SELECTED)
 			{
@@ -725,11 +725,19 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			if (m_searchText.GetLength() > 0 &&
 				FindNoCaseAndInsert(csText, m_searchText, StrF(_T("\x01\x04 color='#%02x%02x%02x'\x02"), GetRValue(highlightColor), GetGValue(highlightColor), GetBValue(highlightColor)), _T("\x01\x03\x04\x02"), m_linesPerRow) > 0)
 			{
-				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcText, DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX);
+				UINT nHTMLFlags = DT_EXPANDTABS | DT_NOPREFIX;
+				if (m_linesPerRow == 1)
+					nHTMLFlags |= DT_SINGLELINE | DT_END_ELLIPSIS;
+				else
+					nHTMLFlags |= DT_VCENTER;
+				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcText, nHTMLFlags);
 			}
 			else
 			{
-				pDC->DrawText(csText, rcText, DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX);
+				UINT nFlags = DT_EXPANDTABS | DT_NOPREFIX;
+				if (m_linesPerRow == 1)
+					nFlags |= DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS;
+				pDC->DrawText(csText, rcText, nFlags);
 			}
 		}
 
@@ -766,10 +774,10 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.ListSmallQuickPasteIndexColor());
 			CPen* pOldPen = pDC->SelectObject(&pen);
 
-			pDC->DrawText(cs, crHotKey, DT_BOTTOM);
+			pDC->DrawText(cs, crHotKey, DT_SINGLELINE | DT_VCENTER);
 
-			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top));
-			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom));
+			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top + m_windowDpi->Scale(5)));
+			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom - m_windowDpi->Scale(5)));
 
 			pDC->SelectObject(hOldFont);
 			pDC->SetTextColor(localOldTextColor);

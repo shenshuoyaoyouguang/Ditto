@@ -2330,15 +2330,22 @@ void CQPasteWnd::UpdateFont()
 	lf.lfHeight = m_DittoWindow.m_dpi.Scale(lf.lfHeight);
 	m_lstHeader.SetLogFont(lf);
 
+	// the main window is created at runtime, without a font it falls back to
+	// the legacy GUI font (SimSun on CJK systems); give it the display font so
+	// the sidebar and chip bar inherit it too (ui-redesign)
+	m_uiFont.DeleteObject();
+	m_uiFont.CreateFontIndirect(&lf);
+	SetFont(&m_uiFont);
+
 	m_SearchFont.DeleteObject();
-	m_SearchFont.CreateFont(-m_DittoWindow.m_dpi.Scale(15), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_SearchFont.CreateFont(-m_DittoWindow.m_dpi.Scale(15), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Microsoft YaHei UI"));
 	m_search.SetFont(&m_SearchFont);
 	m_search.SetPromptFont(m_SearchFont);
 
 	m_GroupTree.SetFont(&m_SearchFont);
 
 	m_groupFont.DeleteObject();
-	m_groupFont.CreateFont(-m_DittoWindow.m_dpi.Scale(12), 0, 0, 0, 400, 0, 1, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_groupFont.CreateFont(-m_DittoWindow.m_dpi.Scale(12), 0, 0, 0, 400, 0, 1, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Microsoft YaHei UI"));
 	m_stGroup.SetFont(&m_groupFont);
 	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
 	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
@@ -2820,6 +2827,12 @@ void CQPasteWnd::OnMenuQuickoptionsFont()
 		CGetSetOptions::SetFont(*dlg.m_cf.lpLogFont);
 		(*dlg.m_cf.lpLogFont).lfHeight = m_DittoWindow.m_dpi.Scale((*dlg.m_cf.lpLogFont).lfHeight);
 		m_lstHeader.SetLogFont(*dlg.m_cf.lpLogFont);
+
+		// keep the window font (sidebar/chip bar inherit it) in sync (ui-redesign)
+		m_uiFont.DeleteObject();
+		m_uiFont.CreateFontIndirect(dlg.m_cf.lpLogFont);
+		SetFont(&m_uiFont);
+
 		this->SetLinesPerRow(CGetSetOptions::GetLinesPerRow(), true, true);
 	}
 

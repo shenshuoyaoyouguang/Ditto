@@ -1429,6 +1429,7 @@ BOOL CGetSetOptions::GetFont(LOGFONT &font)
 		//other wise load the default font below
 		if(font.lfFaceName[0] != 0)
 		{
+			SanitizeFont(font);
 			return TRUE;
 		}
 	}
@@ -1443,6 +1444,7 @@ BOOL CGetSetOptions::GetFont(LOGFONT &font)
 				memcpy(&font, lpVoid, dwLength);
 				delete[] lpVoid;
 				lpVoid = NULL;
+				SanitizeFont(font);
 				return TRUE;
 			}
 			else
@@ -1459,8 +1461,29 @@ BOOL CGetSetOptions::GetFont(LOGFONT &font)
 	font.lfHeight = -13;
 	font.lfWeight = 400;
 	font.lfCharSet = 1;
-	STRCPY(font.lfFaceName, _T("Segoe UI"));
+	STRCPY(font.lfFaceName, _T("Microsoft YaHei UI"));
 	return TRUE;
+}
+
+// legacy UI fonts (MS Shell Dlg/Tahoma map to SimSun on CJK systems) render poorly
+// with ClearType, upgrade them to the modern default (ui-redesign)
+void CGetSetOptions::SanitizeFont(LOGFONT &font)
+{
+	static const TCHAR *legacyFonts[] =
+		{
+			_T("MS Shell Dlg"), _T("MS Shell Dlg 2"), _T("Tahoma"),
+			_T("System"), _T("SimSun"), _T("NSimSun"),
+			_T("宋体"), _T("新宋体")
+		};
+
+	for (int i = 0; i < (int)(sizeof(legacyFonts) / sizeof(legacyFonts[0])); i++)
+	{
+		if (CString(font.lfFaceName).CompareNoCase(legacyFonts[i]) == 0)
+		{
+			STRCPY(font.lfFaceName, _T("Microsoft YaHei UI"));
+			return;
+		}
+	}
 }
 
 void CGetSetOptions::SetFont(LOGFONT &font)

@@ -41,4 +41,22 @@
 	<SearchTextBoxFocusBG>RGB(24,24,24)</SearchTextBoxFocusBG>
 	<SearchTextBoxFocusText>RGB(127,127,127)</SearchTextBoxFocusText>
 
+	<ClipPastedColor>RGB(245,226,169)</ClipPastedColor>
+
+	<ScrollBarThumb>RGB(74,74,74)</ScrollBarThumb>
+	<ScrollBarThumbHover>RGB(90,90,90)</ScrollBarThumbHover>
+	<ScrollBarTrack>RGB(24,24,24)</ScrollBarTrack>
+
+	<SidebarBG>RGB(24,24,24)</SidebarBG>
+	<SidebarText>RGB(153,153,153)</SidebarText>
+	<SearchBoxBG>RGB(38,38,38)</SearchBoxBG>
+	<SearchBoxBorder>RGB(58,58,58)</SearchBoxBorder>
+	<ChipBG>RGB(38,38,38)</ChipBG>
+	<ChipSelectedBG>RGB(64,64,64)</ChipSelectedBG>
+	<RowHoverBG>RGB(38,38,38)</RowHoverBG>
+	<Accent>RGB(76,194,255)</Accent>
+	<SubText>RGB(153,153,153)</SubText>
+	<FaintText>RGB(107,107,107)</FaintText>
+	<SeparatorLine>RGB(58,58,58)</SeparatorLine>
+
 </Ditto_Theme_File>

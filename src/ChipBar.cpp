@@ -197,9 +197,10 @@ void CChipBar::OnPaint()
 	for (size_t i = 0; i < m_csLabels.size() && i < m_rcChips.size(); i++)
 	{
 		CString csLabel = m_csLabels[i];
+		CString csCount;
 		if (i < m_nCounts.size() && m_nCounts[i] >= 0)
 		{
-			csLabel += StrF(_T("  %d"), m_nCounts[i]);
+			csCount.Format(_T("%d"), m_nCounts[i]);
 		}
 
 		COLORREF crBG;
@@ -207,15 +208,32 @@ void CChipBar::OnPaint()
 		GetChipColors(crBG, crText, (int)i);
 
 		CBrush brush(crBG);
-		CPen pen(PS_SOLID, 1, crBG);
+		CPen pen(PS_SOLID, 1, (int)i == m_nSelected ? crBG : CGetSetOptions::m_Theme.SeparatorLine());
 		CBrush *pOldBrush = dc.SelectObject(&brush);
 		CPen *pOldPen = dc.SelectObject(&pen);
 		dc.RoundRect(m_rcChips[i], CPoint(nRadius, nRadius));
 		dc.SelectObject(pOldBrush);
 		dc.SelectObject(pOldPen);
 
+		// draw the count in a fainter color right after the label (ui-redesign)
+		CRect rcChip(m_rcChips[i]);
+		CString csFull(csLabel);
+		if (!csCount.IsEmpty())
+			csFull += CString(_T("  ")) + csCount;
+		CSize szAll = dc.GetTextExtent(csFull);
+		CSize szLabel = dc.GetTextExtent(csLabel);
+		int nTextLeft = rcChip.left + (rcChip.Width() - szAll.cx) / 2;
+		rcChip.left = nTextLeft;
+
 		COLORREF crOldText = dc.SetTextColor(crText);
-		dc.DrawText(csLabel, m_rcChips[i], DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+		dc.DrawText(csLabel, rcChip, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+		if (!csCount.IsEmpty())
+		{
+			CRect rcCount(rcChip);
+			rcCount.left = nTextLeft + szLabel.cx + (szAll.cx - szLabel.cx - dc.GetTextExtent(csCount).cx);
+			dc.SetTextColor(CGetSetOptions::m_Theme.FaintText());
+			dc.DrawText(csCount, rcCount, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+		}
 		dc.SetTextColor(crOldText);
 		if (GetFocus() == this && (int)i == m_nSelected)
 		{
