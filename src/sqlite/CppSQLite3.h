@@ -37,8 +37,6 @@
 
 #define SQLITE3_ERRMSG(mpDB) const TCHAR* szError = (const TCHAR*)sqlite3_errmsg16(mpDB)
 
-int sqlite3_encode_binary(const unsigned char *in, int n, unsigned char *out);
-int sqlite3_decode_binary(const unsigned char *in, unsigned char *out);
 
 class CppSQLite3Exception
 {
@@ -86,7 +84,6 @@ public:
     int fieldIndex(const TCHAR* szField);
     const TCHAR* fieldName(int nCol);
 
-    const TCHAR* fieldDeclType(int nCol);
     int fieldDataType(int nCol);
 
     const TCHAR* fieldValue(int nField);
@@ -107,8 +104,6 @@ public:
     const unsigned char* getBlobField(int nField, int& nLen);
     const unsigned char* getBlobField(const TCHAR* szField, int& nLen);
 
-	int getBlobFieldSize(const TCHAR* szField);
-	int getBlobFieldSize(int nField);
 
     bool fieldIsNull(int nField);
     bool fieldIsNull(const TCHAR* szField);
@@ -182,7 +177,6 @@ public:
 
     bool close();
 
-	bool tableExists(const TCHAR* szTable);
 
 	int execDMLEx(LPCTSTR szSQL,...);
     int execDML(const TCHAR* szSQL);
@@ -190,14 +184,12 @@ public:
 	CppSQLite3Query execQueryEx(LPCTSTR szSQL,...);
     CppSQLite3Query execQuery(const TCHAR* szSQL);
 
-	int execScalarEx(LPCTSTR szSQL,...);
     int execScalar(const TCHAR* szSQL);
 
     CppSQLite3Statement compileStatement(const TCHAR* szSQL);
 
     sqlite_int64 lastRowId();
 
-    void interrupt() { sqlite3_interrupt(mpDB); }
 
     void setBusyTimeout(int nMillisecs);
 
