@@ -179,100 +179,12 @@ void CHyperLink::SetURL(CString strURL)
     }
 }
 
-CString CHyperLink::GetURL() const
-{ 
-    return m_strURL;   
-}
-
-void CHyperLink::SetColours(COLORREF crLinkColour, COLORREF crVisitedColour,
-                            COLORREF crHoverColour /* = -1 */) 
-{ 
-    m_crLinkColour    = crLinkColour; 
-    m_crVisitedColour = crVisitedColour;
-
-	if (crHoverColour == -1)
-		m_crHoverColour = ::GetSysColor(COLOR_HIGHLIGHT);
-	else
-		m_crHoverColour = crHoverColour;
-
-    if (::IsWindow(m_hWnd))
-        Invalidate(); 
-}
-
-COLORREF CHyperLink::GetLinkColour() const
-{ 
-    return m_crLinkColour; 
-}
-
-COLORREF CHyperLink::GetVisitedColour() const
-{
-    return m_crVisitedColour; 
-}
-
-COLORREF CHyperLink::GetHoverColour() const
-{
-    return m_crHoverColour;
-}
-
 void CHyperLink::SetVisited(BOOL bVisited /* = TRUE */) 
 { 
     m_bVisited = bVisited; 
 
     if (::IsWindow(GetSafeHwnd()))
         Invalidate(); 
-}
-
-BOOL CHyperLink::GetVisited() const
-{ 
-    return m_bVisited; 
-}
-
-void CHyperLink::SetLinkCursor(HCURSOR hCursor)
-{ 
-    m_hLinkCursor = hCursor;
-    if (m_hLinkCursor == NULL)
-        SetDefaultCursor();
-}
-
-HCURSOR CHyperLink::GetLinkCursor() const
-{
-    return m_hLinkCursor;
-}
-
-void CHyperLink::SetUnderline(BOOL bUnderline /* = TRUE */)
-{
-    m_bUnderline = bUnderline;
-
-    if (::IsWindow(GetSafeHwnd()))
-    {
-        LOGFONT lf;
-        GetFont()->GetLogFont(&lf);
-        lf.lfUnderline = m_bUnderline;
-
-        m_Font.DeleteObject();
-        m_Font.CreateFontIndirect(&lf);
-        SetFont(&m_Font);
-
-        Invalidate(); 
-    }
-}
-
-BOOL CHyperLink::GetUnderline() const
-{ 
-    return m_bUnderline; 
-}
-
-void CHyperLink::SetAutoSize(BOOL bAutoSize /* = TRUE */)
-{
-    m_bAdjustToFit = bAutoSize;
-
-    if (::IsWindow(GetSafeHwnd()))
-        PositionWindow();
-}
-
-BOOL CHyperLink::GetAutoSize() const
-{ 
-    return m_bAdjustToFit; 
 }
 
 

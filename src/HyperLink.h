@@ -31,25 +31,8 @@ public:
 public:
 
     void SetURL(CString strURL);
-    CString GetURL() const;
-
-    void SetColours(COLORREF crLinkColour, COLORREF crVisitedColour, 
-                    COLORREF crHoverColour = -1);
-    COLORREF GetLinkColour() const;
-    COLORREF GetVisitedColour() const;
-    COLORREF GetHoverColour() const;
 
     void SetVisited(BOOL bVisited = TRUE);
-    BOOL GetVisited() const;
-
-    void SetLinkCursor(HCURSOR hCursor);
-    HCURSOR GetLinkCursor() const;
-
-    void SetUnderline(BOOL bUnderline = TRUE);
-    BOOL GetUnderline() const;
-
-    void SetAutoSize(BOOL bAutoSize = TRUE);
-    BOOL GetAutoSize() const;
 
 	static HINSTANCE GotoURL(LPCTSTR url, int showcmd);
 
