@@ -47,6 +47,7 @@ public:
 
 private:
     int    Get32BitScrollPos(int bar, CScrollBar* pScrollBar);
+    BOOL   HandleMouseWheel(int scrollBar, UINT nFlags, short zDelta, CPoint pt);
     void   UpdateScrollInfo();
     void   UpdateScrollBar(int bar, int windowSize, int displaySize,
                            LONG& pageSize, LONG& scrollPos, LONG& deltaPos);

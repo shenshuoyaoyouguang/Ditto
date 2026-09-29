@@ -328,14 +328,37 @@ BOOL CScrollHelper::Update(CPoint changes)
 
 BOOL CScrollHelper::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
+    return HandleMouseWheel(SB_VERT, nFlags, zDelta, pt);
+}
+
+BOOL CScrollHelper::OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+    return HandleMouseWheel(SB_HORZ, nFlags, zDelta, pt);
+}
+
+// Shared body for the vertical and horizontal mouse-wheel handlers. scrollBar
+// selects the axis, which also fixes the old OnMouseHWheel bug of testing the
+// vertical scrollbar range for horizontal wheel input.
+BOOL CScrollHelper::HandleMouseWheel(int scrollBar, UINT nFlags, short zDelta, CPoint pt)
+{
     if ( m_attachWnd == NULL )
         return FALSE;
 
-    // Don't do anything if the vertical scrollbar is not enabled.
+    // Don't do anything if the scrollbar is not enabled.
     int scrollMin = 0, scrollMax = 0;
-    m_attachWnd->GetScrollRange(SB_VERT, &scrollMin, &scrollMax);
+    m_attachWnd->GetScrollRange(scrollBar, &scrollMin, &scrollMax);
     if ( scrollMin == scrollMax )
         return FALSE;
+
+    // Scroll up/left messages for SB_VERT, down/right for SB_HORZ share the
+    // same numeric codes, so one set of messages works for both axes.
+    auto doScroll = [this, scrollBar](UINT nSBCode)
+    {
+        if ( scrollBar == SB_VERT )
+            OnVScroll(nSBCode, 0, NULL);
+        else
+            OnHScroll(nSBCode, 0, NULL);
+    };
 
     // Compute the number of scrolling increments requested.
     int numScrollIncrements = abs(zDelta) / WHEEL_DELTA;
@@ -349,8 +372,7 @@ BOOL CScrollHelper::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
     // Check if a page scroll was requested.
     if ( numScrollLinesPerIncrement == WHEEL_PAGESCROLL )
     {
-        // Call the vscroll message handler to do the work.
-        OnVScroll(zDelta > 0 ? SB_PAGEUP : SB_PAGEDOWN, 0, NULL);
+        doScroll(zDelta > 0 ? SB_PAGEUP : SB_PAGEDOWN);
         return TRUE;
     }
 
@@ -363,55 +385,10 @@ BOOL CScrollHelper::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
     // Do the scrolling.
     for(int i = 0; i < numScrollLines; ++i)
     {
-        // Call the vscroll message handler to do the work.
-        OnVScroll(zDelta > 0 ? SB_LINEUP : SB_LINEDOWN, 0, NULL);
+        doScroll(zDelta > 0 ? SB_LINEUP : SB_LINEDOWN);
     }
 
     return TRUE;
-}
-
-BOOL CScrollHelper::OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt)
-{
-	if (m_attachWnd == NULL)
-		return FALSE;
-
-	// Don't do anything if the vertical scrollbar is not enabled.
-	int scrollMin = 0, scrollMax = 0;
-	m_attachWnd->GetScrollRange(SB_VERT, &scrollMin, &scrollMax);
-	if (scrollMin == scrollMax)
-		return FALSE;
-
-	// Compute the number of scrolling increments requested.
-	int numScrollIncrements = abs(zDelta) / WHEEL_DELTA;
-
-	// Each scrolling increment corresponds to a certain number of
-	// scroll lines (one scroll line is like a SB_LINEUP or SB_LINEDOWN).
-	// We need to query the system parameters for this value.
-	int numScrollLinesPerIncrement = 0;
-	::SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &numScrollLinesPerIncrement, 0);
-
-	// Check if a page scroll was requested.
-	if (numScrollLinesPerIncrement == WHEEL_PAGESCROLL)
-	{
-		// Call the vscroll message handler to do the work.		
-		OnHScroll(zDelta > 0 ? SB_PAGEUP : SB_PAGEDOWN, 0, NULL);
-		return TRUE;
-	}
-
-	// Compute total number of lines to scroll.
-	int numScrollLines = numScrollIncrements * numScrollLinesPerIncrement;
-
-	// Adjust numScrollLines to slow down the scrolling a bit more.
-	numScrollLines = max(numScrollLines / 3, 1);
-
-	// Do the scrolling.
-	for (int i = 0; i < numScrollLines; ++i)
-	{
-		// Call the vscroll message handler to do the work.
-		OnHScroll(zDelta > 0 ? SB_LINEUP : SB_LINEDOWN, 0, NULL);
-	}
-
-	return TRUE;
 }
 
 void CScrollHelper::OnSize(UINT nType, int cx, int cy)
