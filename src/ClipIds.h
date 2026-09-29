@@ -25,11 +25,6 @@ public:
 	//  if the id cannot be found, this appends the IDs.
 //	BOOL ReorderGroupInsert( long lParentID, long lInsertBeforeID = 0 );
 
-	// Empties this array and fills it with the elements of the given group ID
-	BOOL LoadElementsOf(int groupId);
-
-	BOOL CopyTo(int parentId);
-
 	BOOL DeleteIDs(bool fromClipWindow, CppSQLite3DB& db);
 
 	BOOL Export(CString csFilePath);
