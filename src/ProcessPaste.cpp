@@ -178,7 +178,6 @@ UINT CProcessPaste::MarkAsPastedThread(LPVOID pParam)
 	Log(_T("Start of MarkAsPastedThread"));
 
 	BOOL bRet = FALSE;
-	int clipId = 0;
 
 	try
 	{
@@ -276,7 +275,7 @@ UINT CProcessPaste::MarkAsPastedThread(LPVOID pParam)
 
 	DWORD endTick = GetTickCount();
 	if((endTick-startTick) > 350)
-		Log(StrF(_T("Paste Timing MarkAsPastedThread: %d, ClipId: %d"), endTick-startTick, clipId));
+		Log(StrF(_T("Paste Timing MarkAsPastedThread: %d"), endTick-startTick));
 
 	UpdateTimeEvent.SetEvent();
 	return bRet;

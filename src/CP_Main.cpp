@@ -307,11 +307,10 @@ BOOL CCP_MainApp::InitInstance()
 		//handled this message
 		//If it didn't handle the message(ditto is not running) then startup this processes of ditto 
 		//disconnected from the clipboard
-		LRESULT ret = 0;
 		HWND hWnd = (HWND)(LONG_PTR)CGetSetOptions::GetMainHWND();
 		if(hWnd)
 		{
-			ret = ::SendMessage(hWnd, WM_OPEN_CLOSE_WINDOW, cmdInfo.m_bOpenWindow, cmdInfo.m_bCloseWindow);
+			::SendMessage(hWnd, WM_OPEN_CLOSE_WINDOW, cmdInfo.m_bOpenWindow, cmdInfo.m_bCloseWindow);
 		}
 
 		return FALSE;		
@@ -323,44 +322,40 @@ BOOL CCP_MainApp::InitInstance()
 		//handled this message
 		//If it didn't handle the message(ditto is not running) then startup this processes of ditto 
 		//disconnected from the clipboard
-		LRESULT ret = 0;
 		HWND hWnd = (HWND)(LONG_PTR)CGetSetOptions::GetMainHWND();
 		if (hWnd)
 		{
-			ret = ::SendMessage(hWnd, WM_CLOSE, NULL, NULL);
+			::SendMessage(hWnd, WM_CLOSE, NULL, NULL);
 		}
 
 		return FALSE;
 	}
 	else if (cmdInfo.m_plainTextPaste)
 	{		
-		LRESULT ret = 0;
 		HWND hWnd = (HWND)(LONG_PTR)CGetSetOptions::GetMainHWND();
 		if (hWnd)
 		{
-			ret = ::SendMessage(hWnd, WM_PLAIN_TEXT_PASTE, NULL, NULL);
+			::SendMessage(hWnd, WM_PLAIN_TEXT_PASTE, NULL, NULL);
 		}
 
 		return FALSE;
 	}
 	else if (cmdInfo.m_pasteClip)
 	{
-		LRESULT ret = 0;
 		HWND hWnd = (HWND)(LONG_PTR)CGetSetOptions::GetMainHWND();
 		if (hWnd)
 		{
-			ret = ::SendMessage(hWnd, WM_PASTE_CLIP, cmdInfo.m_clipID, NULL);
+			::SendMessage(hWnd, WM_PASTE_CLIP, cmdInfo.m_clipID, NULL);
 		}
 
 		return FALSE;
 	}
 	else if (cmdInfo.m_editClip)
 	{
-		LRESULT ret = 0;
 		HWND hWnd = (HWND)(LONG_PTR)CGetSetOptions::GetMainHWND();
 		if (hWnd)
 		{
-			ret = ::SendMessage(hWnd, WM_EDIT_CLIP, cmdInfo.m_clipID, NULL);
+			::SendMessage(hWnd, WM_EDIT_CLIP, cmdInfo.m_clipID, NULL);
 		}
 
 		return FALSE;

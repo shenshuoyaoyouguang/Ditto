@@ -262,7 +262,7 @@ CString TopLevelWindowText(DWORD pid)
 	std::pair<CString, DWORD> params = { _T(""), pid };
 
 	// Enumerate the windows using a lambda to process each window
-	BOOL bResult = EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL
+	EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL
 	{
 		auto pParams = (std::pair<CString, DWORD>*)(lParam);
 
