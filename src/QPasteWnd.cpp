@@ -6551,8 +6551,6 @@ void CQPasteWnd::OnTimer(UINT_PTR nIDEvent)
 	}
 	else if (nIDEvent == TIMER_DRAG_HIDE_WINDOW)
 	{
-		OutputDebugString(_T("drag timer\n"));
-
 		CPoint mouse;
 		GetCursorPos(&mouse);
 
@@ -6568,8 +6566,6 @@ void CQPasteWnd::OnTimer(UINT_PTR nIDEvent)
 	else if (nIDEvent == TIMER_DO_ACTION)
 	{
 		KillTimer(TIMER_DO_ACTION);
-
-		OutputDebugString(StrF(_T("DoActionTimer, cmd: %d"), m_timerAction.Cmd));
 
 		if (m_timerAction.Cmd > 0)
 		{
