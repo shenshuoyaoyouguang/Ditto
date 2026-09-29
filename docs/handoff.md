@@ -175,3 +175,31 @@ CI 配置：`.github/workflows/pull_request.yml`（`windows-latest` + `nuget res
 ## 8. 附录：已执行项明细
 
 详见 PR #3 提交信息（commit `bf452af`）与上文 Pass 1/2/3 分类。完整 diff：`git diff myfork/master...myfork/deslop/src-cleanup`。
+
+## 9. 执行结果（2026-09-29）
+
+§3 剩余的 19 项任务已**全部执行完毕**：每项独立分支 → PR → CI（MSBuild Release x64）绿后合入 `master`。前置：PR #3 评审发现的 `src/Slugify.h` `trim(input)` 回归已先修复（commit b6f361d）。
+
+| 任务 | PR | 备注 |
+|---|---|---|
+| P0 #1 崩溃后门 | [#4](https://github.com/shenshuoyaoyouguang/Ditto/pull/4) | 连同 `csText`/`GetWindowText`/`signal.h` 一并删除 |
+| P1 #2 OnTimer 调试输出 | [#10](https://github.com/shenshuoyaoyouguang/Ditto/pull/10) | 两处裸 `OutputDebugString` |
+| P1 #3 未使用局部变量 | [#5](https://github.com/shenshuoyaoyouguang/Ditto/pull/5) | CP_Main×5 块、ProcessPaste clipId+Log 参数、Misc bResult、SimpleBrowser×9（BeforeNavigate2 有使用，保留） |
+| P1 #4 恒真分支 | [#6](https://github.com/shenshuoyaoyouguang/Ditto/pull/6) | |
+| P1 #5 死分支 | [#7](https://github.com/shenshuoyaoyouguang/Ditto/pull/7) | |
+| P1 #6 Misc 死函数链 | [#11](https://github.com/shenshuoyaoyouguang/Ditto/pull/11) | `IsVista` 保留（ClipboardViewer 仍使用） |
+| P1 #7 ClipIds 死函数 | [#8](https://github.com/shenshuoyaoyouguang/Ditto/pull/8) | |
+| P1 #8 CppSQLite3 死 API | [#9](https://github.com/shenshuoyaoyouguang/Ditto/pull/9) | encode/decode_binary、tableExists、execScalarEx、getBlobFieldSize、fieldDeclType、interrupt |
+| P2 #9 DoPaste 族合并 | [#14](https://github.com/shenshuoyaoyouguang/Ditto/pull/14) | 单一 `OpenSelectionWithOption` + 14 个单行封装；首次 CI 失败（漏恢复声明）后补齐 |
+| P2 #10 HslToRgb 去重 | [#12](https://github.com/shenshuoyaoyouguang/Ditto/pull/12) | 保留 double 版，声明移至 Theme.h |
+| P2 #11 MoveUp/MoveDown | [#13](https://github.com/shenshuoyaoyouguang/Ditto/pull/13) | `GetNeighborMoveOrder(up, …)` 参数化 8 个同构查询分支 |
+| P2 #12 CSystemTray | [#15](https://github.com/shenshuoyaoyouguang/Ditto/pull/15) | 类文件 + 工程条目 + MainFrm.h 注释 |
+| P2 #13 废弃属性页 | [#21](https://github.com/shenshuoyaoyouguang/Ditto/pull/21) | IDD 2006/2007 无复用；.rc 对话框模板保留 |
+| P2 #14 Options setter 群 | [#19](https://github.com/shenshuoyaoyouguang/Ditto/pull/19) | 实测 16 个零调用 setter（文档预估约 20） |
+| P2 #15 控件 getter 群 | [#20](https://github.com/shenshuoyaoyouguang/Ditto/pull/20) | RichEditCtrlEx 21 个 + HyperLink 11 个；内部互调的 GetCharFormat/SetVisited/PositionWindow/SetDefaultCursor 保留 |
+| P2 #16 alt-image 机制 | [#17](https://github.com/shenshuoyaoyouguang/Ditto/pull/17) | 灰度禁用态（EnableButton/m_dcGS）保留 |
+| P2 #17 滚轮合并 | [#18](https://github.com/shenshuoyaoyouguang/Ditto/pull/18) | 顺带修 `OnMouseHWheel` 误用 `SB_VERT` 的横向滚轮 bug |
+| P3 #18 getter 用错 | [#16](https://github.com/shenshuoyaoyouguang/Ditto/pull/16) | 行为修复 |
+| P3 #19 Format 缺占位符 | — | 目标文件已随 P2 #13 删除，问题随之消失 |
+
+**遗留**：项目无 GUI 自动化测试，仍需按 §3 各项说明做人工冒烟（重点：排序/移动 clip——P2 #11 重构了排序路径；特殊粘贴菜单——P2 #9；横向滚轮——P2 #17；选项对话框——P2 #13）。发现未处理的关联死代码：`RichEditCtrlEx.h` 的 `m_saFontList` 成员已无使用者；`DeleteClipData.cpp` 列 2 排序忽略 `desc`（既有 bug）。
