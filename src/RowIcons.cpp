@@ -24,8 +24,8 @@ void CRowIcons::Draw(HDC hdc, CDPI &dpi, ClipRowIcon icon, const CRect &rc, COLO
 	// scale the 16 unit design grid into the destination rect
 	Gdiplus::Matrix previous;
 	graphics.GetTransform(&previous);
-	graphics.TranslateTransform((Gdiplus::REAL)rc.left, (Gdiplus::REAL)rc.top);
 	Gdiplus::REAL scale = min(rc.Width(), rc.Height()) / 16.0f;
+	graphics.TranslateTransform((Gdiplus::REAL)rc.left, rc.top + (rc.Height() - 16.0f * scale) / 2.0f);
 	graphics.ScaleTransform(scale, scale);
 
 	DrawIcon(graphics, icon, pen);

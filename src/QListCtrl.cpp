@@ -705,7 +705,10 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			CSize szMeta = pDC->GetTextExtent(csMeta);
 			int nMetaRight = rcItem.right - m_windowDpi->Scale(6);
 			CRect rcMeta(nMetaRight - szMeta.cx, rcItem.top, nMetaRight, rcItem.bottom);
-			COLORREF crOldMeta = pDC->SetTextColor(CGetSetOptions::m_Theme.FaintText());
+			COLORREF crMeta = CGetSetOptions::m_Theme.FaintText();
+			if (rItem.state & LVIS_SELECTED)
+				crMeta = bListHasFocus ? CGetSetOptions::m_Theme.ListBoxSelectedText() : CGetSetOptions::m_Theme.ListBoxSelectedNoFocusText();
+			COLORREF crOldMeta = pDC->SetTextColor(crMeta);
 			pDC->DrawText(csMeta, rcMeta, DT_RIGHT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 			pDC->SetTextColor(crOldMeta);
 			pDC->SelectObject(hOldMetaFont);

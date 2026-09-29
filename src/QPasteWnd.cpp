@@ -691,7 +691,7 @@ void CQPasteWnd::MoveControls()
 	int searchRowTop = m_DittoWindow.m_dpi.Scale(5);
 	int searchRowHeight = m_DittoWindow.m_dpi.Scale(25);
 	int chipRowTop = searchRowTop + searchRowHeight + m_DittoWindow.m_dpi.Scale(2);
-	int chipRowHeight = m_chipBar.GetBarHeight();
+	int chipRowHeight = m_chipBar.GetBarHeight(cx - sidebarW);
 	int topOfListBox = chipRowTop + chipRowHeight + m_DittoWindow.m_dpi.Scale(4);
 
 	m_search.MoveWindow(sidebarW + m_DittoWindow.m_dpi.Scale(34), searchRowTop, cx - sidebarW - m_DittoWindow.m_dpi.Scale(70), searchRowHeight);
@@ -1733,6 +1733,7 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 		CString csTypeFilter = GetTypeFilterSql(m_nChipFilter);
 		if (csTypeFilter.GetLength() > 0)
 		{
+			csTypeFilter = _T("Main.bIsGroup = 1 OR (Main.bIsGroup = 0 AND ") + csTypeFilter + _T(")");
 			if (strFilter.GetLength() > 0 && strFilter != _T("()"))
 				strFilter = _T("(") + strFilter + _T(") AND (") + csTypeFilter + _T(")");
 			else
@@ -1753,20 +1754,18 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 		_T("where %s order by %s"), IsDistinct, dataJoin, strFilter, csSort);
 
 
-	{
-		ATL::CCritSecLock csLock(m_CritSection.m_sect);
-		m_listItems.clear();
-	}
-
 	m_noSearchResults = false;
 	m_lstHeader.SetItemCount(0);
 	m_lstHeader.RefreshVisibleRows();
 
-	CPoint loadItem(-1, m_lstHeader.GetCountPerPage() + 2);
-	m_loadItems.push_back(loadItem);
-
-	m_thread.SetSearchSql(sql, countSql, m_csBaseFilter,
-		StrF(_T("SELECT COUNT(%s Main.lID) FROM Main %s where"), IsDistinct, dataJoin));
+	{
+		ATL::CCritSecLock csLock(m_CritSection.m_sect);
+		m_thread.SetSearchSql(sql, countSql, m_csBaseFilter,
+			StrF(_T("SELECT COUNT(%s Main.lID) FROM Main %s where"), IsDistinct, dataJoin));
+		m_listItems.clear();
+		m_loadItems.clear();
+		m_loadItems.push_back(CPoint(-1, m_lstHeader.GetCountPerPage() + 2));
+	}
 	m_thread.FireLoadItems(true);
 
 	MoveControls();
@@ -4013,7 +4012,7 @@ bool CQPasteWnd::DoActionCloseWindow()
 			Log(_T("close 2"));
 			ret = true;
 		}
-		else if (m_strSQLSearch.IsEmpty() == FALSE)
+		else if (m_strSQLSearch.IsEmpty() == FALSE || m_nChipFilter != 0)
 		{
 			OnCancelFilter(0, 0);
 			Log(_T("close 3"));
@@ -4182,6 +4181,8 @@ bool CQPasteWnd::DoModifierActiveActionMoveLast()
 bool CQPasteWnd::DoActionCancelFilter()
 {
 	m_bShowStarredClips = false;
+	m_nChipFilter = 0;
+	m_chipBar.SetSelected(0);
 
 	FillList();
 
@@ -6426,6 +6427,9 @@ void CQPasteWnd::OnUpdateMenuNewclip(CCmdUI* pCmdUI)
 
 LRESULT CQPasteWnd::OnSetListCount(WPARAM wParam, LPARAM lParam)
 {
+	if (!m_thread.IsCurrentSearch((UINT_PTR)lParam))
+		return 0;
+
 	m_noSearchResults = false;
 
 	int x = m_lstHeader.GetScrollPos(SB_HORZ);
@@ -6468,12 +6472,18 @@ LRESULT CQPasteWnd::OnSetTypeCounts(WPARAM wParam, LPARAM lParam)
 	int *pCounts = (int*)wParam;
 	if (pCounts != NULL)
 	{
+		if (!m_thread.IsCurrentSearch((UINT_PTR)lParam))
+		{
+			delete[] pCounts;
+			return 0;
+		}
 		// array order: image, file, link, text; chip order: all, text, image, file, link
 		m_chipBar.SetChipCount(1, pCounts[3]);
 		m_chipBar.SetChipCount(2, pCounts[0]);
 		m_chipBar.SetChipCount(3, pCounts[1]);
 		m_chipBar.SetChipCount(4, pCounts[2]);
 		delete[] pCounts;
+		MoveControls();
 	}
 	return 0;
 }
@@ -6483,7 +6493,9 @@ LRESULT CQPasteWnd::OnTypeFilterChanged(WPARAM wParam, LPARAM lParam)
 	if ((int)wParam != m_nChipFilter)
 	{
 		m_nChipFilter = (int)wParam;
-		FillList(m_strSearch);
+		CString searchText;
+		m_search.GetWindowText(searchText);
+		FillList(searchText);
 	}
 	return 0;
 }
@@ -6492,7 +6504,7 @@ CString CQPasteWnd::GetTypeFilterSql(int nChip)
 {
 	// keep these in sync with CRowIcons::Classify (ui-redesign)
 	const TCHAR *csImage = _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')");
-	const TCHAR *csFile = _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')");
+	const TCHAR *csFile = _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:[\\/]*' OR Main.mText GLOB '\\\\*')");
 	const TCHAR *csLink = _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')");
 
 	switch (nChip)

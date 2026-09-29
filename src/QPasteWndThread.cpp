@@ -6,6 +6,7 @@
 #include "cp_main.h"
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 CQPasteWndThread::CQPasteWndThread(void)
 {
@@ -69,47 +70,52 @@ void CQPasteWndThread::OnSetListCount(void *param)
     ResetEvent(m_SearchingEvent);
     long lTick = GetTickCount();
 
-	CString countSQL = m_countSql;
+    CString countSQL, baseFilter, countPrefix;
+    UINT_PTR generation;
+    {
+        ATL::CCritSecLock csLock(m_searchLock.m_sect);
+        countSQL = m_countSql;
+        baseFilter = m_baseFilter;
+        countPrefix = m_countPrefix;
+        generation = m_searchGeneration;
+    }
 
     long lRecordCount = 0;
 
     try
     {
         lRecordCount = theApp.m_db.execScalar(countSQL);
-        ::PostMessage(pasteWnd->m_hWnd, NM_SET_LIST_COUNT, lRecordCount, 0);
+        ATL::CCritSecLock csLock(m_searchLock.m_sect);
+        if (generation == m_searchGeneration)
+            ::PostMessage(pasteWnd->m_hWnd, NM_SET_LIST_COUNT, lRecordCount, (LPARAM)generation);
     }
     CATCH_SQLITE_EXCEPTION
 
-    // per chip counts for the type filter bar, base filter without the chip filter applied (ui-redesign)
-    if (m_countPrefix.GetLength() > 0 && m_baseFilter.GetLength() > 0)
+    // Use one search snapshot and the same predicates as the list filter.
+    if (!countPrefix.IsEmpty() && !baseFilter.IsEmpty() && IsCurrentSearch(generation))
     {
-        const TCHAR *csConds[4] =
-        {
-            // image, file, link, text = everything else, keep in sync with CRowIcons::Classify
-            _T("(Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')"),
-            _T("(Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*')"),
-            _T("(Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%')"),
-            _T("(NOT (Main.mText LIKE 'CF_DIB%' OR Main.mText LIKE 'PNG%' OR Main.mText LIKE 'image/%')")
-                _T(" OR Main.mText LIKE 'Copied File%' OR Main.mText GLOB '[A-Za-z]:\\*' OR Main.mText GLOB '\\\\*'")
-                _T(" OR Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'ftp://%' OR Main.mText LIKE 'www.%'))"),
-        };
-
-        int *pCounts = new int[4];
-
         try
         {
+            std::unique_ptr<int[]> counts(new int[4]);
+            const int chips[] = { 2, 3, 4, 1 }; // image, file, link, text
             for (int i = 0; i < 4; i++)
             {
                 CString csChipSql;
-                csChipSql.Format(_T("%s (%s) AND %s"), m_countPrefix, m_baseFilter, csConds[i]);
-                pCounts[i] = (int)theApp.m_db.execScalar(csChipSql);
+                csChipSql.Format(_T("%s (%s) AND Main.bIsGroup = 0 AND %s"),
+                    countPrefix, baseFilter, CQPasteWnd::GetTypeFilterSql(chips[i]));
+                counts[i] = (int)theApp.m_db.execScalar(csChipSql);
+            }
+
+            ATL::CCritSecLock csLock(m_searchLock.m_sect);
+            if (generation == m_searchGeneration &&
+                ::PostMessage(pasteWnd->m_hWnd, NM_SET_TYPE_COUNTS, (WPARAM)counts.get(), (LPARAM)generation))
+            {
+                // Transfer ownership only after every query and the post succeed.
+                counts.release();
             }
         }
         CATCH_SQLITE_EXCEPTION
-
-        // the receiver frees the array
-        ::PostMessage(pasteWnd->m_hWnd, NM_SET_TYPE_COUNTS, (WPARAM)pCounts, 0);
-    } 
+    }
 
     SetEvent(m_SearchingEvent);
 
@@ -128,7 +134,8 @@ void CQPasteWndThread::OnLoadItems(void *param)
 	    int loadItemsIndex = 0;
 	    int loadItemsCount = 0;
 	    int loadCount = 0;
-		CString localSql = m_sql;
+		CString localSql;
+		UINT_PTR generation = 0;
 	    bool clearFirstLoadItem = false;
 		bool firstLoad = false;
 		int listSize = 0;
@@ -138,6 +145,10 @@ void CQPasteWndThread::OnLoadItems(void *param)
 
 		    if(pasteWnd->m_loadItems.size() > 0)
 		    {
+				// FillList replaces SQL and queued requests under the same list lock.
+				ATL::CCritSecLock searchLock(m_searchLock.m_sect);
+				localSql = m_sql;
+				generation = m_searchGeneration;
 				firstLoad = (pasteWnd->m_loadItems.begin()->x == -1);
 		        loadItemsIndex = max(pasteWnd->m_loadItems.begin()->x, 0);
 		        loadItemsCount = pasteWnd->m_loadItems.begin()->y - pasteWnd->m_loadItems.begin()->x;
@@ -169,6 +180,9 @@ void CQPasteWndThread::OnLoadItems(void *param)
 
 					{
 						ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
+
+						if (!IsCurrentSearch(generation) || pasteWnd->m_bStopQuery)
+							break;
 
 						if (pos < pasteWnd->m_listItems.size())
 						{
@@ -203,12 +217,6 @@ void CQPasteWndThread::OnLoadItems(void *param)
 						}
 					}
 
-					if(pasteWnd->m_bStopQuery)
-					{
-						Log(StrF(_T("StopQuery called exiting filling cache count = %d"), loadItemsIndex));
-						break;
-					}
-
 					q.nextRow();
 
 					if(firstLoad == false)
@@ -225,6 +233,14 @@ void CQPasteWndThread::OnLoadItems(void *param)
 					loadCount++;
 					pos++;
 				}
+
+				{
+					ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
+					if (pasteWnd->m_bStopQuery)
+						break;
+				}
+				if (!IsCurrentSearch(generation))
+					continue;
 
 				DWORD loadCount = GetTickCount() - startTick;
 				DWORD countCountStart = GetTickCount();
@@ -254,7 +270,8 @@ void CQPasteWndThread::OnLoadItems(void *param)
 				{
 					ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
 
-					pasteWnd->m_loadItems.erase(pasteWnd->m_loadItems.begin());
+					if (IsCurrentSearch(generation) && !pasteWnd->m_loadItems.empty())
+						pasteWnd->m_loadItems.erase(pasteWnd->m_loadItems.begin());
 				}
 
 				Log(StrF(_T("Load items End count = %d, Total Time = %d, LoadItems: %d, Count: %d, Accel: %d"), loadCount, GetTickCount() - startTick, loadCount, countCount, acceleratorCount));

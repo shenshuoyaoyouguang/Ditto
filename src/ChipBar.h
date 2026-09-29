@@ -20,19 +20,24 @@ public:
 	void SetSelected(int nIndex);
 	int GetSelected() const { return m_nSelected; }
 
-	int GetBarHeight();
+	int GetBarHeight(int width = -1);
+	virtual BOOL PreTranslateMessage(MSG *pMsg);
 
 protected:
 	afx_msg void OnPaint();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg UINT OnGetDlgCode();
+	afx_msg void OnSetFocus(CWnd *pOldWnd);
+	afx_msg void OnKillFocus(CWnd *pNewWnd);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnMouseLeave();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 
 	DECLARE_MESSAGE_MAP()
 
-	void Layout();
+	int Layout(int width = -1);
 	int HitTest(CPoint point);
 	void GetChipColors(COLORREF &crBG, COLORREF &crText, int nIndex) const;
 
