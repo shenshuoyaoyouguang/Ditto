@@ -90,8 +90,6 @@ void logsendrecieveinfo(CString cs, CString csFile = _T(""), long lLine = -1);
 // Utility Functions
 CString StrF(const TCHAR * pszFormat, ...);
 // called after determining that the preceding character is a backslash
-BYTE GetEscapeChar( BYTE ch );
-CString RemoveEscapes( const TCHAR* str );
 
 CString GetWndText( HWND hWnd );
 // returns true if the given window is owned by this process
@@ -181,7 +179,6 @@ __inline BOOL FileExists(LPCTSTR pszFile)
 	return (GetFileAttributes(pszFile) != 0xffffffff); 
 }
 
-bool IsRunningLimited();
 BOOL IsVista();
 
 void DeleteDittoTempFiles(BOOL checkFileLastAccess);
