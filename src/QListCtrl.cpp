@@ -721,22 +721,48 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		if (DrawRtfText(nItem, rcText, pDC) == FALSE)
 		{
 			auto highlightColor = CGetSetOptions::m_Theme.SearchTextHighlight();
+
+			bool bSingleLine = (m_linesPerRow == 1);
+			CSize szPlain(0, 0);
+
+			// single-line rows clip their overflow; DrawHTML has no ellipsis
+			// support and even grows its MaxWidth for long words, so truncate
+			// the plain text up front (ui-redesign)
+			if (bSingleLine && csText.GetLength() > 0)
+			{
+				int nFit = 0;
+				if (::GetTextExtentExPoint(pDC->GetSafeHdc(), csText, csText.GetLength(), rcText.Width(), &nFit, NULL, &szPlain) &&
+					nFit >= 0 && nFit < csText.GetLength())
+				{
+					if (nFit > 1)
+						csText = csText.Left(nFit - 1) + _T("\u2026");
+					else if (nFit == 1)
+						csText = csText.Left(1);
+					else
+						csText.Empty();
+				}
+			}
+
 			//use unprintable characters so it doesn't find copied html to convert
 			if (m_searchText.GetLength() > 0 &&
 				FindNoCaseAndInsert(csText, m_searchText, StrF(_T("\x01\x04 color='#%02x%02x%02x'\x02"), GetRValue(highlightColor), GetGValue(highlightColor), GetBValue(highlightColor)), _T("\x01\x03\x04\x02"), m_linesPerRow) > 0)
 			{
-				UINT nHTMLFlags = DT_EXPANDTABS | DT_NOPREFIX;
-				if (m_linesPerRow == 1)
-					nHTMLFlags |= DT_SINGLELINE | DT_END_ELLIPSIS;
-				else
-					nHTMLFlags |= DT_VCENTER;
-				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcText, nHTMLFlags);
+				CRect rcHTML = rcText;
+				if (bSingleLine)
+				{
+					// DrawHTML flows from the rect top and ignores DT_VCENTER,
+					// center the measured line manually (ui-redesign)
+					if (szPlain.cy == 0)
+						szPlain = pDC->GetTextExtent(csText);
+					rcHTML.top += max(0, (rcText.Height() - szPlain.cy) / 2);
+				}
+				DrawHTML(pDC->m_hDC, csText, csText.GetLength(), rcHTML, DT_EXPANDTABS | DT_NOPREFIX);
 			}
 			else
 			{
-				UINT nFlags = DT_EXPANDTABS | DT_NOPREFIX;
-				if (m_linesPerRow == 1)
-					nFlags |= DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS;
+				UINT nFlags = DT_VCENTER | DT_EXPANDTABS | DT_NOPREFIX;
+				if (bSingleLine)
+					nFlags |= DT_SINGLELINE | DT_END_ELLIPSIS;
 				pDC->DrawText(csText, rcText, nFlags);
 			}
 		}

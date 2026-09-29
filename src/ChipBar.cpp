@@ -221,18 +221,27 @@ void CChipBar::OnPaint()
 		if (!csCount.IsEmpty())
 			csFull += CString(_T("  ")) + csCount;
 		CSize szAll = dc.GetTextExtent(csFull);
-		CSize szLabel = dc.GetTextExtent(csLabel);
-		int nTextLeft = rcChip.left + (rcChip.Width() - szAll.cx) / 2;
-		rcChip.left = nTextLeft;
 
 		COLORREF crOldText = dc.SetTextColor(crText);
-		dc.DrawText(csLabel, rcChip, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
-		if (!csCount.IsEmpty())
+		if (szAll.cx > rcChip.Width())
 		{
-			CRect rcCount(rcChip);
-			rcCount.left = nTextLeft + szLabel.cx + (szAll.cx - szLabel.cx - dc.GetTextExtent(csCount).cx);
-			dc.SetTextColor(CGetSetOptions::m_Theme.FaintText());
-			dc.DrawText(csCount, rcCount, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+			// does not fit: fall back to a centered, clipped label without count
+			dc.DrawText(csLabel, rcChip, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+		}
+		else
+		{
+			CSize szLabel = dc.GetTextExtent(csLabel);
+			int nTextLeft = rcChip.left + (rcChip.Width() - szAll.cx) / 2;
+			CRect rcLabel(rcChip);
+			rcLabel.left = nTextLeft;
+			dc.DrawText(csLabel, rcLabel, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+			if (!csCount.IsEmpty())
+			{
+				CRect rcCount(rcChip);
+				rcCount.left = nTextLeft + szLabel.cx + (szAll.cx - szLabel.cx - dc.GetTextExtent(csCount).cx);
+				dc.SetTextColor(CGetSetOptions::m_Theme.FaintText());
+				dc.DrawText(csCount, rcCount, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+			}
 		}
 		dc.SetTextColor(crOldText);
 		if (GetFocus() == this && (int)i == m_nSelected)

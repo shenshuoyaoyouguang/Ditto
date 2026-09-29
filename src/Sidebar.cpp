@@ -118,6 +118,14 @@ void CSidebar::Layout()
 	}
 
 	m_rcTree = CRect(x - m_dpi->Scale(4), y, rcClient.Width() - m_dpi->Scale(2), yBottom - m_dpi->Scale(8));
+
+	// rows moved under the cursor; the stored hover hit no longer matches it
+	if (m_nHoverItem >= 0)
+	{
+		m_nHoverItem = -1;
+		m_bHoverBottom = false;
+		Invalidate(FALSE);
+	}
 }
 
 CRect CSidebar::GetTreeRect()
@@ -191,6 +199,10 @@ void CSidebar::OnPaint()
 
 	CRect rcClient;
 	GetClientRect(rcClient);
+
+	// hover changes invalidate without erasing, repaint the background here
+	// so the previous row highlight cannot stay on screen (ui-redesign)
+	dc.FillSolidRect(rcClient, theme.SidebarBG());
 
 	CFont *pFont = GetParent() ? GetParent()->GetFont() : GetFont();
 	CFont *pOldFont = dc.SelectObject(pFont);

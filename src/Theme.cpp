@@ -35,8 +35,8 @@ void CTheme::LoadDefaults()
 	m_CaptionLeftTopMost = RGB(243, 243, 243);
 	m_CaptionRightTopMost = RGB(243, 243, 243);
 
-	m_CaptionLeftNotConnected = RGB(237, 94, 94);
-	m_CaptionRightNotConnected = RGB(237, 94, 94);
+	m_CaptionLeftNotConnected = RGB(255, 255, 255);
+	m_CaptionRightNotConnected = RGB(255, 255, 0);
 
 	m_CaptionTextColor = RGB(110, 110, 110);
 	m_ListBoxOddRowsBG = RGB(243, 243, 243);
@@ -52,7 +52,8 @@ void CTheme::LoadDefaults()
 	m_mainWindowBG = RGB(243, 243, 243);
 	m_searchTextBoxFocusBG = RGB(255, 255, 255);
 	m_searchTextBoxFocusText = RGB(27, 27, 27);
-	m_searchTextBoxFocusBorder = RGB(227, 227, 227);
+	// focused border doubles as the focus cue, keep it clearly apart from SearchBoxBorder
+	m_searchTextBoxFocusBorder = RGB(0, 103, 192);
 	m_searchTextHighlight = RGB(0, 103, 192);
 
 	m_groupTreeBG = RGB(251, 251, 251);

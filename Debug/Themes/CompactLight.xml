@@ -19,7 +19,7 @@
 	<MainWindowBG>RGB(243,243,243)</MainWindowBG>
 	<SearchTextBoxFocusBG>RGB(255,255,255)</SearchTextBoxFocusBG>
 	<SearchTextBoxFocusText>RGB(27,27,27)</SearchTextBoxFocusText>
-	<SearchTextBoxFocusBorder>RGB(227,227,227)</SearchTextBoxFocusBorder>
+	<SearchTextBoxFocusBorder>RGB(0,103,192)</SearchTextBoxFocusBorder>
 	<SearchTextHighlight>RGB(0,103,192)</SearchTextHighlight>
 	<Border>RGB(217,217,217)</Border>
 	<BorderTopMost>RGB(217,217,217)</BorderTopMost>
