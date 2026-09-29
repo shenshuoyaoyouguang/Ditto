@@ -2241,6 +2241,16 @@ BOOL CGetSetOptions::GetUseModernScrollBar()
 	return GetProfileLong(_T("UseModernScrollBar"), TRUE);
 }
 
+void CGetSetOptions::SetShowSidebar(BOOL val)
+{
+	SetProfileLong(_T("ShowSidebar"), val);
+}
+
+BOOL CGetSetOptions::GetShowSidebar()
+{
+	return GetProfileLong(_T("ShowSidebar"), TRUE);
+}
+
 void CGetSetOptions::SetPasteAsAdmin(BOOL val)
 {
 	SetProfileLong(_T("PasteAsAdmin"), val);

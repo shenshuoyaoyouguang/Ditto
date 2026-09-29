@@ -2,6 +2,7 @@
 
 #include "QListCtrl.h"
 #include "ChipBar.h"
+#include "Sidebar.h"
 #include "SearchEditBox.h"
 #include "WndEx.h"
 #include "GroupStatic.h"
@@ -133,6 +134,9 @@ public:
     CQListCtrl m_lstHeader;
     CChipBar m_chipBar;
     int m_nChipFilter;
+    CSidebar m_sidebar;
+    BOOL m_bSidebarVisible;
+    void ShowSidebar(BOOL bShow);
 
     CAlphaBlend m_Alpha;
 	//CEditWithButton m_search;
@@ -456,6 +460,7 @@ protected:
 	afx_msg LRESULT OnSetListCount(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSetTypeCounts(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnTypeFilterChanged(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSidebarNav(WPARAM wParam, LPARAM lParam);
 	CString GetTypeFilterSql(int nChip);
     afx_msg HBRUSH CtlColor(CDC *pDC, UINT nCtlColor);
     afx_msg void OnNcLButtonDblClk(UINT nHitTest, CPoint point);

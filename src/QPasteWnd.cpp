@@ -49,6 +49,7 @@ static char THIS_FILE[] = __FILE__;
 #define ID_SYSTEM_BUTTON		0x210
 #define ID_NO_SEARCH_RESULTS	0x211
 #define ID_CHIP_BAR				0x212
+#define ID_SIDEBAR				0x213
 
 
 #define QPASTE_WIDTH			200
@@ -89,6 +90,7 @@ CQPasteWnd::CQPasteWnd()
 	m_pendingRefresh = false;
 	m_lastNonActiveMouseMove = 0;
 	m_nChipFilter = 0;
+	m_bSidebarVisible = FALSE;
 }
 
 CQPasteWnd::~CQPasteWnd()
@@ -215,6 +217,7 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_MESSAGE(NM_SET_LIST_COUNT, OnSetListCount)
 	ON_MESSAGE(NM_SET_TYPE_COUNTS, OnSetTypeCounts)
 	ON_MESSAGE(NM_TYPE_FILTER_CHANGED, OnTypeFilterChanged)
+	ON_MESSAGE(NM_SIDEBAR_NAV, OnSidebarNav)
 	ON_MESSAGE(NM_REFRESH_ROW, OnRefeshRow)
 	ON_MESSAGE(NM_ITEM_DELETED, OnItemDeleted)
 	ON_WM_TIMER()
@@ -468,8 +471,22 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		CGetSetOptions::m_Theme.ScrollBarThumbHover()
 	);
 
+	// docked left sidebar (ui-redesign)
+	m_sidebar.Create(this, ID_SIDEBAR, &m_DittoWindow.m_dpi);
+	m_sidebar.SetDpiInfo(&m_DittoWindow.m_dpi);
+	{
+		std::vector<CString> csNav;
+		csNav.push_back(theApp.m_Language.GetString(_T("NavHistory"), _T("History")));
+		m_sidebar.SetNavItems(csNav);
+
+		std::vector<CString> csBottom;
+		csBottom.push_back(theApp.m_Language.GetString(_T("NavFriends"), _T("Friends")));
+		m_sidebar.SetBottomItems(csBottom);
+	}
+
 	((CWnd*)&m_GroupTree)->CreateEx(NULL, _T("SysTreeView32"), NULL, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS, CRect(0, 0, 100, 100), this, 0);
-	m_GroupTree.ModifyStyle(WS_CAPTION | WS_TABSTOP, 0);
+	m_GroupTree.ModifyStyle(WS_CAPTION | WS_TABSTOP, WS_CHILD);
+	m_GroupTree.SetParent(&m_sidebar);
 
 	m_GroupTree.SetNotificationWndEx(m_hWnd);
 	m_GroupTree.ShowWindow(SW_HIDE);
@@ -658,27 +675,34 @@ void CQPasteWnd::MoveControls()
 	int cy = crRect.Height();
 
 	// Search row sits at the top of the window, chips below it, the list fills the rest (ui-redesign)
+	int sidebarW = m_bSidebarVisible ? m_sidebar.GetWidth() : 0;
+	m_sidebar.MoveWindow(0, 0, sidebarW, cy);
+	if (m_bSidebarVisible)
+	{
+		m_GroupTree.MoveWindow(m_sidebar.GetTreeRect());
+	}
+
 	int searchRowTop = m_DittoWindow.m_dpi.Scale(5);
 	int searchRowHeight = m_DittoWindow.m_dpi.Scale(25);
 	int chipRowTop = searchRowTop + searchRowHeight + m_DittoWindow.m_dpi.Scale(2);
 	int chipRowHeight = m_chipBar.GetBarHeight();
 	int topOfListBox = chipRowTop + chipRowHeight + m_DittoWindow.m_dpi.Scale(4);
 
-	m_search.MoveWindow(m_DittoWindow.m_dpi.Scale(34), searchRowTop, cx - m_DittoWindow.m_dpi.Scale(70), searchRowHeight);
+	m_search.MoveWindow(sidebarW + m_DittoWindow.m_dpi.Scale(34), searchRowTop, cx - sidebarW - m_DittoWindow.m_dpi.Scale(70), searchRowHeight);
 
 	m_systemMenu.MoveWindow(cx - m_DittoWindow.m_dpi.Scale(30), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
 
-	m_ShowGroupsFolderBottom.MoveWindow(m_DittoWindow.m_dpi.Scale(4), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
+	m_ShowGroupsFolderBottom.MoveWindow(sidebarW + m_DittoWindow.m_dpi.Scale(4), searchRowTop, m_DittoWindow.m_dpi.Scale(24), searchRowHeight);
 
-	m_chipBar.MoveWindow(0, chipRowTop, cx, chipRowHeight);
+	m_chipBar.MoveWindow(sidebarW, chipRowTop, cx - sidebarW, chipRowHeight);
 
 	if (theApp.m_GroupID > 0 && m_bShowStarredClips == false)
 	{
 		m_stGroup.ShowWindow(SW_SHOW);
 		m_BackButton.ShowWindow(SW_SHOW);
 
-		m_BackButton.MoveWindow(m_DittoWindow.m_dpi.Scale(4), topOfListBox, m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
-		m_stGroup.MoveWindow(m_DittoWindow.m_dpi.Scale(24), topOfListBox, cx - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(16));
+		m_BackButton.MoveWindow(sidebarW + m_DittoWindow.m_dpi.Scale(4), topOfListBox, m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
+		m_stGroup.MoveWindow(sidebarW + m_DittoWindow.m_dpi.Scale(24), topOfListBox, cx - sidebarW - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(16));
 
 		topOfListBox += m_DittoWindow.m_dpi.Scale(20);
 	}
@@ -705,7 +729,7 @@ void CQPasteWnd::MoveControls()
 		CRect r;
 		m_lstHeader.GetWindowRect(&r);
 
-		rgnRect.CreateRectRgn(0, 0, cx, (cy - listBoxBottomOffset - topOfListBox) );
+		rgnRect.CreateRectRgn(0, 0, cx - sidebarW, (cy - listBoxBottomOffset - topOfListBox) );
 
 		m_lstHeader.SetWindowRgn(rgnRect, TRUE);
 	}
@@ -724,14 +748,14 @@ void CQPasteWnd::MoveControls()
 		m_modernScrollBarHorz.ShowWindow(SW_HIDE);
 
 		auto border = m_DittoWindow.m_dpi.Scale(10);
-		m_noSearchResultsStatic.MoveWindow(border, topOfListBox + border, cx - border, cy - listBoxBottomOffset - topOfListBox + 1 - border);
+		m_noSearchResultsStatic.MoveWindow(sidebarW + border, topOfListBox + border, cx - sidebarW - border * 2, cy - listBoxBottomOffset - topOfListBox + 1 - border * 2);
 	}
 	else
 	{
 		m_lstHeader.ShowWindow(SW_SHOW);
 		m_noSearchResultsStatic.ShowWindow(SW_HIDE);
 
-		m_lstHeader.MoveWindow(0, topOfListBox, cx + extraSize, cy - listBoxBottomOffset - topOfListBox + extraSize + 1);
+		m_lstHeader.MoveWindow(sidebarW, topOfListBox, cx - sidebarW + extraSize, cy - listBoxBottomOffset - topOfListBox + extraSize + 1);
 		
 		// Update modern scrollbar position and visibility (only if enabled)
 		if (CGetSetOptions::m_useModernScrollBar)
@@ -969,6 +993,9 @@ void CQPasteWnd::SaveWindowSize()
 BOOL CQPasteWnd::ShowQPasteWindow(BOOL bFillList)
 {
 	theApp.m_bShowingQuickPaste = true;
+
+	// restore the docked sidebar before the first layout (ui-redesign)
+	ShowSidebar(CGetSetOptions::GetShowSidebar());
 
 	Log(StrF(_T("Start - ShowQPasteWindow - Fill List: %d, array count: %d"), bFillList, m_listItems.size()));
 
@@ -6049,30 +6076,30 @@ void CQPasteWnd::OnShowGroupsBottom()
 {
 	m_lstHeader.HidePopup(true);
 
-	if (m_GroupTree.IsWindowVisible())
+	// toggles the docked sidebar (ui-redesign)
+	ShowSidebar(!m_bSidebarVisible);
+	CGetSetOptions::SetShowSidebar(m_bSidebarVisible);
+}
+
+void CQPasteWnd::ShowSidebar(BOOL bShow)
+{
+	m_bSidebarVisible = bShow;
+
+	if (bShow && ::IsWindow(m_GroupTree.m_hWnd))
 	{
-		m_GroupTree.ShowWindow(SW_HIDE);
-		return;
+		m_GroupTree.m_selectedFolderID = theApp.m_GroupID;
+		m_GroupTree.FillTree();
+		m_GroupTree.m_bHide = false;
 	}
 
-	m_GroupTree.m_bHide = false;
+	m_sidebar.ShowWindow(bShow ? SW_SHOW : SW_HIDE);
+	if (::IsWindow(m_GroupTree.m_hWnd))
+	{
+		m_GroupTree.ShowWindow(bShow ? SW_SHOW : SW_HIDE);
+	}
 	m_bHideWnd = false;
 
-	CRect crWindow, crList;
-	m_lstHeader.GetWindowRect(crList);
-	GetWindowRect(crWindow);
-
-	CRect cr(crWindow.left, crWindow.bottom, crWindow.left + crWindow.Width(), crWindow.bottom + 200);
-
-	EnsureWindowVisible(&cr);
-
-	m_GroupTree.MoveWindow(cr);
-	m_GroupTree.m_selectedFolderID = theApp.m_GroupID;
-	m_GroupTree.FillTree();
-	m_GroupTree.ShowWindow(SW_SHOW);
-
-	m_GroupTree.m_bHide = true;
-	m_bHideWnd = true;
+	MoveControls();
 }
 
 LRESULT CQPasteWnd::OnGroupTreeMessage(WPARAM wParam, LPARAM lParam)
@@ -6081,7 +6108,7 @@ LRESULT CQPasteWnd::OnGroupTreeMessage(WPARAM wParam, LPARAM lParam)
 
 	int id = (int)wParam;
 
-	m_GroupTree.ShowWindow(SW_HIDE);
+	// the group tree stays docked in the sidebar (ui-redesign)
 
 	m_bHandleSearchTextChange = false;
 	m_search.SetWindowText(_T(""));
@@ -6411,6 +6438,27 @@ CString CQPasteWnd::GetTypeFilterSql(int nChip)
 	case 1: return StrF(_T("(NOT (%s OR %s OR %s))"), csImage, csFile, csLink);
 	default: return _T("");
 	}
+}
+
+LRESULT CQPasteWnd::OnSidebarNav(WPARAM wParam, LPARAM lParam)
+{
+	if (lParam != 0)
+	{
+		// bottom entries: friends opens the options window where the friends page lives
+		theApp.m_pMainFrame->SendMessage(WM_SHOW_OPTIONS, 0, 0);
+		return 0;
+	}
+
+	if ((int)wParam == 0)
+	{
+		// history: leave any group back to the main list
+		m_bHandleSearchTextChange = false;
+		m_search.SetWindowText(_T(""));
+		m_bHandleSearchTextChange = true;
+
+		theApp.EnterGroupID(-1);
+	}
+	return 0;
 }
 
 LRESULT CQPasteWnd::OnItemDeleted(WPARAM wParam, LPARAM lParam)

@@ -43,6 +43,9 @@
     <ClCompile Include="src\ChipBar.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Sidebar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Client.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -533,6 +536,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\ChipBar.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sidebar.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Client.h">
