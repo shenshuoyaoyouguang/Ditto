@@ -1017,9 +1017,9 @@ void SimpleBrowser::OnDocumentComplete(CString URL)
 		
 		notification.URL = URL;
 
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1039,9 +1039,9 @@ void SimpleBrowser::OnDownloadBegin()
 
 		Notification	notification(m_hWnd,GetDlgCtrlID(),DownloadBegin);
 		
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1062,9 +1062,9 @@ void SimpleBrowser::OnProgressChange(int progress,int progress_max)
 		notification.progress     = progress;
 		notification.progress_max = progress_max;
 
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1082,9 +1082,9 @@ void SimpleBrowser::OnDownloadComplete()
 
 		Notification	notification(m_hWnd,GetDlgCtrlID(),DownloadComplete);
 		
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1127,9 +1127,9 @@ void SimpleBrowser::OnNavigateComplete2(CString URL)
 		
 		notification.URL = URL;
 
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1157,9 +1157,9 @@ void SimpleBrowser::OnStatusTextChange(CString text)
 		
 		notification.text = text;
 
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1187,9 +1187,9 @@ void SimpleBrowser::OnTitleChange(CString text)
 		
 		notification.text = text;
 
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1209,9 +1209,9 @@ void SimpleBrowser::OnPrintTemplateInstantiation()
 
 		Notification	notification(m_hWnd,GetDlgCtrlID(),PrintTemplateInstantiation);
 		
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
@@ -1229,9 +1229,9 @@ void SimpleBrowser::OnPrintTemplateTeardown()
 
 		Notification	notification(m_hWnd,GetDlgCtrlID(),PrintTemplateTeardown);
 		
-		LRESULT result = parent->SendMessage(WM_NOTIFY,
-		                                     notification.hdr.idFrom,
-											 (LPARAM)&notification);
+		parent->SendMessage(WM_NOTIFY,
+		                     notification.hdr.idFrom,
+							 (LPARAM)&notification);
 		
 	}
 }
