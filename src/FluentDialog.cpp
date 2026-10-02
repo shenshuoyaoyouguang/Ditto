@@ -102,7 +102,9 @@ LRESULT CFluentDialog::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	CRect rcOldClient;
 	GetClientRect(rcOldClient);
 
-	SetWindowPos(NULL, pSuggested, SWP_NOZORDER | SWP_NOACTIVATE);
+	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
+		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
+		SWP_NOZORDER | SWP_NOACTIVATE);
 
 	CRect rcNewClient;
 	GetClientRect(rcNewClient);
@@ -220,7 +222,9 @@ LRESULT CFluentPropertyPage::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	CRect rcOldClient;
 	GetClientRect(rcOldClient);
 
-	SetWindowPos(NULL, pSuggested, SWP_NOZORDER | SWP_NOACTIVATE);
+	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
+		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
+		SWP_NOZORDER | SWP_NOACTIVATE);
 
 	CRect rcNewClient;
 	GetClientRect(rcNewClient);

@@ -112,7 +112,7 @@ CString AppFonts::ResolveFamily(const CString& csOverride)
 bool AppFonts::FamilyCoversTestGlyphs(const CString& csFamily)
 {
 	// latin base, latin extended and a cjk ideograph
-	static const WORD testGlyphs[] = { 0x0041, 0x00E9, 0x4E2D };
+	static const wchar_t testGlyphs[] = { 0x0041, 0x00E9, 0x4E2D };
 
 	HDC hdc = GetDC(NULL);
 	if (hdc == NULL)
@@ -165,7 +165,7 @@ void AppFonts::ApplyToChildren(CWnd* pWnd, CFont* pFont)
 	if (pWnd == NULL || pWnd->GetSafeHwnd() == NULL)
 		return;
 
-	CFont* font = pFont != NULL ? pFont : Get(Font_Body);
+	CFont* font = pFont != NULL ? pFont : Inst().Get(Font_Body);
 	if (font == NULL || font->GetSafeHandle() == NULL)
 		return;
 
