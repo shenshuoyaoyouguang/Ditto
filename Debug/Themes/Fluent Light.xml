@@ -1,0 +1,59 @@
+<Ditto_Theme_File Version="4" Author="Ditto" Notes="Windows 11 Fluent light theme, follows the system accent color">
+	<CaptionLeft>#F3F3F3</CaptionLeft>
+	<CaptionRight>#EAEAEA</CaptionRight>
+	<CaptionLeftTopMost>#E8E8E8</CaptionLeftTopMost>
+	<CaptionRightTopMost>#DCDCDC</CaptionRightTopMost>
+	<CaptionLeftNotConnected>#F3F3F3</CaptionLeftNotConnected>
+	<CaptionRightNotConnected>#F6C468</CaptionRightNotConnected>
+	<CaptionTextColor>#616161</CaptionTextColor>
+	<Border>#E5E5E5</Border>
+	<BorderTopMost>#E0E0E0</BorderTopMost>
+	<BorderNotConnected>#E5E5E5</BorderNotConnected>
+
+	<ListBoxOddRowsBG>#FFFFFF</ListBoxOddRowsBG>
+	<ListBoxEvenRowsBG>#F9F9F9</ListBoxEvenRowsBG>
+	<ListBoxOddRowsText>#1A1A1A</ListBoxOddRowsText>
+	<ListBoxEvenRowsText>#1A1A1A</ListBoxEvenRowsText>
+	<ListBoxSelectedNoFocusBG>#E4E4E4</ListBoxSelectedNoFocusBG>
+	<ListBoxSelectedText>#1A1A1A</ListBoxSelectedText>
+	<ListBoxSelectedNoFocusText>#1A1A1A</ListBoxSelectedNoFocusText>
+
+	<ClipPastedColor>#005FB8</ClipPastedColor>
+	<MainWindowBG>#F3F3F3</MainWindowBG>
+	<SearchTextBoxFocusBG>#FFFFFF</SearchTextBoxFocusBG>
+	<SearchTextBoxFocusText>#1A1A1A</SearchTextBoxFocusText>
+	<SearchTextBoxFocusBorder>#005FB8</SearchTextBoxFocusBorder>
+	<SearchTextHighlight>#005FB8</SearchTextHighlight>
+	<GroupTreeBG>#F3F3F3</GroupTreeBG>
+	<GroupTreeText>#1A1A1A</GroupTreeText>
+	<DescriptionWindowBG>#FFFFFF</DescriptionWindowBG>
+	<DescriptionWindowText>#1A1A1A</DescriptionWindowText>
+	<ScrollBarThumb>#C8C8C8</ScrollBarThumb>
+	<ScrollBarThumbHover>#A8A8A8</ScrollBarThumbHover>
+	<ScrollBarTrack>#F3F3F3</ScrollBarTrack>
+
+	<CaptionSize>32</CaptionSize>
+	<CaptionFontSize>14</CaptionFontSize>
+
+	<Surface_Base>#F3F3F3</Surface_Base>
+	<Surface_Elevated>#FFFFFF</Surface_Elevated>
+	<Surface_RowAlt>#F9F9F9</Surface_RowAlt>
+	<Text_Primary>#1A1A1A</Text_Primary>
+	<Text_Secondary>#616161</Text_Secondary>
+	<Text_Disabled>#9D9D9D</Text_Disabled>
+	<Text_OnAccent>#FFFFFF</Text_OnAccent>
+	<Accent_Default>accent</Accent_Default>
+	<Stroke_Card>#E5E5E5</Stroke_Card>
+	<Stroke_Divider>#EDEDED</Stroke_Divider>
+	<Control_Fill>#FBFBFB</Control_Fill>
+	<Control_Hover>#F0F0F0</Control_Hover>
+	<Control_Pressed>#EDEDED</Control_Pressed>
+	<Control_DisabledBG>#F5F5F5</Control_DisabledBG>
+	<State_Hover>#EAEAEA</State_Hover>
+	<State_SelectedText>#1A1A1A</State_SelectedText>
+	<Indicator_Badge>#616161</Indicator_Badge>
+	<Radius_Control>4</Radius_Control>
+	<RowHeight_Compact>30</RowHeight_Compact>
+	<RowHeight_Comfortable>44</RowHeight_Comfortable>
+	<Font_Family>auto</Font_Family>
+</Ditto_Theme_File>
