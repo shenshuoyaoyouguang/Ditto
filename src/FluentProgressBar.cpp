@@ -149,7 +149,7 @@ void CFluentProgressBar::OnPaint()
 		GetRValue(theme.SurfaceBase()),
 		GetGValue(theme.SurfaceBase()),
 		GetBValue(theme.SurfaceBase())));
-	graphics.FillRectangle(&surface, 0, 0, (REAL)rc.Width(), (REAL)rc.Height());
+	graphics.FillRectangle(&surface, 0.0f, 0.0f, (REAL)rc.Width(), (REAL)rc.Height());
 
 	if (m_bMarquee)
 	{
