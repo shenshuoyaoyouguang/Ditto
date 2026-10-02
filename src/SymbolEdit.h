@@ -41,6 +41,7 @@ class CSymbolEdit : public CEdit
 	bool m_bInternalIcon;
 	CString m_strPromptText;
 	COLORREF m_colorPromptText;
+	bool m_bCustomPromptColor;
 
 	CBrush m_brush;
 	COLORREF m_lastBrushColor;

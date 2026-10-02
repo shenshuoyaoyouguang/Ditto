@@ -12,6 +12,7 @@
 #include "CopyProperties.h"
 #include "CP_Main.h"
 #include "DimWnd.h"
+#include "Fonts.h"
 #include "FormatSQL.h"
 #include "FriendPromptDlg.h"
 #include "GroupName.h"
@@ -228,6 +229,7 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_MESSAGE(NM_UPDATE_SCROLLBAR, OnUpdateScrollBar)
 	ON_MESSAGE(NM_CANCEL_SEARCH, OnCancelFilter)
 	ON_MESSAGE(NM_POST_OPTIONS_WINDOW, OnPostOptions)
+	ON_MESSAGE(WM_DPICHANGED, OnDpiChanged)
 	ON_COMMAND(ID_MENU_SEARCHDESCRIPTION, OnMenuSearchDescription)
 	ON_COMMAND(ID_MENU_SEARCHFULLTEXT, OnMenuSearchFullText)
 	ON_COMMAND(ID_MENU_SEARCHQUICKPASTE, OnMenuSearchQuickPaste)
@@ -507,8 +509,8 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	m_alwaysOnToWarningStatic.Create(onTopMsg, WS_CHILD | SS_CENTERIMAGE | SS_NOTIFY, CRect(0, 0, 0, 0), this, ON_TOP_WARNING);
-	m_alwaysOnToWarningStatic.SetBkColor(COLORREF(RGB(255, 255, 0)));
-	m_alwaysOnToWarningStatic.SetTextColor(COLORREF(RGB(0, 0, 255)));
+	m_alwaysOnToWarningStatic.SetBkColor(CGetSetOptions::m_Theme.AccentSubtle());
+	m_alwaysOnToWarningStatic.SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
 	m_alwaysOnToWarningStatic.SetToggleCursor(true);
 	m_alwaysOnToWarningStatic.SetFont(&m_groupFont);
 
@@ -648,6 +650,35 @@ void CQPasteWnd::SetSearchImages()
 	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL, IDB_BITMAP_SEARCH_CLOSE);
 	//	break;
 	//}
+}
+
+LRESULT CQPasteWnd::OnDpiChanged(WPARAM wParam, LPARAM lParam)
+{
+	UINT newDpi = HIWORD(wParam);
+	RECT* pSuggested = (RECT*)lParam;
+
+	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
+		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
+		SWP_NOZORDER | SWP_NOACTIVATE);
+
+	m_DittoWindow.OnDpiChanged(this, newDpi);
+	m_DittoWindow.SetCaptionOn(this, m_DittoWindow.m_captionPosition, true,
+		CGetSetOptions::m_Theme.GetCaptionSize(), CGetSetOptions::m_Theme.GetCaptionFontSize());
+
+	m_search.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_lstHeader.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_modernScrollBar.SetDPI(&m_DittoWindow.m_dpi);
+	m_modernScrollBarHorz.SetDPI(&m_DittoWindow.m_dpi);
+	m_ShowGroupsFolderBottom.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_BackButton.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_systemMenu.SetDpiInfo(&m_DittoWindow.m_dpi);
+
+	UpdateFont();
+	MoveControls();
+
+	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ERASE);
+
+	return 0;
 }
 
 void CQPasteWnd::OnSize(UINT nType, int cx, int cy)
@@ -2210,21 +2241,28 @@ void CQPasteWnd::UpdateFont()
 	lf.lfHeight = m_DittoWindow.m_dpi.Scale(lf.lfHeight);
 	m_lstHeader.SetLogFont(lf);
 
+	// search box and statics use the app font ramp (plan section 4.2)
+	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI());
+
 	m_SearchFont.DeleteObject();
-	m_SearchFont.CreateFont(-m_DittoWindow.m_dpi.Scale(15), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_SearchFont.CreateFontIndirect(&AppFonts::Inst().BodyLogFont());
 	m_search.SetFont(&m_SearchFont);
 	m_search.SetPromptFont(m_SearchFont);
 
 	m_GroupTree.SetFont(&m_SearchFont);
 
+	LOGFONT lfCaption;
+	AppFonts::Inst().Get(Font_Caption)->GetLogFont(&lfCaption);
+	lfCaption.lfUnderline = FALSE;
+
 	m_groupFont.DeleteObject();
-	m_groupFont.CreateFont(-m_DittoWindow.m_dpi.Scale(12), 0, 0, 0, 400, 0, 1, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_groupFont.CreateFontIndirect(&lfCaption);
 	m_stGroup.SetFont(&m_groupFont);
 	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
+	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
 
 	m_noSearchResultsStatic.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
+	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
 	m_noSearchResultsStatic.SetFont(&m_SearchFont);
 
 	m_lstHeader.CreateSmallFont();
