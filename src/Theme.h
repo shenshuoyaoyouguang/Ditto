@@ -99,6 +99,9 @@ protected:
 	void FinalizeTokens();
 	void DeriveTokensFromLegacy();
 	void RefreshAccentDerived();
+	// Re-resolves Accent_Default from the live Windows accent (the "accent"
+	// alias) and re-derives everything that depends on it.
+	void RefreshSystemAccent();
 	void ResetTokenFlags();
 
 	static COLORREF BlendOver(COLORREF under, COLORREF over, int alpha);
@@ -187,6 +190,10 @@ protected:
 	// legacy nodes read during derivation
 	bool m_hasLegacyMainWindowBG, m_hasLegacySearchTextBoxFocusBG, m_hasLegacyListBoxEvenRowsBG;
 	bool m_hasLegacyListBoxOddRowsText, m_hasLegacyClipPastedColor, m_hasLegacySmallQuickPasteIndexColor;
+	bool m_hasLegacyDescriptionWindowBG;
+	// true when Accent_Default is the "accent" alias and must re-resolve from
+	// the live Windows setting even when the theme file itself did not change
+	bool m_bFollowSystemAccent;
 	bool m_bParsedThemeXml;
 	bool m_bDarkTheme;
 
