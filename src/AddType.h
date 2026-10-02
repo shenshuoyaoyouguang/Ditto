@@ -10,7 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CAddType dialog
 
-class CAddType : public CDialog
+#include "FluentDialog.h"
+
+class CAddType : public CFluentDialog
 {
 // Construction
 public:

@@ -10,7 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CMoveToGroupDlg dialog
 
-class CMoveToGroupDlg : public CDialog
+#include "FluentDialog.h"
+
+class CMoveToGroupDlg : public CFluentDialog
 {
 // Construction
 public:

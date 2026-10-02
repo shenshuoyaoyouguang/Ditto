@@ -16,7 +16,7 @@ static char THIS_FILE[] = __FILE__;
 
 
 CFriendDetails::CFriendDetails(CWnd* pParent /*=NULL*/)
-	: CDialog(CFriendDetails::IDD, pParent)
+	: CFluentDialog(CFriendDetails::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CFriendDetails)
 	m_checkSendAll = FALSE;
@@ -28,7 +28,7 @@ CFriendDetails::CFriendDetails(CWnd* pParent /*=NULL*/)
 
 void CFriendDetails::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CFriendDetails)
 	DDX_Check(pDX, IDC_CHECK_SEND_ALL, m_checkSendAll);
 	DDX_Text(pDX, IDC_EDIT_DESCRIPTION, m_csDescription);
@@ -37,7 +37,7 @@ void CFriendDetails::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CFriendDetails, CDialog)
+BEGIN_MESSAGE_MAP(CFriendDetails, CFluentDialog)
 	//{{AFX_MSG_MAP(CFriendDetails)
 		// NOTE: the ClassWizard will add message map macros here
 	//}}AFX_MSG_MAP
@@ -48,7 +48,7 @@ END_MESSAGE_MAP()
 
 BOOL CFriendDetails::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 	
 	UpdateData(FALSE);
 
@@ -62,5 +62,5 @@ void CFriendDetails::OnOK()
 {
 	UpdateData();
 	
-	CDialog::OnOK();
+	CFluentDialog::OnOK();
 }

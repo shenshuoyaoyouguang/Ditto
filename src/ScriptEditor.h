@@ -6,7 +6,9 @@
 
 // CScriptEditor dialog
 
-class CScriptEditor : public CDialogEx
+#include "FluentDialog.h"
+
+class CScriptEditor : public CFluentDialog
 {
 	DECLARE_DYNAMIC(CScriptEditor)
 

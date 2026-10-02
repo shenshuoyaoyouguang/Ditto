@@ -15,7 +15,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CCopyProperties dialog
 
-class CCopyProperties : public CDialog
+#include "FluentDialog.h"
+
+class CCopyProperties : public CFluentDialog
 {
 // Construction
 public:
@@ -84,7 +86,6 @@ protected:
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnLbnSelchangeCopyData();
 	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
 };

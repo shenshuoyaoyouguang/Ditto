@@ -17,7 +17,7 @@ static char THIS_FILE[] = __FILE__;
 
 
 CAddType::CAddType(CWnd* pParent /*=NULL*/)
-	: CDialog(CAddType::IDD, pParent)
+	: CFluentDialog(CAddType::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CAddType)
 	m_eCustomType = _T("");
@@ -27,7 +27,7 @@ CAddType::CAddType(CWnd* pParent /*=NULL*/)
 
 void CAddType::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAddType)
 	DDX_Control(pDX, IDC_LIST1, m_lbCandidateTypes);
 	DDX_Text(pDX, IDC_EDIT1, m_eCustomType);
@@ -36,7 +36,7 @@ void CAddType::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CAddType, CDialog)
+BEGIN_MESSAGE_MAP(CAddType, CFluentDialog)
 	//{{AFX_MSG_MAP(CAddType)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_RADIO_PRIMARY_TYPES, &CAddType::OnBnClickedRadioPrimaryTypes)
@@ -50,7 +50,7 @@ END_MESSAGE_MAP()
 // CAddType message handlers
 BOOL CAddType::OnInitDialog() 
 {
-	CDialog::OnInitDialog();		
+	CFluentDialog::OnInitDialog();		
 	
 	::CheckDlgButton(m_hWnd, IDC_RADIO_CURRENT_TYPES, BST_CHECKED);
 	OnBnClickedRadioCurrentTypes();

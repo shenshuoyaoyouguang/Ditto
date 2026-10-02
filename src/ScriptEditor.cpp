@@ -12,10 +12,10 @@
 
 // CScriptEditor dialog
 
-IMPLEMENT_DYNAMIC(CScriptEditor, CDialogEx)
+IMPLEMENT_DYNAMIC(CScriptEditor, CFluentDialog)
 
 CScriptEditor::CScriptEditor(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_SCRIPT_EDITOR, pParent)
+	: CFluentDialog(IDD_SCRIPT_EDITOR, pParent)
 {
 
 }
@@ -26,13 +26,13 @@ CScriptEditor::~CScriptEditor()
 
 void CScriptEditor::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_SCRIPTS, m_scriptsList);
 	DDX_Control(pDX, IDC_RICHEDIT21, m_rich);
 }
 
 
-BEGIN_MESSAGE_MAP(CScriptEditor, CDialogEx)
+BEGIN_MESSAGE_MAP(CScriptEditor, CFluentDialog)
 	ON_LBN_SELCHANGE(IDC_LIST_SCRIPTS, &CScriptEditor::OnLbnSelchangeListScripts)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_SCRIPT, &CScriptEditor::OnBnClickedButtonAddScript)
 	ON_EN_KILLFOCUS(IDC_EDIT_NAME, &CScriptEditor::OnEnKillfocusEditName)
@@ -49,7 +49,7 @@ END_MESSAGE_MAP()
 
 BOOL CScriptEditor::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	SetWindowText(m_title);
 
@@ -219,7 +219,7 @@ void CScriptEditor::OnBnClickedCheckActive()
 
 void CScriptEditor::OnSize(UINT nType, int cx, int cy)
 {
-	CDialogEx::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 
 	m_resize.MoveControls(CSize(cx, cy));
 }
@@ -325,5 +325,5 @@ BOOL CScriptEditor::PreTranslateMessage(MSG* pMsg)
 		return TRUE;
 	}
 
-	return CDialogEx::PreTranslateMessage(pMsg);
+	return CFluentDialog::PreTranslateMessage(pMsg);
 }

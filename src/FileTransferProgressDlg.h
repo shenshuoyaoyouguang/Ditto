@@ -11,7 +11,10 @@
 /////////////////////////////////////////////////////////////////////////////
 // CFileTransferProgressDlg dialog
 
-class CFileTransferProgressDlg : public CDialog
+#include "FluentDialog.h"
+#include "FluentProgressBar.h"
+
+class CFileTransferProgressDlg : public CFluentDialog
 {
 // Construction
 public:
@@ -20,7 +23,8 @@ public:
 // Dialog Data
 	//{{AFX_DATA(CFileTransferProgressDlg)
 	enum { IDD = IDD_DIALOG_REMOTE_FILE };
-	CAnimateCtrl	m_FileCopy;
+	CAnimateCtrl	m_FileCopy;		// legacy avi control, hidden (see OnInitDialog)
+	CFluentProgressBar m_progressBar;
 	CButton	m_m_CancelButton;
 	CProgressCtrl	m_ProgressSingleFile;
 	CProgressCtrl	m_ProgressAllFiles;

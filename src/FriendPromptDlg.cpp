@@ -10,10 +10,10 @@
 
 // CFriendPromptDlg dialog
 
-IMPLEMENT_DYNAMIC(CFriendPromptDlg, CDialogEx)
+IMPLEMENT_DYNAMIC(CFriendPromptDlg, CFluentDialog)
 
 CFriendPromptDlg::CFriendPromptDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_DIALOG_FREIND_PROMPT, pParent)
+	: CFluentDialog(IDD_DIALOG_FREIND_PROMPT, pParent)
 {
 	m_save = false;
 	m_clearList = false;
@@ -25,16 +25,15 @@ CFriendPromptDlg::~CFriendPromptDlg()
 
 void CFriendPromptDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDIT_NAME, m_textBox);
 	DDX_Control(pDX, IDC_EDIT_DESC, m_description);
 }
 
 
-BEGIN_MESSAGE_MAP(CFriendPromptDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CFriendPromptDlg, CFluentDialog)
 	ON_BN_CLICKED(IDOK, &CFriendPromptDlg::OnBnClickedOk)
 	ON_WM_SIZE()
-	ON_WM_CTLCOLOR()
 	ON_BN_CLICKED(IDCANCEL, &CFriendPromptDlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR, &CFriendPromptDlg::OnBnClickedButtonClear)
 END_MESSAGE_MAP()
@@ -49,12 +48,12 @@ void CFriendPromptDlg::OnBnClickedOk()
 		m_save = true;
 	}
 
-	CDialogEx::OnOK();
+	CFluentDialog::OnOK();
 }
 
 BOOL CFriendPromptDlg::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	::SendMessage(this->m_hWnd, WM_SETICON, 0, NULL);
 
@@ -74,31 +73,19 @@ BOOL CFriendPromptDlg::OnInitDialog()
 
 void CFriendPromptDlg::OnSize(UINT nType, int cx, int cy)
 {
-	CDialogEx::OnSize(nType, cx, cy);
-}
-
-HBRUSH CFriendPromptDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
-{
-	HBRUSH hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
-
-	// TODO:  Change any attributes of the DC here
-
-	// TODO:  Return a different brush if the default is not desired
-	return hbr;
-
-	//return m_brush;
+	CFluentDialog::OnSize(nType, cx, cy);
 }
 
 
 void CFriendPromptDlg::OnBnClickedCancel()
 {
 	// TODO: Add your control notification handler code here
-	CDialogEx::OnCancel();
+	CFluentDialog::OnCancel();
 }
 
 
 void CFriendPromptDlg::OnBnClickedButtonClear()
 {
 	m_clearList = true;
-	CDialogEx::OnOK();
+	CFluentDialog::OnOK();
 }

@@ -10,10 +10,10 @@
 
 // GlobalClips dialog
 
-IMPLEMENT_DYNAMIC(GlobalClips, CDialogEx)
+IMPLEMENT_DYNAMIC(GlobalClips, CFluentDialog)
 
 GlobalClips::GlobalClips(CWnd* pParent /*=NULL*/)
-	: CDialogEx(GlobalClips::IDD, pParent)
+	: CFluentDialog(GlobalClips::IDD, pParent)
 {
 
 }
@@ -24,12 +24,12 @@ GlobalClips::~GlobalClips()
 
 void GlobalClips::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST2, m_List);
 }
 
 
-BEGIN_MESSAGE_MAP(GlobalClips, CDialogEx)
+BEGIN_MESSAGE_MAP(GlobalClips, CFluentDialog)
 	ON_WM_CLOSE()
 	ON_WM_SIZE()
 	ON_WM_NCDESTROY()
@@ -37,7 +37,7 @@ END_MESSAGE_MAP()
 
 BOOL GlobalClips::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	theApp.m_Language.UpdateGlobalHotKeys(this);
 
@@ -138,7 +138,7 @@ void GlobalClips::OnCancel()
 
 void GlobalClips::OnSize(UINT nType, int cx, int cy)
 {
-	CDialogEx::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 
 	m_Resize.MoveControls(CSize(cx, cy));
 }
@@ -187,6 +187,6 @@ void GlobalClips::OnSize(UINT nType, int cx, int cy)
 
 void GlobalClips::OnNcDestroy()
 {
-	CDialogEx::OnNcDestroy();
+	CFluentDialog::OnNcDestroy();
 	::PostMessage(m_hWndParent, WM_GLOBAL_CLIPS_CLOSED, 0, 0);
 }

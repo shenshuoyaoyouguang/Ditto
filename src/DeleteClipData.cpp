@@ -15,10 +15,10 @@
 
 // CDeleteClipData dialog
 
-IMPLEMENT_DYNAMIC(CDeleteClipData, CDialog)
+IMPLEMENT_DYNAMIC(CDeleteClipData, CFluentDialog)
 
 CDeleteClipData::CDeleteClipData(CWnd* pParent /*=NULL*/)
-	: CDialog(CDeleteClipData::IDD, pParent)
+	: CFluentDialog(CDeleteClipData::IDD, pParent)
 	, m_pDescriptionWindow(nullptr)
 	, m_clipTitle(_T(""))
 	, m_filterByClipTitle(FALSE)
@@ -48,7 +48,7 @@ CDeleteClipData::~CDeleteClipData()
 
 void CDeleteClipData::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST2, m_clipList);
 	DDX_Text(pDX, IDC_EDIT_CLIP_TITLE, m_clipTitle);
 	DDX_Check(pDX, IDC_CHECK_CLIP_TITLE, m_filterByClipTitle);
@@ -70,7 +70,7 @@ void CDeleteClipData::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CDeleteClipData, CDialog)
+BEGIN_MESSAGE_MAP(CDeleteClipData, CFluentDialog)
 	ON_WM_CLOSE()
 	ON_WM_SIZE()
 	ON_WM_NCDESTROY()
@@ -94,7 +94,7 @@ END_MESSAGE_MAP()
 
 BOOL CDeleteClipData::OnInitDialog()
 {
-	CDialog::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	theApp.m_Language.UpdateDeleteClipData(this);
 
@@ -221,14 +221,14 @@ void CDeleteClipData::CloseDescriptionWindow()
 
 void CDeleteClipData::OnSize(UINT nType, int cx, int cy)
 {
-	CDialog::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 
 	m_Resize.MoveControls(CSize(cx, cy));
 }
 
 void CDeleteClipData::OnNcDestroy()
 {
-	CDialog::OnNcDestroy();
+	CFluentDialog::OnNcDestroy();
 	::PostMessage(m_hWndParent, WM_DELETE_CLIPS_CLOSED, 0, 0);
 }
 
@@ -697,7 +697,7 @@ void CDeleteClipData::OnTimer(UINT_PTR nIDEvent)
 		break;
 	}
 
-	CDialog::OnTimer(nIDEvent);
+	CFluentDialog::OnTimer(nIDEvent);
 }
 
 
@@ -875,7 +875,7 @@ BOOL CDeleteClipData::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
-	return CDialog::PreTranslateMessage(pMsg);
+	return CFluentDialog::PreTranslateMessage(pMsg);
 }
 
 void CDeleteClipData::SelectRow(int selectedRow)
