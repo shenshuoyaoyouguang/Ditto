@@ -17,7 +17,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // COptionsTypes property page
 
-IMPLEMENT_DYNCREATE(COptionsTypes, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionsTypes, CFluentPropertyPage)
 
 COptionsTypes::COptionsTypes() : CFluentPropertyPage(COptionsTypes::IDD)
 {
@@ -44,7 +44,7 @@ void COptionsTypes::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsTypes, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionsTypes, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(COptionsTypes)
 	ON_BN_CLICKED(IDC_DELETE, OnDelete)
 	ON_BN_CLICKED(IDC_ADD, OnAdd)

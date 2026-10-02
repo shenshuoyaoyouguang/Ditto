@@ -14,7 +14,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // COptionsKeyBoard property page
 
-IMPLEMENT_DYNCREATE(COptionsKeyBoard, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionsKeyBoard, CFluentPropertyPage)
 
 COptionsKeyBoard::COptionsKeyBoard() : CFluentPropertyPage(COptionsKeyBoard::IDD)
 {
@@ -57,7 +57,7 @@ void COptionsKeyBoard::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_HOTKEY_COPYSAVECLIPBOARD, m_copyAndSaveClipboardCtrl);
 }
 
-BEGIN_MESSAGE_MAP(COptionsKeyBoard, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionsKeyBoard, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(COptionsKeyBoard)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()

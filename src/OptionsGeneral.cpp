@@ -24,7 +24,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // COptionsGeneral property page
 
-IMPLEMENT_DYNCREATE(COptionsGeneral, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionsGeneral, CFluentPropertyPage)
 
 COptionsGeneral::COptionsGeneral() : CFluentPropertyPage(COptionsGeneral::IDD)
 {
@@ -66,7 +66,7 @@ void COptionsGeneral::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsGeneral, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionsGeneral, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(COptionsGeneral)
 	ON_BN_CLICKED(IDC_GET_PATH, OnGetPath)
 	ON_BN_CLICKED(IDC_BUTTON_ABOUT, OnButtonAbout)

@@ -17,7 +17,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // COptionsStats dialog
 
-IMPLEMENT_DYNCREATE(COptionsStats, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionsStats, CFluentPropertyPage)
 
 COptionsStats::COptionsStats()
 	: CFluentPropertyPage(COptionsStats::IDD)
@@ -63,7 +63,7 @@ void COptionsStats::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsStats, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionsStats, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(COptionsStats)
 	ON_BN_CLICKED(IDC_RESET_COUNTS, OnResetCounts)
 	ON_BN_CLICKED(IDC_REMOVE_ALL, OnRemoveAll)

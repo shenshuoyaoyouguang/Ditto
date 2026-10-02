@@ -10,7 +10,7 @@
 #include "MoveToGroupDlg.h"
 #include "SQlite/CppSQLite3.h"
 
-IMPLEMENT_DYNAMIC(CAdvGeneral, CDialogEx)
+IMPLEMENT_DYNAMIC(CAdvGeneral, CFluentDialog)
 
 CAdvGeneral::CAdvGeneral(CWnd* pParent /*=NULL*/)
 	: CFluentDialog(CAdvGeneral::IDD, pParent)

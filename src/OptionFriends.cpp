@@ -18,7 +18,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // COptionFriends property page
 
-IMPLEMENT_DYNCREATE(COptionFriends, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionFriends, CFluentPropertyPage)
 
 COptionFriends::COptionFriends() : CFluentPropertyPage(COptionFriends::IDD)
 {
@@ -51,7 +51,7 @@ void COptionFriends::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionFriends, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionFriends, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(COptionFriends)
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST, OnDblclkList)
 	ON_NOTIFY(LVN_KEYDOWN, IDC_LIST, OnKeydownList)
