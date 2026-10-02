@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "SymbolEdit.h"
 #include "cp_main.h"
+#include "Fonts.h"
 #include "QListCtrl.h"
 #include "..\Shared\TextConvert.h"
 
@@ -20,6 +21,7 @@ CSymbolEdit::CSymbolEdit() :
 	m_hSymbolIcon(NULL),
 	m_bInternalIcon(false),
 	m_colorPromptText(RGB(127, 127, 127)),
+	m_bCustomPromptColor(false),
 	m_centerTextDiff(0)
 {
 	m_fontPrompt.CreateFont(
@@ -412,6 +414,7 @@ void CSymbolEdit::SetPromptText(LPCTSTR szText, BOOL redraw)
 void CSymbolEdit::SetPromptTextColor(COLORREF color, BOOL redraw)
 {
 	m_colorPromptText = color;
+	m_bCustomPromptColor = true;
 
 	if (redraw)
 		Invalidate(TRUE);
@@ -469,8 +472,9 @@ void CSymbolEdit::OnPaint()
 	textRect.left += LOWORD(margins);
 	textRect.right -= HIWORD(margins);
 
-	// Clearing the background
-	dc.FillSolidRect(rect, GetSysColor(COLOR_WINDOW));	
+	// Clearing the background - always the elevated surface, never a system
+	// color (system window color flashed white under dark themes)
+	dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
 
 	if (m_hSymbolIcon)
 	{
@@ -507,19 +511,13 @@ void CSymbolEdit::OnPaint()
 
 	if(this == GetFocus() || text.GetLength() > 0)
 	{
-		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SearchTextBoxFocusBG());
+		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
 
-		//CBrush borderBrush(CGetSetOptions::m_Theme.SearchTextBoxFocusBorder());
-		//dc.FrameRect(rect, &borderBrush);
-
-		//rect.DeflateRect(1, 1, 1, 1);
-		//textRect.DeflateRect(0, 1, 1, 1);
-
-		oldFont = dc.SelectObject(GetFont());		
+		oldFont = dc.SelectObject(GetFont());
 
 		COLORREF oldColor = dc.GetTextColor();
 		dc.SetTextColor(CGetSetOptions::m_Theme.SearchTextBoxFocusText());
-			
+
 		dc.DrawText(text, textRect, DT_SINGLELINE | DT_INTERNAL | DT_EDITCONTROL | DT_NOPREFIX);
 
 		dc.SelectObject(oldFont);
@@ -527,7 +525,7 @@ void CSymbolEdit::OnPaint()
 	}
 	else
 	{
-		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.MainWindowBG());
+		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
 	}
 
 
@@ -539,7 +537,7 @@ void CSymbolEdit::OnPaint()
 
 		oldFont = dc.SelectObject(&m_fontPrompt);
 		COLORREF color = dc.GetTextColor();
-		dc.SetTextColor(m_colorPromptText);
+		dc.SetTextColor(m_bCustomPromptColor ? m_colorPromptText : CGetSetOptions::m_Theme.TextSecondary());
 
 		dc.DrawText(m_strPromptText, textRect, DT_LEFT | DT_SINGLELINE | DT_EDITCONTROL | DT_VCENTER | DT_NOPREFIX);
 		dc.SetTextColor(color);
@@ -610,13 +608,13 @@ HBRUSH CSymbolEdit::CtlColor(CDC* pDC, UINT n)
 	if (::GetFocus() == m_hWnd)
 	{
 		pDC->SetTextColor(CGetSetOptions::m_Theme.SearchTextBoxFocusText());
-		pDC->SetBkColor(CGetSetOptions::m_Theme.SearchTextBoxFocusBG());
-		color = CGetSetOptions::m_Theme.SearchTextBoxFocusBG();
+		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
+		color = CGetSetOptions::m_Theme.SurfaceElevated();
 	}
 	else
 	{
-		pDC->SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-		color = CGetSetOptions::m_Theme.MainWindowBG();
+		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
+		color = CGetSetOptions::m_Theme.SurfaceElevated();
 	}
 
 	if (color != m_lastBrushColor)
@@ -830,14 +828,23 @@ void CSymbolEdit::OnDpiChanged()
 }
 
 void CSymbolEdit::SetDpiInfo(CDPI *dpi)
-{ 
-	m_windowDpi = dpi; 
+{
+	m_windowDpi = dpi;
 
 	m_closeButton.Reset();
 	m_closeButton.LoadStdImageDPI(m_windowDpi->GetDPI(), search_close_16, search_close_20, search_close_24, search_close_28, search_close_32, _T("PNG"));
 
 	m_searchesButton.Reset();
 	m_searchesButton.LoadStdImageDPI(m_windowDpi->GetDPI(), down_16, down_20, down_24, down_28, down_32, _T("PNG"));
+
+	// prompt text follows the app font ramp at the current dpi
+	if (AppFonts::Inst().Get(Font_Body) != NULL &&
+		AppFonts::Inst().Get(Font_Body)->GetSafeHandle() != NULL)
+	{
+		LOGFONT lf;
+		AppFonts::Inst().Get(Font_Body)->GetLogFont(&lf);
+		SetPromptFont(&lf, FALSE);
+	}
 
 	RecalcLayout();
 
@@ -944,20 +951,20 @@ void CSymbolEdit::OnNcPaint()
 
 	CRect b(0, r.Height() - m_centerTextDiff- m_windowDpi->Scale(1), r.Width(), r.Height());
 
-	COLORREF c = CGetSetOptions::m_Theme.MainWindowBG();
+	COLORREF c = CGetSetOptions::m_Theme.StrokeCard();
 
 	if (this == GetFocus() || text.GetLength() > 0)
-	{		
-		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SearchTextBoxFocusBG());
-		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SearchTextBoxFocusBG());
+	{
+		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SurfaceElevated());
 
-		c = CGetSetOptions::m_Theme.SearchTextBoxFocusBorder();
+		c = CGetSetOptions::m_Theme.AccentDefault();
 	}
 	else
 	{
-		dc.FillSolidRect(t, CGetSetOptions::m_Theme.MainWindowBG());
-		dc.FillSolidRect(b, CGetSetOptions::m_Theme.MainWindowBG());
-	}	
+		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SurfaceElevated());
+	}
 
 	//if ((text.GetLength() > 0 || this == GetFocus()) && m_windowDpi)
 	{

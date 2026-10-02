@@ -12,6 +12,7 @@
 #include "CopyProperties.h"
 #include "CP_Main.h"
 #include "DimWnd.h"
+#include "Fonts.h"
 #include "FormatSQL.h"
 #include "FriendPromptDlg.h"
 #include "GroupName.h"
@@ -507,8 +508,8 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	m_alwaysOnToWarningStatic.Create(onTopMsg, WS_CHILD | SS_CENTERIMAGE | SS_NOTIFY, CRect(0, 0, 0, 0), this, ON_TOP_WARNING);
-	m_alwaysOnToWarningStatic.SetBkColor(COLORREF(RGB(255, 255, 0)));
-	m_alwaysOnToWarningStatic.SetTextColor(COLORREF(RGB(0, 0, 255)));
+	m_alwaysOnToWarningStatic.SetBkColor(CGetSetOptions::m_Theme.AccentSubtle());
+	m_alwaysOnToWarningStatic.SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
 	m_alwaysOnToWarningStatic.SetToggleCursor(true);
 	m_alwaysOnToWarningStatic.SetFont(&m_groupFont);
 
@@ -2210,21 +2211,28 @@ void CQPasteWnd::UpdateFont()
 	lf.lfHeight = m_DittoWindow.m_dpi.Scale(lf.lfHeight);
 	m_lstHeader.SetLogFont(lf);
 
+	// search box and statics use the app font ramp (plan section 4.2)
+	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI());
+
 	m_SearchFont.DeleteObject();
-	m_SearchFont.CreateFont(-m_DittoWindow.m_dpi.Scale(15), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_SearchFont.CreateFontIndirect(&AppFonts::Inst().BodyLogFont());
 	m_search.SetFont(&m_SearchFont);
 	m_search.SetPromptFont(m_SearchFont);
 
 	m_GroupTree.SetFont(&m_SearchFont);
 
+	LOGFONT lfCaption;
+	AppFonts::Inst().Get(Font_Caption)->GetLogFont(&lfCaption);
+	lfCaption.lfUnderline = FALSE;
+
 	m_groupFont.DeleteObject();
-	m_groupFont.CreateFont(-m_DittoWindow.m_dpi.Scale(12), 0, 0, 0, 400, 0, 1, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
+	m_groupFont.CreateFontIndirect(&lfCaption);
 	m_stGroup.SetFont(&m_groupFont);
 	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
+	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
 
 	m_noSearchResultsStatic.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
+	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
 	m_noSearchResultsStatic.SetFont(&m_SearchFont);
 
 	m_lstHeader.CreateSmallFont();
