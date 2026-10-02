@@ -1526,6 +1526,24 @@ void CQPasteWnd::UpdateStatus(bool bRepaintImmediately)
 	SetCustomWindowTitle(windowTitle);
 }
 
+static CString TypeFilterSql(int typeFilter)
+{
+	switch (typeFilter)
+	{
+	case CHIP_TEXT:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_UNICODETEXT'))");
+	case CHIP_IMAGE:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_DIB'))");
+	case CHIP_FILE:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_HDROP'))");
+	case CHIP_LINK:
+		return _T("(Main.bIsGroup = 0 AND (Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'www.%'))");
+	}
+
+	return _T("");
+}
+
+
 BOOL CQPasteWnd::FillList(CString csSQLSearch)
 {
 	KillTimer(TIMER_DO_SEARCH);
@@ -6237,23 +6255,6 @@ void CQPasteWnd::OnShowGroupsBottom()
 
 // sql fragment restricting the list to one clip type (plan section 5.5);
 // types live in the Data table, links are a cheap description prefix match
-static CString TypeFilterSql(int typeFilter)
-{
-	switch (typeFilter)
-	{
-	case CHIP_TEXT:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_UNICODETEXT'))");
-	case CHIP_IMAGE:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_DIB'))");
-	case CHIP_FILE:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_HDROP'))");
-	case CHIP_LINK:
-		return _T("(Main.bIsGroup = 0 AND (Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'www.%'))");
-	}
-
-	return _T("");
-}
-
 void CQPasteWnd::ApplyTypeFilter()
 {
 	m_chipBar.SetActive(m_typeFilter);
@@ -6313,7 +6314,7 @@ void CQPasteWnd::UpdateSidebarTreeDock()
 		if (m_GroupTree.GetParent() == NULL ||
 			m_GroupTree.GetParent()->GetSafeHwnd() != m_sidebar.GetSafeHwnd())
 		{
-			m_GroupTree.SetParent(m_sidebar);
+			m_GroupTree.SetParent(&m_sidebar);
 		}
 
 		m_GroupTree.ModifyStyle(TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS, TVS_TRACKSELECT | TVS_FULLROWSELECT);

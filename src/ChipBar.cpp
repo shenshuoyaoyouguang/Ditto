@@ -122,7 +122,7 @@ void CChipBar::OnPaint()
 	if (m_bChipsLaidOut == false)
 		LayoutChips();
 
-	dc.FillSolidRect(dc.m_ps.rcPaint, theme.SurfaceBase());
+	dc.FillSolidRect(&dc.m_ps.rcPaint, theme.SurfaceBase());
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Caption);
 	int radius = m_dpi != NULL ? m_dpi->Scale(11) : 11;
@@ -151,7 +151,8 @@ void CChipBar::OnPaint()
 		}
 
 		CFont* pOld = dc.SelectObject(pFont);
-		dc.DrawText(m_labels[i], rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+		CRect rcText(rc);
+		dc.DrawText(m_labels[i], &rcText, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 		dc.SelectObject(pOld);
 
 		if (bActive)
