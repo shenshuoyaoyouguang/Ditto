@@ -147,3 +147,27 @@ void CGdiImageDrawer::Draw(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int 
 	//	pScreenDC->Draw3dRect(rectWithBorder, RGB(255, 255, 255), RGB(255, 255, 255));
 	//}
 }
+
+void CGdiImageDrawer::DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int posY, bool mouseHover, bool mouseDown, COLORREF tintColor)
+{
+	int width = m_pStdImage->m_pBitmap->GetWidth();
+	int height = m_pStdImage->m_pBitmap->GetHeight();
+
+	if (mouseDown)
+	{
+		int one = dpi.Scale(1);
+		posX += one;
+		posY += one;
+	}
+
+	Graphics graphics(pScreenDC->m_hDC);
+
+	ColorMap map;
+	map.oldColor = Color(255, 0, 0, 0);
+	map.newColor = Color(255, GetRValue(tintColor), GetGValue(tintColor), GetBValue(tintColor));
+
+	ImageAttributes attributes;
+	attributes.SetRemapTable(1, &map);
+
+	graphics.DrawImage(*m_pStdImage, Rect(posX, posY, width, height), 0, 0, width, height, UnitPixel, &attributes);
+}

@@ -6,6 +6,7 @@
 #include "QListCtrl.h"
 #include "ProcessPaste.h"
 #include "BitmapHelper.h"
+#include "Fonts.h"
 #include "MainTableFunctions.h"
 #include "DittoCopyBuffer.h"
 #include <atlbase.h>
@@ -213,6 +214,8 @@ CQListCtrl::CQListCtrl()
 	m_showIfClipWasPasted = TRUE;
 	m_bShowTextForFirstTenHotKeys = true;
 	m_pToolTipActions = NULL;
+	m_hoverItem = -1;
+	m_bHoverTracked = false;
 }
 
 CQListCtrl::~CQListCtrl()
@@ -259,6 +262,7 @@ BEGIN_MESSAGE_MAP(CQListCtrl, CListCtrl)
 	ON_NOTIFY_REFLECT(LVN_KEYDOWN, OnKeydown)
 	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, OnCustomdrawList)
 	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSELEAVE()
 	ON_WM_SYSKEYDOWN()
 	ON_WM_ERASEBKGND()
 	ON_WM_CREATE()
@@ -427,6 +431,30 @@ void CQListCtrl::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 	::ReleaseDC(NULL, hDC);
 }
 
+// gdi+ rounded fill used for the selection pill (plan section 5.3)
+static void FillRoundedRect(CDC* pDC, const CRect& rc, int radius, COLORREF color)
+{
+	if (rc.Width() <= 0 || rc.Height() <= 0)
+		return;
+
+	Graphics graphics(pDC->GetSafeHdc());
+	graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+
+	RectF rect((REAL)rc.left, (REAL)rc.top, (REAL)rc.Width() - 1, (REAL)rc.Height() - 1);
+	float r = (float)min(radius, min(rc.Width(), rc.Height()) / 2);
+	float d = r * 2;
+
+	GraphicsPath path;
+	path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+	path.AddArc(rect.X + rect.Width - d, rect.Y, d, d, 270, 90);
+	path.AddArc(rect.X + rect.Width - d, rect.Y + rect.Height - d, d, d, 0, 90);
+	path.AddArc(rect.X, rect.Y + rect.Height - d, d, d, 90, 90);
+	path.CloseFigure();
+
+	SolidBrush brush(Color(255, GetRValue(color), GetGValue(color), GetBValue(color)));
+	graphics.FillPath(&brush, &path);
+}
+
 void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
@@ -480,18 +508,24 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		// Draw the background of the list item.  Colors are selected
 		// according to the item's state.
-		if (rItem.state & LVIS_SELECTED)
+		bool bSelected = (rItem.state & LVIS_SELECTED) != 0;
+		if (bSelected)
 		{
 			if (bListHasFocus)
 			{
-				crBkgnd = CGetSetOptions::m_Theme.ListBoxSelectedBG();
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxSelectedText());
+				crBkgnd = CGetSetOptions::m_Theme.StateSelectedBG();
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.StateSelectedText());
 			}
 			else
 			{
 				crBkgnd = CGetSetOptions::m_Theme.ListBoxSelectedNoFocusBG();
 				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxSelectedNoFocusText());
 			}
+		}
+		else if (nItem == m_hoverItem)
+		{
+			crBkgnd = CGetSetOptions::m_Theme.StateHover();
+			OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
 		}
 		else
 		{
@@ -508,7 +542,17 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			}
 		}
 
-		pDC->FillSolidRect(rcItem, crBkgnd);
+		if (bSelected)
+		{
+			// selection draws as an inset rounded pill instead of a full row
+			CRect rcPill(rcItem);
+			rcPill.DeflateRect(m_windowDpi->Scale(2), 0, m_windowDpi->Scale(2), 0);
+			FillRoundedRect(pDC, rcPill, m_windowDpi->Scale(4), crBkgnd);
+		}
+		else
+		{
+			pDC->FillSolidRect(rcItem, crBkgnd);
+		}
 		nOldBKMode = pDC->SetBkMode(TRANSPARENT);
 
 		CRect rcText = rcItem;
@@ -554,28 +598,30 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		DrawBitMap(nItem, rcText, pDC, csText);
 
-		// draw the symbol box
+		// draw the symbol box (tinted to the text color so the black glyphs
+		// stay visible on dark rows)
+		COLORREF iconTint = CGetSetOptions::m_Theme.TextPrimary();
 		if (strSymbols.GetLength() > 0)
 		{
 			if (strSymbols.Find(_T("<group>")) >= 0) //group
 			{
-				m_groupFolder.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
+				m_groupFolder.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_groupFolder.ImageWidth() + m_windowDpi->Scale(2);
 			}
 			if (strSymbols.Find(_T("<noautodelete>")) >= 0) //don't auto delete
 			{
-				m_dontDeleteImage.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
+				m_dontDeleteImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_dontDeleteImage.ImageWidth() + m_windowDpi->Scale(2);
 			}
 			if (strSymbols.Find(_T("<shortcut>")) >= 0) // has shortcut
 			{
-				m_shortCutImage.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
+				m_shortCutImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_shortCutImage.ImageWidth() + m_windowDpi->Scale(2);
 			}
 			if (drawInGroupIcon &&
 				strSymbols.Find(_T("<ingroup>")) >= 0) // in group
 			{
-				m_inFolderImage.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
+				m_inFolderImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_inFolderImage.ImageWidth() + m_windowDpi->Scale(2);
 			}
 			if (strSymbols.Find(_T("<qpastetext>")) >= 0) // has quick paste text
@@ -583,7 +629,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			}
 			if (strSymbols.Find(_T("<sticky>")) >= 0) //sticky clip
 			{
-				m_stickyImage.Draw(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false);
+				m_stickyImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_stickyImage.ImageWidth() + m_windowDpi->Scale(2);
 			}
 		}
@@ -631,15 +677,15 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			crHotKey.top += m_windowDpi->Scale(1 + extraFromClipWasPaste);
 
 			HFONT hOldFont = (HFONT)pDC->SelectObject(m_SmallFont);
-			COLORREF localOldTextColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListSmallQuickPasteIndexColor());
+			COLORREF localOldTextColor = pDC->SetTextColor(CGetSetOptions::m_Theme.IndicatorBadge());
 
-			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.ListSmallQuickPasteIndexColor());
+			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.StrokeDivider());
 			CPen* pOldPen = pDC->SelectObject(&pen);
 
 			pDC->DrawText(cs, crHotKey, DT_BOTTOM);
 
-			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top));
-			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom));
+			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top + m_windowDpi->Scale(2)));
+			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom - m_windowDpi->Scale(2)));
 
 			pDC->SelectObject(hOldFont);
 			pDC->SetTextColor(localOldTextColor);
@@ -1359,6 +1405,9 @@ int CQListCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		EnableToolTips(FALSE);
 	}
 
+	// flicker-free scrolling via the common controls double buffer
+	SetExtendedStyle(GetExtendedStyle() | LVS_EX_DOUBLEBUFFER);
+
 	//m_pToolTip = new CToolTipEx;
 	//m_pToolTip->Create(this);
 
@@ -2060,8 +2109,11 @@ void CQListCtrl::SetLogFont(LOGFONT& font)
 
 void CQListCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
+	// rows shift under the cursor while scrolling, the tracked index goes stale
+	ClearHover();
+
 	CListCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
-	
+
 	// Notify parent to update modern scrollbar
 	CWnd* pParent = GetParent();
 	if (pParent && pParent->GetSafeHwnd())
@@ -2098,8 +2150,70 @@ BOOL CQListCtrl::OnItemDeleted(long lID)
 	return (bRet2);
 }
 
+void CQListCtrl::UpdateHover(CPoint point)
+{
+	LVHITTESTINFO hitTest;
+	ZeroMemory(&hitTest, sizeof(hitTest));
+	hitTest.pt = point;
+
+	int item = HitTest(&hitTest);
+
+	if (item != m_hoverItem)
+	{
+		int oldItem = m_hoverItem;
+		m_hoverItem = item;
+
+		// repaint only the rows that changed state, not the whole list
+		if (oldItem >= 0)
+			RedrawItem(oldItem);
+		if (item >= 0)
+			RedrawItem(item);
+	}
+
+	if (m_bHoverTracked == false)
+	{
+		TRACKMOUSEEVENT track;
+		track.cbSize = sizeof(track);
+		track.dwFlags = TME_LEAVE;
+		track.hwndTrack = GetSafeHwnd();
+		track.dwHoverTime = 0;
+
+		if (TrackMouseEvent(&track))
+			m_bHoverTracked = true;
+	}
+}
+
+void CQListCtrl::RedrawItem(int item)
+{
+	if (item < 0)
+		return;
+
+	CRect rc;
+	if (GetItemRect(item, rc, LVIR_BOUNDS))
+		InvalidateRect(rc, FALSE);
+}
+
+void CQListCtrl::ClearHover()
+{
+	if (m_hoverItem >= 0)
+	{
+		RedrawItem(m_hoverItem);
+		m_hoverItem = -1;
+	}
+}
+
+void CQListCtrl::OnMouseLeave()
+{
+	m_bHoverTracked = false;
+	ClearHover();
+
+	CListCtrl::OnMouseLeave();
+}
+
 void CQListCtrl::OnMouseMove(UINT nFlags, CPoint point)
 {
+	UpdateHover(point);
+
 	if (CGetSetOptions::m_showScrollBar == FALSE)
 	{
 		CRect crWindow;
@@ -2292,22 +2406,17 @@ void CQListCtrl::SetDpiInfo(CDPI* dpi)
 
 void CQListCtrl::CreateSmallFont()
 {
-	LOGFONT lf;
+	// badge digits use the app font family (the old raster "Small Font" has no
+	// modern sizes); the user's size option (in points) is still honored
+	AppFonts::Inst().EnsureInitialized();
 
-	lf.lfHeight = -MulDiv(CGetSetOptions::GetFirstTenHotKeysFontSize(), m_windowDpi->GetDPI(), 72);
-	lf.lfWidth = 0;
-	lf.lfEscapement = 0;
-	lf.lfOrientation = 0;
-	lf.lfWeight = FW_LIGHT;
-	lf.lfItalic = FALSE;
-	lf.lfUnderline = FALSE;
-	lf.lfStrikeOut = FALSE;
-	lf.lfCharSet = ANSI_CHARSET;
-	lf.lfOutPrecision = OUT_STRING_PRECIS;
-	lf.lfClipPrecision = CLIP_STROKE_PRECIS;
-	lf.lfQuality = DEFAULT_QUALITY;
-	lf.lfPitchAndFamily = VARIABLE_PITCH | FF_DONTCARE;
-	lstrcpy(lf.lfFaceName, _T("Small Font"));
+	LOGFONT lf;
+	AppFonts::Inst().Get(Font_Caption)->GetLogFont(&lf);
+	if (m_windowDpi != NULL)
+	{
+		lf.lfHeight = -MulDiv(CGetSetOptions::GetFirstTenHotKeysFontSize(), m_windowDpi->GetDPI(), 72);
+	}
+	lf.lfWeight = FW_NORMAL;
 
 	m_SmallFont = ::CreateFontIndirect(&lf);
 }
