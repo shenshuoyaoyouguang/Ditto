@@ -363,6 +363,8 @@
 		<Item English_Text = "Links" ID = "Chip_Link"></Item>
 		<Item English_Text = "Starred" ID = "Chip_Starred"></Item>
 		<Item English_Text = "Groups" ID = "Chip_Groups"></Item>
+		<Item English_Text = "Copy Buffers" ID = "CopyBuffersTitle"></Item>
+		<Item English_Text = "Quick Paste Keyboard" ID = "QuickPasteKeyboardTitle"></Item>
 		<Item English_Text = "General" ID = "GeneralTitle"></Item>
 		<Item English_Text = "Supported Types" ID = "SupportedTypesTitle"></Item>
 		<Item English_Text = "Stats" ID = "StatsTitle"></Item>

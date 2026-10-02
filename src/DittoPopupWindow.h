@@ -1,3 +1,5 @@
+// DEAD CODE: no instantiation point anywhere in the repo; kept only for reference.
+// Deletion requires explicit user approval (see docs/design/ui-fluent-redesign-plan.md section 9).
 #pragma once
 #include "WndEx.h"
 

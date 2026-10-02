@@ -32,7 +32,7 @@ COptionsKeyBoard::~COptionsKeyBoard()
 
 void COptionsKeyBoard::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionsKeyBoard)
 	DDX_Control(pDX, IDC_CHECK_SEND_PASTE, m_btSendPaste);
 	DDX_Control(pDX, IDC_CHECK_USE_UI_GROUP_LAST_10, m_UseUiGroupForLastTen);
@@ -67,7 +67,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsKeyBoard::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	m_CustomeKeysHelp.SetURL(_T("https://github.com/sabrogden/Ditto/wiki/Custom-Key-Strokes"));
 
@@ -109,12 +109,12 @@ BOOL COptionsKeyBoard::OnInitDialog()
 
 LRESULT COptionsKeyBoard::OnWizardNext() 
 {
-	return CPropertyPage::OnWizardNext();
+	return CFluentPropertyPage::OnWizardNext();
 }
 
 BOOL COptionsKeyBoard::OnWizardFinish() 
 {
-	return CPropertyPage::OnWizardFinish();
+	return CFluentPropertyPage::OnWizardFinish();
 }
 
 BOOL COptionsKeyBoard::OnApply()
@@ -164,11 +164,11 @@ BOOL COptionsKeyBoard::OnApply()
 	g_HotKeys.SaveAllKeys();
 	g_HotKeys.RegisterAll(true);
 	
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 
 void COptionsKeyBoard::OnCancel() 
 {
 	g_HotKeys.RegisterAll( true );
-	CPropertyPage::OnCancel();
+	CFluentPropertyPage::OnCancel();
 }

@@ -36,7 +36,7 @@ CAbout::~CAbout()
 
 void CAbout::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAbout)
 	DDX_Control(pDX, IDC_STATIC_LINK, m_Link);
 	DDX_Control(pDX, IDC_HYPER_LINK, m_HyperLink);
@@ -55,7 +55,7 @@ END_MESSAGE_MAP()
 
 BOOL CAbout::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	m_List.AddString(_T("Ditto"));
 

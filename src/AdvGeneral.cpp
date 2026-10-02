@@ -24,7 +24,7 @@ CAdvGeneral::~CAdvGeneral()
 
 void CAdvGeneral::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_MFCPROPERTYGRID1, m_propertyGrid);
 	DDX_Control(pDX, IDC_EDIT_ADV_FILTER, m_editFilter);
 }
@@ -166,7 +166,7 @@ END_MESSAGE_MAP()
 
 BOOL CAdvGeneral::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	m_propertyGrid.ModifyStyle(0, WS_CLIPCHILDREN);
 
@@ -192,7 +192,18 @@ BOOL CAdvGeneral::OnInitDialog()
 	hdItem.cxy = dpi.Scale(400); // whatever you want the property name column width to be
 	m_propertyGrid.GetHeaderCtrl().SetItem(0, &hdItem);
 
-	m_propertyGrid.SetFont(this->GetFont());	
+	m_propertyGrid.SetFont(this->GetFont());
+
+	// align the mfc property grid with the theme tokens (plan section 5.6)
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_propertyGrid.SetCustomColors(
+		theme.SurfaceElevated(),
+		theme.TextPrimary(),
+		theme.ControlFill(),
+		theme.TextSecondary(),
+		theme.SurfaceElevated(),
+		theme.TextSecondary(),
+		theme.StrokeDivider());
 
 	pGroupTest->AddSubItem(new CMFCPropertyGridProperty(_T("Activate window delay (100ms default)"), (long)CGetSetOptions::SendKeysDelay(), _T(""), SETTING_ACTIVATE_WINDOW_DELAY));
 
@@ -1002,12 +1013,12 @@ void CAdvGeneral::OnBnClickedOk()
 			}
 		}
 	}
-	CDialogEx::OnOK();
+	CFluentDialog::OnOK();
 }
 
 void CAdvGeneral::OnSize(UINT nType, int cx, int cy)
 {
-	CDialogEx::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 
 	if (((GetKeyState(VK_LBUTTON) & 0x100) != 0) &&
 		m_mouseDownOnCaption == false)
@@ -1082,7 +1093,7 @@ void CAdvGeneral::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize.x = 450;
 	lpMMI->ptMinTrackSize.y = 450;
 
-	CDialogEx::OnGetMinMaxInfo(lpMMI);
+	CFluentDialog::OnGetMinMaxInfo(lpMMI);
 }
 
 void CAdvGeneral::OnNcLButtonDown(UINT nHitTest, CPoint point)
@@ -1187,7 +1198,7 @@ BOOL CAdvGeneral::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
-	return CDialogEx::PreTranslateMessage(pMsg);
+	return CFluentDialog::PreTranslateMessage(pMsg);
 }
 
 void CAdvGeneral::OnBnClickedButtonNextMatch()

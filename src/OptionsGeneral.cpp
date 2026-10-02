@@ -44,7 +44,7 @@ COptionsGeneral::~COptionsGeneral()
 
 void COptionsGeneral::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionsGeneral)
 	//DDX_Control(pDX, IDC_ENSURE, m_EnsureConnected);
 	//	DDX_Control(pDX, IDC_EDIT_SAVE_DELAY, m_SaveDelay);
@@ -72,7 +72,6 @@ BEGIN_MESSAGE_MAP(COptionsGeneral, CPropertyPage)
 	ON_BN_CLICKED(IDC_BUTTON_ABOUT, OnButtonAbout)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BUTTON_ADVANCED, &COptionsGeneral::OnBnClickedButtonAdvanced)
-	ON_WM_CTLCOLOR()
 	ON_BN_CLICKED(IDC_BUTTON_THEME, &COptionsGeneral::OnBnClickedButtonTheme)
 	ON_BN_CLICKED(IDC_BUTTON_PREVIEW_THEME, &COptionsGeneral::OnBnClickedButtonPreviewTheme)
 	ON_CBN_SELCHANGE(IDC_COMBO_THEME, &COptionsGeneral::OnCbnSelchangeComboTheme)
@@ -88,7 +87,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsGeneral::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	CString url = _T("https://github.com/sabrogden/Ditto/wiki/Environment-Variables");
 
@@ -348,12 +347,12 @@ BOOL COptionsGeneral::OnApply()
 		m_pParent->m_themeChanged = TRUE;
 	}
 	
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 
 BOOL COptionsGeneral::OnSetActive() 
 {	
-	return CPropertyPage::OnSetActive();
+	return CFluentPropertyPage::OnSetActive();
 }
 
 //void COptionsGeneral::OnSetDbPath() 
@@ -453,23 +452,6 @@ void COptionsGeneral::OnBnClickedButtonAdvanced()
 	adv.DoModal();
 }
 
-
-HBRUSH COptionsGeneral::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
-{
-	HBRUSH hbr = CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
-
-	
-
-	switch(nCtlColor)
-	{
-	case CTLCOLOR_DLG:     // dialog 
-	case CTLCOLOR_STATIC:  // static, checkbox, read-only edit, etc.
-		//pDC->SetBkColor(RGB(251, 251, 251));
-		//hbr = m_brush;
-		break;
-	}
-	return hbr;
-}
 
 void COptionsGeneral::FillThemes()
 {
@@ -627,7 +609,7 @@ void COptionsGeneral::OnBnClickedButtonFont()
 //void COptionsGeneral::OnEnChangePath()
 //{
 //	// TODO:  If this is a RICHEDIT control, the control will not
-//	// send this notification unless you override the CPropertyPage::OnInitDialog()
+//	// send this notification unless you override the CFluentPropertyPage::OnInitDialog()
 //	// function and call CRichEditCtrl().SetEventMask()
 //	// with the ENM_CHANGE flag ORed into the mask.
 //

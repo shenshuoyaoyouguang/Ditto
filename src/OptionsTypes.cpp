@@ -37,7 +37,7 @@ COptionsTypes::~COptionsTypes()
 
 void COptionsTypes::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionsTypes)
 	DDX_Control(pDX, IDC_LIST1, m_List);
 	//}}AFX_DATA_MAP
@@ -77,12 +77,12 @@ BOOL COptionsTypes::OnApply()
 		theApp.ReloadTypes();
 	}
 	
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 
 BOOL COptionsTypes::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	try
 	{

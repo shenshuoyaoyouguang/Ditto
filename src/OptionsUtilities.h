@@ -1,3 +1,5 @@
+// DEAD CODE: no instantiation point anywhere in the repo; kept only for reference.
+// Deletion requires explicit user approval (see docs/design/ui-fluent-redesign-plan.md section 9).
 #if !defined(AFX_OPTIONSUTILITIES_H__094B311D_3C47_43A8_A254_A009E3F0A75D__INCLUDED_)
 #define AFX_OPTIONSUTILITIES_H__094B311D_3C47_43A8_A254_A009E3F0A75D__INCLUDED_
 

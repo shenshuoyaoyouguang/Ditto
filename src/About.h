@@ -13,7 +13,9 @@
 #include "hyperlink.h"
 #include "HListBox.h"
 
-class CAbout : public CPropertyPage
+#include "FluentDialog.h"
+
+class CAbout : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(CAbout)
 

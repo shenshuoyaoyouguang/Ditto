@@ -64,8 +64,20 @@ protected:
 		// NOTE - the ClassWizard will add and remove member functions here.
 	afx_msg void OnDestroy();
 	afx_msg void OnNcDestroy();
+	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
+	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
+	afx_msg void OnNavSelect();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
+
+protected:
+	void LayoutNav(int cx, int cy);
+	void FillNavItems();
+
+	CListBox m_nav;
+	int m_navWidth;
+	bool m_bNavCreated;
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -49,7 +49,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsCopyBuffers::OnInitDialog()
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	CCopyBufferItem Item;
 	
@@ -153,6 +153,6 @@ BOOL COptionsCopyBuffers::OnApply()
 	g_HotKeys.SaveAllKeys();
 	g_HotKeys.RegisterAll(true);
 
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 

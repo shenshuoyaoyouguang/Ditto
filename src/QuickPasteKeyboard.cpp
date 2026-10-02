@@ -26,7 +26,7 @@ CQuickPasteKeyboard::~CQuickPasteKeyboard()
 
 void CQuickPasteKeyboard::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST1, m_list);
 	DDX_Control(pDX, IDC_HOTKEY1, m_hotKey1);
 	DDX_Control(pDX, IDC_HOTKEY2, m_hotKey2);
@@ -63,7 +63,7 @@ END_MESSAGE_MAP()
 
 BOOL CQuickPasteKeyboard::OnInitDialog()
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	InitListCtrlCols();
 	LoadItems();
@@ -419,7 +419,7 @@ BOOL CQuickPasteKeyboard::OnApply()
 		}
 	}
 
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 
 void CQuickPasteKeyboard::OnCbnSelchangeComboAllAssigned()
@@ -775,7 +775,7 @@ void CQuickPasteKeyboard::OnEnKillfocusEdit1()
 
 void CQuickPasteKeyboard::OnKillFocus(CWnd* pNewWnd)
 {
-	CPropertyPage::OnKillFocus(pNewWnd);
+	CFluentPropertyPage::OnKillFocus(pNewWnd);
 
 	// TODO: Add your message handler code here
 }
@@ -804,7 +804,7 @@ BOOL CQuickPasteKeyboard::PreTranslateMessage(MSG* pMsg)
 		break;
 	}
 
-	return CPropertyPage::PreTranslateMessage(pMsg);
+	return CFluentPropertyPage::PreTranslateMessage(pMsg);
 }
 
 
@@ -828,7 +828,7 @@ BOOL CQuickPasteKeyboard::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResul
 	}
 
 
-	return CPropertyPage::OnNotify(wParam, lParam, pResult);
+	return CFluentPropertyPage::OnNotify(wParam, lParam, pResult);
 }
 
 
@@ -859,7 +859,7 @@ BOOL CQuickPasteKeyboard::OnCommand(WPARAM wParam, LPARAM lParam)
 		}
 	}
 
-	return CPropertyPage::OnCommand(wParam, lParam);
+	return CFluentPropertyPage::OnCommand(wParam, lParam);
 }
 
 
@@ -883,7 +883,7 @@ void CQuickPasteKeyboard::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: Add your message handler code here and/or call default
 
-	CPropertyPage::OnKeyUp(nChar, nRepCnt, nFlags);
+	CFluentPropertyPage::OnKeyUp(nChar, nRepCnt, nFlags);
 }
 
 

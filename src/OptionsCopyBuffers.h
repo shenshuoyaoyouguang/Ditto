@@ -4,7 +4,9 @@
 
 // COptionsCopyBuffers dialog
 
-class COptionsCopyBuffers : public CPropertyPage
+#include "FluentDialog.h"
+
+class COptionsCopyBuffers : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(COptionsCopyBuffers)
 

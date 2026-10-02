@@ -363,6 +363,8 @@
 		<Item English_Text = "Links" ID = "Chip_Link">链接</Item>
 		<Item English_Text = "Starred" ID = "Chip_Starred">收藏</Item>
 		<Item English_Text = "Groups" ID = "Chip_Groups">分组</Item>
+		<Item English_Text = "Copy Buffers" ID = "CopyBuffersTitle">复制缓冲区</Item>
+		<Item English_Text = "Quick Paste Keyboard" ID = "QuickPasteKeyboardTitle">快速粘贴热键</Item>
 		<Item English_Text = "General" ID = "GeneralTitle">常规</Item>
 		<Item English_Text = "Supported Types" ID = "SupportedTypesTitle">支持类型</Item>
 		<Item English_Text = "Stats" ID = "StatsTitle">统计</Item>
