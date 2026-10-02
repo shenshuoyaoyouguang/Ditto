@@ -40,10 +40,13 @@ private:
 
 	CString ResolveFamily(const CString& csOverride);
 	bool FamilyCoversTestGlyphs(const CString& csFamily);
-	bool BuildFont(CFont& font, int size96, int weight, bool underline = false);
+	// isBody marks the single token that BodyLogFont() exposes; it must be
+	// explicit because Font_Body and Font_BodyStrong share size 14.
+	bool BuildFont(CFont& font, int size96, int weight, bool underline = false, bool isBody = false);
 
 	CFont m_fonts[Font_Count];
 	LOGFONT m_lfBody;
 	CString m_csFamily;
 	UINT m_dpi;
+	bool m_initialized;
 };

@@ -11,6 +11,8 @@
 
 class CFluentDialog : public CDialog
 {
+	DECLARE_DYNAMIC(CFluentDialog)
+
 public:
 	CFluentDialog();
 	CFluentDialog(UINT nIDTemplate, CWnd* pParentWnd = NULL);
@@ -37,6 +39,8 @@ protected:
 
 class CFluentPropertyPage : public CPropertyPage
 {
+	DECLARE_DYNAMIC(CFluentPropertyPage)
+
 public:
 	CFluentPropertyPage();
 	CFluentPropertyPage(UINT nIDTemplate, UINT nIDCaption = 0, DWORD dwSize = sizeof(PROPSHEETPAGE));

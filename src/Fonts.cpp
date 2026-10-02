@@ -12,18 +12,29 @@ AppFonts::AppFonts()
 {
 	ZeroMemory(&m_lfBody, sizeof(m_lfBody));
 	m_dpi = 96;
+	m_initialized = false;
 }
 
 void AppFonts::Init(UINT dpi, const CString& csFamilyOverride)
 {
 	if (dpi == 0)
 		dpi = 96;
-	m_dpi = dpi;
 
-	m_csFamily = ResolveFamily(csFamilyOverride);
+	CString csFamily = ResolveFamily(csFamilyOverride);
+
+	// BuildFont() starts with DeleteObject(), and ApplyToChildren() handed the
+	// raw HFONT to child windows (WM_SETFONT). Rebuilding for unchanged inputs
+	// would leave those windows holding a deleted font, so only rebuild when
+	// the dpi or the resolved family actually changed.
+	if (m_initialized && m_dpi == dpi && m_csFamily == csFamily)
+		return;
+
+	m_dpi = dpi;
+	m_csFamily = csFamily;
+	m_initialized = true;
 
 	BuildFont(m_fonts[Font_Caption], 12, FW_NORMAL);
-	BuildFont(m_fonts[Font_Body], 14, FW_NORMAL);
+	BuildFont(m_fonts[Font_Body], 14, FW_NORMAL, false, true);
 	BuildFont(m_fonts[Font_BodyStrong], 14, FW_SEMIBOLD);
 	BuildFont(m_fonts[Font_Subtitle], 16, FW_NORMAL);
 	BuildFont(m_fonts[Font_Title], 20, FW_NORMAL);
@@ -54,10 +65,15 @@ CFont* AppFonts::Get(FontToken token)
 	if (m_fonts[Font_Body].GetSafeHandle() == NULL)
 		EnsureInitialized();
 
+	// If only this token failed to build (e.g. GDI exhaustion) fall back to
+	// Body so callers never select an invalid HFONT into a DC.
+	if (m_fonts[token].GetSafeHandle() == NULL && token != Font_Body)
+		return &m_fonts[Font_Body];
+
 	return &m_fonts[token];
 }
 
-bool AppFonts::BuildFont(CFont& font, int size96, int weight, bool underline)
+bool AppFonts::BuildFont(CFont& font, int size96, int weight, bool underline, bool isBody)
 {
 	font.DeleteObject();
 
@@ -71,9 +87,13 @@ bool AppFonts::BuildFont(CFont& font, int size96, int weight, bool underline)
 	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
 	lf.lfQuality = CLEARTYPE_QUALITY;
 	lf.lfPitchAndFamily = VARIABLE_PITCH | FF_SWISS;
-	lstrcpy(lf.lfFaceName, m_csFamily);
+	// m_csFamily comes from the theme xml and can be arbitrarily long; copy
+	// with truncation instead of overrunning lfFaceName[LF_FACESIZE].
+	_tcsncpy_s(lf.lfFaceName, LF_FACESIZE, (LPCTSTR)m_csFamily, _TRUNCATE);
 
-	if (size96 == 14)
+	// Font_Body and Font_BodyStrong are both size 14, so the size alone cannot
+	// identify which one BodyLogFont() must expose -- the caller says so.
+	if (isBody)
 		m_lfBody = lf;
 
 	return font.CreateFontIndirect(&lf) ? true : false;
