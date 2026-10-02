@@ -30,7 +30,7 @@ void CAdvGeneral::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CAdvGeneral, CDialogEx)
+BEGIN_MESSAGE_MAP(CAdvGeneral, CFluentDialog)
 	ON_BN_CLICKED(IDOK, &CAdvGeneral::OnBnClickedOk)
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BT_COMPACT_AND_REPAIR, &CAdvGeneral::OnBnClickedBtCompactAndRepair)
