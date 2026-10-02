@@ -221,6 +221,11 @@ void CDeleteClipData::CloseDescriptionWindow()
 
 void CDeleteClipData::OnSize(UINT nType, int cx, int cy)
 {
+	// Skip our own resizer pass while CFluentDialog::OnDpiChanged is rescaling;
+	// see CScriptEditor::OnSize.
+	if (IsRescaling())
+		return;
+
 	CFluentDialog::OnSize(nType, cx, cy);
 
 	m_Resize.MoveControls(CSize(cx, cy));

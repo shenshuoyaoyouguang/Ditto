@@ -58,6 +58,11 @@ BOOL CFileTransferProgressDlg::OnInitDialog()
 	// same spot; the animate control from the template stays hidden
 	m_FileCopy.ShowWindow(SW_HIDE);
 
+	// m_progressBar already carries the single-file progress (same 0-100 value
+	// from SetSingleFilePos), so the template's IDC_PROGRESS_FILE would be a
+	// second, identical bar right next to it. Hide it too.
+	m_ProgressSingleFile.ShowWindow(SW_HIDE);
+
 	CRect rcAvi;
 	m_FileCopy.GetWindowRect(rcAvi);
 	ScreenToClient(rcAvi);
@@ -107,12 +112,22 @@ void CFileTransferProgressDlg::SetNumFiles(int nFiles)
 	m_ProgressSingleFile.SetStep(1);
 	m_ProgressSingleFile.SetPos(0);
 
+	// the fluent bar must own its range explicitly -- it defaults to 0..100, and
+	// OnPaint derives the fill fraction from GetRange/GetPos, so a changed range
+	// would silently misplace the fill
+	m_progressBar.SetRange32(0, 100);
+	m_progressBar.SetStep(1);
 	m_progressBar.SetPos(0);
+
+	// No file count yet means we are still opening the connection: show moving
+	// feedback instead of a bar stuck at zero.
+	m_progressBar.SetMarquee(nFiles <= 0);
 }
 
 void CFileTransferProgressDlg::ResetSingleFileProgress()
 {
 	m_ProgressSingleFile.SetPos(0);
+	m_progressBar.SetMarquee(true);
 	m_progressBar.SetPos(0);
 }
 
@@ -123,6 +138,10 @@ void CFileTransferProgressDlg::StepAllFiles()
 
 void CFileTransferProgressDlg::SetSingleFilePos(int nPos)
 {
+	// first real progress report ends the connection phase
+	if (m_progressBar.IsMarquee())
+		m_progressBar.SetMarquee(false);
+
 	m_ProgressSingleFile.SetPos(nPos);
 	m_progressBar.SetPos(nPos);
 }

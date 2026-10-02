@@ -219,6 +219,12 @@ void CScriptEditor::OnBnClickedCheckActive()
 
 void CScriptEditor::OnSize(UINT nType, int cx, int cy)
 {
+	// A dpi change resizes the window (WM_SIZE) and then rescales every child in
+	// CFluentDialog::RescaleChildren. Running our own resizer pass as well applies
+	// the layout twice, so anchored and stretched controls end up displaced.
+	if (IsRescaling())
+		return;
+
 	CFluentDialog::OnSize(nType, cx, cy);
 
 	m_resize.MoveControls(CSize(cx, cy));

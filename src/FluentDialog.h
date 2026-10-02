@@ -31,8 +31,18 @@ protected:
 	void ApplyFluentStyle();
 	void RescaleChildren(const CRect& rcOldClient, const CRect& rcNewClient);
 
+	// True while OnDpiChanged is driving the resize. A dpi change resizes the
+	// window, which synchronously dispatches WM_SIZE and runs the derived OnSize
+	// (its own CDialogResizer pass), and then RescaleChildren scales every child
+	// proportionally -- two layout passes for one dpi change, which displaces or
+	// double-grows anchored and stretched controls. Derived OnSize handlers skip
+	// their own pass while this is set.
+	bool IsRescaling() const { return m_bRescaling; }
+
 	CBrush m_brBackground;
+	CBrush m_brControl;
 	CDialogResizer* m_pResizer;
+	bool m_bRescaling;
 
 	DECLARE_MESSAGE_MAP()
 };
@@ -55,7 +65,11 @@ protected:
 	void ApplyFluentStyle();
 	void RescaleChildren(const CRect& rcOldClient, const CRect& rcNewClient);
 
+	bool IsRescaling() const { return m_bRescaling; }
+
 	CBrush m_brBackground;
+	CBrush m_brControl;
+	bool m_bRescaling;
 
 	DECLARE_MESSAGE_MAP()
 };

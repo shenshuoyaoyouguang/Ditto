@@ -9,18 +9,21 @@
 CFluentDialog::CFluentDialog()
 	: CDialog()
 	, m_pResizer(NULL)
+	, m_bRescaling(false)
 {
 }
 
 CFluentDialog::CFluentDialog(UINT nIDTemplate, CWnd* pParentWnd)
 	: CDialog(nIDTemplate, pParentWnd)
 	, m_pResizer(NULL)
+	, m_bRescaling(false)
 {
 }
 
 CFluentDialog::CFluentDialog(LPCTSTR lpszTemplateName, CWnd* pParentWnd)
 	: CDialog(lpszTemplateName, pParentWnd)
 	, m_pResizer(NULL)
+	, m_bRescaling(false)
 {
 }
 
@@ -48,6 +51,12 @@ void CFluentDialog::ApplyFluentStyle()
 	CTheme& theme = CGetSetOptions::m_Theme;
 	m_brBackground.DeleteObject();
 	m_brBackground.CreateSolidBrush(theme.SurfaceBase());
+
+	// List boxes and edit controls paint their own background, so they need a
+	// brush of their own -- returning the dialog brush would make them
+	// indistinguishable from the dialog.
+	m_brControl.DeleteObject();
+	m_brControl.CreateSolidBrush(theme.SurfaceElevated());
 }
 
 BOOL CFluentDialog::OnEraseBkgnd(CDC* pDC)
@@ -81,6 +90,17 @@ HBRUSH CFluentDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 			return (HBRUSH)m_brBackground.GetSafeHandle();
 		break;
 
+	case CTLCOLOR_LISTBOX:
+	case CTLCOLOR_EDIT:
+		// These actually send WM_CTLCOLOR (unlike the common controls such as
+		// SysTreeView32 / SysDateTimePick32, which never do and therefore kept
+		// their system colours on a themed dialog).
+		pDC->SetTextColor(theme.TextPrimary());
+		pDC->SetBkColor(theme.SurfaceElevated());
+		if (m_brControl.GetSafeHandle() != NULL)
+			return (HBRUSH)m_brControl.GetSafeHandle();
+		break;
+
 	default:
 		break;
 	}
@@ -100,9 +120,18 @@ LRESULT CFluentDialog::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 {
 	UINT newDpi = HIWORD(wParam);
 	RECT* pSuggested = (RECT*)lParam;
+	if (pSuggested == NULL)
+		return 0;
 
 	CRect rcOldClient;
 	GetClientRect(rcOldClient);
+
+	// SetWindowPos dispatches WM_SIZE synchronously, which runs the derived
+	// OnSize and its own CDialogResizer pass; RescaleChildren below then scales
+	// every child proportionally. Two passes for one dpi change displaces or
+	// double-grows anchored and stretched controls, so flag the rescale and let
+	// derived handlers skip their own.
+	m_bRescaling = true;
 
 	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
 		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
@@ -114,6 +143,8 @@ LRESULT CFluentDialog::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 
 	AppFonts::Inst().Init(newDpi, CGetSetOptions::m_Theme.FontFamily());
 	AppFonts::ApplyToChildren(this);
+
+	m_bRescaling = false;
 
 	return 0;
 }
@@ -147,11 +178,13 @@ void CFluentDialog::RescaleChildren(const CRect& rcOldClient, const CRect& rcNew
 
 CFluentPropertyPage::CFluentPropertyPage()
 	: CPropertyPage()
+	, m_bRescaling(false)
 {
 }
 
 CFluentPropertyPage::CFluentPropertyPage(UINT nIDTemplate, UINT nIDCaption, DWORD dwSize)
 	: CPropertyPage(nIDTemplate, nIDCaption, dwSize)
+	, m_bRescaling(false)
 {
 }
 
@@ -178,6 +211,9 @@ void CFluentPropertyPage::ApplyFluentStyle()
 	CTheme& theme = CGetSetOptions::m_Theme;
 	m_brBackground.DeleteObject();
 	m_brBackground.CreateSolidBrush(theme.SurfaceBase());
+
+	m_brControl.DeleteObject();
+	m_brControl.CreateSolidBrush(theme.SurfaceElevated());
 }
 
 BOOL CFluentPropertyPage::OnEraseBkgnd(CDC* pDC)
@@ -211,6 +247,14 @@ HBRUSH CFluentPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 			return (HBRUSH)m_brBackground.GetSafeHandle();
 		break;
 
+	case CTLCOLOR_LISTBOX:
+	case CTLCOLOR_EDIT:
+		pDC->SetTextColor(theme.TextPrimary());
+		pDC->SetBkColor(theme.SurfaceElevated());
+		if (m_brControl.GetSafeHandle() != NULL)
+			return (HBRUSH)m_brControl.GetSafeHandle();
+		break;
+
 	default:
 		break;
 	}
@@ -222,9 +266,13 @@ LRESULT CFluentPropertyPage::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 {
 	UINT newDpi = HIWORD(wParam);
 	RECT* pSuggested = (RECT*)lParam;
+	if (pSuggested == NULL)
+		return 0;
 
 	CRect rcOldClient;
 	GetClientRect(rcOldClient);
+
+	m_bRescaling = true;
 
 	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
 		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
@@ -236,6 +284,8 @@ LRESULT CFluentPropertyPage::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 
 	AppFonts::Inst().Init(newDpi, CGetSetOptions::m_Theme.FontFamily());
 	AppFonts::ApplyToChildren(this);
+
+	m_bRescaling = false;
 
 	return 0;
 }
