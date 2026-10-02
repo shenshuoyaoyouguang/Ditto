@@ -116,14 +116,17 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		if(m_lastTheme == csTheme &&
 			LastWrite == m_LastWriteTime)
 		{
+			// The file is unchanged, but the "accent" alias resolves to the live
+			// Windows accent: re-resolve it, otherwise changing the system accent
+			// colour never reaches the UI.
+			if (m_bFollowSystemAccent)
+				RefreshSystemAccent();
+
 			return true;
 		}
 	}
 
 	LoadDefaults();
-
-	m_LastWriteTime = LastWrite;
-	m_lastTheme = csTheme;
 
 	Log(StrF(_T("Loading Theme %s"), csPath));
 
@@ -131,8 +134,13 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	if(!doc.LoadFile(csPath.GetBuffer()))
 	{
 		m_csLastError.Format(_T("Error loading Theme %s - reason = %s"), csPath, doc.ErrorDesc());
-		ASSERT(!m_csLastError);
 		Log(m_csLastError);
+		// Leave the cache clear: it is written before parsing, so a failure used
+		// to poison it and every later Load(same theme, bCheckLastWriteTime=true)
+		// short-circuited to "already loaded" -- the theme was never re-read even
+		// after the file was fixed, and the UI kept rendering the defaults.
+		m_lastTheme = _T("");
+		m_LastWriteTime = 0;
 		return false;
 	}
 
@@ -140,8 +148,9 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	if(!ItemHeader)
 	{
 		m_csLastError.Format(_T("Error finding the section Ditto_Theme_File"));
-		ASSERT(!m_csLastError);
 		Log(m_csLastError);
+		m_lastTheme = _T("");
+		m_LastWriteTime = 0;
 		return false;
 	}
 
@@ -152,6 +161,14 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 
 	if(bHeaderOnly)
 		return true;
+
+	// Only commit the cache for a full load, and only after the file parsed. The
+	// short-circuit above compares against this pair, so committing it during a
+	// header-only scan (the options dialog enumerating the theme list) would make
+	// the next Load(same theme, bCheckLastWriteTime=true) skip token parsing
+	// entirely.
+	m_LastWriteTime = LastWrite;
+	m_lastTheme = csTheme;
 
 
 	LoadColor(ItemHeader, "CaptionLeft", m_CaptionLeft);
@@ -171,6 +188,10 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadColor(ItemHeader, "ListBoxSelectedNoFocusText", m_ListBoxSelectedNoFocusText);
 	m_hasLegacyClipPastedColor = LoadColor(ItemHeader, "ClipPastedColor", m_clipPastedColor);
 	m_hasLegacyMainWindowBG = LoadColor(ItemHeader, "MainWindowBG", m_mainWindowBG);
+	// Was declared and reset but never loaded, so Indicator.Badge always derived
+	// from Text.Secondary and the appendix-A rule was dead. No shipped theme has
+	// this node, so wiring it up is a no-op for them and fixes custom themes.
+	m_hasLegacySmallQuickPasteIndexColor = LoadColor(ItemHeader, "ListSmallQuickPasteIndexColor", m_listSmallQuickPasteIndexColor);
 	m_hasLegacySearchTextBoxFocusBG = LoadColor(ItemHeader, "SearchTextBoxFocusBG", m_searchTextBoxFocusBG);
 	LoadColor(ItemHeader, "SearchTextBoxFocusText", m_searchTextBoxFocusText);
 	LoadColor(ItemHeader, "SearchTextBoxFocusBorder", m_searchTextBoxFocusBorder);
@@ -186,7 +207,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadInt(ItemHeader, "CaptionSize", m_captionSize);
 	LoadInt(ItemHeader, "CaptionFontSize", m_captionFontSize);
 
-	LoadColor(ItemHeader, "DescriptionWindowBG", m_descriptionWindowBG);
+	m_hasLegacyDescriptionWindowBG = LoadColor(ItemHeader, "DescriptionWindowBG", m_descriptionWindowBG);
 	LoadColor(ItemHeader, "DescriptionWindowText", m_descriptionWindowText);
 
 	// Modern scrollbar colors
@@ -376,7 +397,21 @@ bool CTheme::LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color
 	}
 	else
 	{
-		intValue = ATOI(csColor);
+		// ATOI() returned 0 for anything it could not parse, and the function still
+		// claimed success: a typo or a #FFF shorthand silently became pure black and
+		// the caller's "loaded" flag suppressed the light/dark default as well.
+		LPCTSTR start = (LPCTSTR)csColor;
+		LPTSTR end = NULL;
+		long value = _tcstol(start, &end, 10);
+
+		if (end == start || (end != NULL && *end != _T('\0')))
+		{
+			m_csLastError.Format(_T("Theme Load, unrecognized color value for Node = %s, Value = %s"), csNode, csColor);
+			Log(m_csLastError);
+			return false;
+		}
+
+		intValue = (int)value;
 		Color = (COLORREF)intValue;
 	}
 
@@ -396,6 +431,7 @@ void CTheme::ResetTokenFlags()
 	m_hasTextPrimary = false;
 	m_hasTextSecondary = false;
 	m_hasTextDisabled = false;
+	m_hasTextOnAccent = false;
 	m_hasAccentDefault = false;
 	m_hasAccentSubtle = false;
 	m_hasAccentText = false;
@@ -416,6 +452,8 @@ void CTheme::ResetTokenFlags()
 	m_hasLegacyListBoxOddRowsText = false;
 	m_hasLegacyClipPastedColor = false;
 	m_hasLegacySmallQuickPasteIndexColor = false;
+	m_hasLegacyDescriptionWindowBG = false;
+	m_bFollowSystemAccent = false;
 	m_bParsedThemeXml = false;
 }
 
@@ -513,16 +551,15 @@ void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
 
 		if (csValue.CompareNoCase(_T("accent")) == 0)
 		{
-			DWORD accent = Windows10AccentColor();
-			if (accent != -1)
-				m_accentDefault = RGB(GetBValue(accent), GetGValue(accent), GetRValue(accent));
-			else
-				m_accentDefault = DarkAppWindows10Setting() ? RGB(0x4C, 0xC2, 0xFF) : RGB(0x00, 0x5F, 0xB8);
-
+			// Remember the alias: the value has to be re-resolved from the live
+			// Windows setting, not just when the xml happens to be re-parsed.
+			m_bFollowSystemAccent = true;
 			m_hasAccentDefault = true;
+			RefreshSystemAccent();
 		}
 		else
 		{
+			m_bFollowSystemAccent = false;
 			m_hasAccentDefault = LoadColor(pParent, "Accent_Default", m_accentDefault);
 		}
 	}
@@ -561,21 +598,41 @@ void CTheme::FinalizeTokens()
 
 void CTheme::DeriveTokensFromLegacy()
 {
-	bool dark = RelLuminance(m_surfaceBase) < 0.5;
-
-	if (!m_hasSurfaceBase)
+	// Settle Surface.Base first: the polarity below drives the accent, hover and
+	// pressed directions, and for a legacy theme the base comes from the theme's
+	// own MainWindowBG -- not from the OS light/dark default that LoadTokenDefaults
+	// seeded. Judging it before this line inverted every derived token whenever
+	// the Windows app mode disagreed with the theme (e.g. Windows light + a dark
+	// theme), leaving the accent at ~1.9:1 against the surface.
+	if (!m_hasSurfaceBase && m_hasLegacyMainWindowBG)
 		m_surfaceBase = m_mainWindowBG;
 
+	bool dark = RelLuminance(m_surfaceBase) < 0.5;
+
 	if (!m_hasSurfaceElevated)
-		m_surfaceElevated = m_hasLegacySearchTextBoxFocusBG ? m_searchTextBoxFocusBG
-			: ShiftToward(m_surfaceBase, !dark, 0.04);
+	{
+		// Appendix A maps Surface.Elevated to DescriptionWindowBG; fall back to it
+		// before synthesising a shift from the base colour.
+		if (m_hasLegacySearchTextBoxFocusBG)
+			m_surfaceElevated = m_searchTextBoxFocusBG;
+		else if (m_hasLegacyDescriptionWindowBG)
+			m_surfaceElevated = m_descriptionWindowBG;
+		else
+			m_surfaceElevated = ShiftToward(m_surfaceBase, !dark, 0.04);
+	}
 
 	if (!m_hasSurfaceRowAlt)
 		m_surfaceRowAlt = m_hasLegacyListBoxEvenRowsBG ? m_ListBoxEvenRowsBG
 			: ShiftToward(m_surfaceBase, !dark, 0.01);
 
-	if (!m_hasTextPrimary)
+	// Guard on the legacy flag like the other legacy fallbacks do: LoadElement()
+	// returns false for both a missing node and an empty one, in which case
+	// m_ListBoxOddRowsText is still the hardcoded RGB(0,0,0) from LoadDefaults()
+	// and a dark theme would render black on black.
+	if (!m_hasTextPrimary && m_hasLegacyListBoxOddRowsText)
 		m_textPrimary = m_ListBoxOddRowsText;
+	else if (!m_hasTextPrimary)
+		m_textPrimary = (RelLuminance(m_surfaceBase) < 0.5) ? RGB(255, 255, 255) : RGB(0, 0, 0);
 
 	if (!m_hasTextSecondary)
 		m_textSecondary = BlendOver(m_surfaceBase, m_textPrimary, 158);
@@ -618,6 +675,24 @@ void CTheme::DeriveTokensFromLegacy()
 		else
 			m_accentDefault = dark ? RGB(0x4C, 0xC2, 0xFF) : RGB(0x00, 0x5F, 0xB8);
 	}
+}
+
+void CTheme::RefreshSystemAccent()
+{
+	DWORD accent = Windows10AccentColor();
+	if (accent != -1)
+	{
+		// windows reports bgr, convert to rgb
+		m_accentDefault = RGB(GetBValue(accent), GetGValue(accent), GetRValue(accent));
+	}
+	else
+	{
+		// Fall back on the theme's own polarity, not the Windows app setting: a
+		// dark theme on a light-mode machine must still get the light accent.
+		m_accentDefault = (RelLuminance(m_surfaceBase) < 0.5) ? RGB(0x4C, 0xC2, 0xFF) : RGB(0x00, 0x5F, 0xB8);
+	}
+
+	RefreshAccentDerived();
 }
 
 void CTheme::RefreshAccentDerived()
@@ -702,11 +777,19 @@ COLORREF CTheme::EnsureContrastOnBase(COLORREF color)
 
 	bool dark = RelLuminance(m_surfaceBase) < 0.5;
 
-	for (double percent = 0.1; percent <= 0.95; percent += 0.1)
+	// Step away from the surface, not towards it: passing !dark moved the accent
+	// towards the background, so every iteration lowered the ratio further and the
+	// loop could never reach 4.5:1 -- it always fell through to the black/white
+	// fallback and the accent hue was lost. Try both directions to be safe.
+	for (int direction = 0; direction < 2; direction++)
 	{
-		COLORREF adjusted = ShiftToward(color, !dark, percent);
-		if (ContrastRatio(adjusted, m_surfaceBase) >= 4.5)
-			return adjusted;
+		for (int step = 1; step <= 9; step++)
+		{
+			double percent = step / 10.0;
+			COLORREF adjusted = ShiftToward(color, direction == 0 ? dark : !dark, percent);
+			if (ContrastRatio(adjusted, m_surfaceBase) >= 4.5)
+				return adjusted;
+		}
 	}
 
 	return PickContrastOn(m_surfaceBase, RGB(0, 0, 0), RGB(255, 255, 255));
