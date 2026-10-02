@@ -10,7 +10,7 @@
 
 IMPLEMENT_DYNCREATE(COptionsCopyBuffers, CPropertyPage)
 
-COptionsCopyBuffers::COptionsCopyBuffers() : CPropertyPage(COptionsCopyBuffers::IDD)
+COptionsCopyBuffers::COptionsCopyBuffers() : CFluentPropertyPage(COptionsCopyBuffers::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("CopyBuffers", "Copy Buffers");
 	m_psp.pszTitle = m_csTitle;
@@ -49,7 +49,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsCopyBuffers::OnInitDialog()
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	CCopyBufferItem Item;
 	
@@ -153,6 +153,6 @@ BOOL COptionsCopyBuffers::OnApply()
 	g_HotKeys.SaveAllKeys();
 	g_HotKeys.RegisterAll(true);
 
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 

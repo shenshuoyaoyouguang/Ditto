@@ -5,7 +5,9 @@
 
 // CQuickPasteKeyboard dialog
 
-class CQuickPasteKeyboard : public CPropertyPage
+#include "FluentDialog.h"
+
+class CQuickPasteKeyboard : public CFluentPropertyPage
 {
 	DECLARE_DYNAMIC(CQuickPasteKeyboard)
 

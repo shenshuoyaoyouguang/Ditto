@@ -20,7 +20,7 @@ static char THIS_FILE[] = __FILE__;
 IMPLEMENT_DYNCREATE(COptionsStats, CPropertyPage)
 
 COptionsStats::COptionsStats()
-	: CPropertyPage(COptionsStats::IDD)
+	: CFluentPropertyPage(COptionsStats::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("StatsTitle", "Stats");
 	m_psp.pszTitle = m_csTitle;
@@ -45,7 +45,7 @@ COptionsStats::COptionsStats()
 
 void COptionsStats::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionsStats)
 	DDX_Text(pDX, IDC_ALL_COPIES, m_eAllCopies);
 	DDX_Text(pDX, IDC_ALL_PASTES, m_eAllPastes);
@@ -76,7 +76,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsStats::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	COleDateTime time((time_t) CGetSetOptions::GetTotalDate());
 	m_eAllDate = time.Format();

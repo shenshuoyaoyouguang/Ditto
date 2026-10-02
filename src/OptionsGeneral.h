@@ -16,7 +16,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // COptionsGeneral dialog
 
-class COptionsGeneral : public CPropertyPage
+#include "FluentDialog.h"
+
+class COptionsGeneral : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(COptionsGeneral)
 
@@ -86,7 +88,6 @@ protected:
 
 public:
 	afx_msg void OnBnClickedButtonAdvanced();
-	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnBnClickedButtonTheme();
 	afx_msg void OnBnClickedButtonPreviewTheme();
 	afx_msg void OnCbnSelchangeComboTheme();

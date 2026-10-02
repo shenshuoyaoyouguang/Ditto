@@ -16,7 +16,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // COptionsKeyBoard dialog
 
-class COptionsKeyBoard : public CPropertyPage
+#include "FluentDialog.h"
+
+class COptionsKeyBoard : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(COptionsKeyBoard)
 

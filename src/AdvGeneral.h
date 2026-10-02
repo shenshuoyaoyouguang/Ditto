@@ -3,7 +3,9 @@
 #include "DialogResizer.h"
 #include <afxcoll.h>
 
-class CAdvGeneral : public CDialogEx
+#include "FluentDialog.h"
+
+class CAdvGeneral : public CFluentDialog
 {
 	DECLARE_DYNAMIC(CAdvGeneral)
 

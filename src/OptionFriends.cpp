@@ -20,7 +20,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(COptionFriends, CPropertyPage)
 
-COptionFriends::COptionFriends() : CPropertyPage(COptionFriends::IDD)
+COptionFriends::COptionFriends() : CFluentPropertyPage(COptionFriends::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("FriendsTitle", "Friends");
 	m_psp.pszTitle = m_csTitle;
@@ -39,7 +39,7 @@ COptionFriends::~COptionFriends()
 
 void COptionFriends::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	CFluentPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionFriends)
 	DDX_Control(pDX, IDC_CHECK_DISABLE_FRIENDS, m_bDisableRecieve);
 	DDX_Control(pDX, IDC_CHECK_LOG_SEND_RECIEVE, m_SendRecieve);
@@ -65,7 +65,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionFriends::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	CFluentPropertyPage::OnInitDialog();
 
 	m_pParent = (COptionsSheet *)GetParent();
 	
@@ -143,7 +143,7 @@ BOOL COptionFriends::OnApply()
 		CGetSetOptions::SetRequestFilesUsingIP(FALSE);
 	}
 	
-	return CPropertyPage::OnApply();
+	return CFluentPropertyPage::OnApply();
 }
 
 

@@ -10,7 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // COptionsStats dialog
 
-class COptionsStats : public CPropertyPage
+#include "FluentDialog.h"
+
+class COptionsStats : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(COptionsStats)
 

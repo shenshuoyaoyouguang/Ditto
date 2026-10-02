@@ -1,3 +1,5 @@
+// DEAD CODE: no instantiation point anywhere in the repo; kept only for reference.
+// Deletion requires explicit user approval (see docs/design/ui-fluent-redesign-plan.md section 9).
 #if !defined(AFX_SELECTDB_H__1B0F5220_5F1A_426F_BA9B_4722E7EA76A3__INCLUDED_)
 #define AFX_SELECTDB_H__1B0F5220_5F1A_426F_BA9B_4722E7EA76A3__INCLUDED_
 

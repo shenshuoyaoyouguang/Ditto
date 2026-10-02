@@ -11,7 +11,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // COptionFriends dialog
 
-class COptionFriends : public CPropertyPage
+#include "FluentDialog.h"
+
+class COptionFriends : public CFluentPropertyPage
 {
 	DECLARE_DYNCREATE(COptionFriends)
 
