@@ -55,6 +55,9 @@
     <ClCompile Include="src\ClipboardViewer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\ChipBar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\ClipCompare.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -329,6 +332,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SearchEditBox.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sidebar.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SelectDB.cpp">
@@ -1030,6 +1036,8 @@
     </ClInclude>
     <ClInclude Include="src\RulerRichEditCtrl\resource.h" />
     <ClInclude Include="src\ModernScrollBar.h" />
+    <ClInclude Include="src\ChipBar.h" />
+    <ClInclude Include="src\Sidebar.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CP_Main.rc">

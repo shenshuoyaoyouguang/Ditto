@@ -49,6 +49,8 @@ static char THIS_FILE[] = __FILE__;
 #define ON_TOP_WARNING 0x209
 #define ID_SYSTEM_BUTTON		0x210
 #define ID_NO_SEARCH_RESULTS	0x211
+#define ID_CHIP_BAR				0x212
+#define ID_SIDEBAR				0x213
 
 
 #define QPASTE_WIDTH			200
@@ -88,6 +90,8 @@ CQPasteWnd::CQPasteWnd()
 	m_lastDbWrite = 0;
 	m_pendingRefresh = false;
 	m_lastNonActiveMouseMove = 0;
+	m_typeFilter = CHIP_ALL;
+	m_showSidebar = false;
 }
 
 CQPasteWnd::~CQPasteWnd()
@@ -229,6 +233,8 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_MESSAGE(NM_UPDATE_SCROLLBAR, OnUpdateScrollBar)
 	ON_MESSAGE(NM_CANCEL_SEARCH, OnCancelFilter)
 	ON_MESSAGE(NM_POST_OPTIONS_WINDOW, OnPostOptions)
+	ON_MESSAGE(NM_CHIP_CLICKED, OnChipClicked)
+	ON_MESSAGE(NM_SIDEBAR_VIEW_CLICKED, OnSidebarViewClicked)
 	ON_COMMAND(ID_MENU_SEARCHDESCRIPTION, OnMenuSearchDescription)
 	ON_COMMAND(ID_MENU_SEARCHFULLTEXT, OnMenuSearchFullText)
 	ON_COMMAND(ID_MENU_SEARCHQUICKPASTE, OnMenuSearchQuickPaste)
@@ -515,6 +521,41 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_noSearchResultsStatic.Create(onTopMsg, WS_CHILD, CRect(0, 0, 0, 0), this, ID_NO_SEARCH_RESULTS);
 
+	// type filter chips (above the list) and the docked sidebar
+	CString csChipLabels[CHIP_COUNT];
+	csChipLabels[CHIP_ALL] = theApp.m_Language.GetString(_T("Chip_All"), _T("All"));
+	csChipLabels[CHIP_TEXT] = theApp.m_Language.GetString(_T("Chip_Text"), _T("Text"));
+	csChipLabels[CHIP_IMAGE] = theApp.m_Language.GetString(_T("Chip_Image"), _T("Images"));
+	csChipLabels[CHIP_FILE] = theApp.m_Language.GetString(_T("Chip_File"), _T("Files"));
+	csChipLabels[CHIP_LINK] = theApp.m_Language.GetString(_T("Chip_Link"), _T("Links"));
+
+	m_chipBar.Create(this, ID_CHIP_BAR);
+	m_chipBar.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_chipBar.SetLabels(csChipLabels);
+
+	CString csViewLabels[VIEW_COUNT];
+	csViewLabels[VIEW_ALL] = theApp.m_Language.GetString(_T("Chip_All"), _T("All"));
+	csViewLabels[VIEW_TEXT] = theApp.m_Language.GetString(_T("Chip_Text"), _T("Text"));
+	csViewLabels[VIEW_IMAGE] = theApp.m_Language.GetString(_T("Chip_Image"), _T("Images"));
+	csViewLabels[VIEW_FILE] = theApp.m_Language.GetString(_T("Chip_File"), _T("Files"));
+	csViewLabels[VIEW_LINK] = theApp.m_Language.GetString(_T("Chip_Link"), _T("Links"));
+	csViewLabels[VIEW_STARRED] = theApp.m_Language.GetString(_T("Chip_Starred"), _T("Starred"));
+
+	m_sidebar.Create(this, ID_SIDEBAR);
+	m_sidebar.SetDpiInfo(&m_DittoWindow.m_dpi);
+	m_sidebar.SetLabels(csViewLabels);
+	m_sidebar.SetGroupsCaption(theApp.m_Language.GetString(_T("Chip_Groups"), _T("Groups")));
+
+	m_showSidebar = CGetSetOptions::GetShowSidebar() ? true : false;
+	UpdateSidebarTreeDock();
+
+	if (m_showSidebar)
+	{
+		m_GroupTree.m_selectedFolderID = theApp.m_GroupID;
+		m_GroupTree.FillTree();
+		m_GroupTree.ShowWindow(SW_SHOW);
+	}
+
 	m_popupMsg.m_hWndPosRelativeTo = m_hWnd;
 
 	UpdateFont();
@@ -701,10 +742,38 @@ void CQPasteWnd::MoveControls()
 	int nWidth = cx;
 	int listBoxBottomOffset = m_DittoWindow.m_dpi.Scale(searchRowStart);
 
+	// sidebar docks on the left; without it the chip filter row sits above the list
+	int contentX = 0;
+	int contentWidth = cx;
+	int chipsHeight = 0;
+
+	if (m_showSidebar)
+	{
+		contentX = m_DittoWindow.m_dpi.Scale(210);
+		contentWidth = cx - contentX;
+
+		m_sidebar.ShowWindow(SW_SHOW);
+		m_chipBar.ShowWindow(SW_HIDE);
+		m_sidebar.MoveWindow(0, 0, contentX, cy - listBoxBottomOffset);
+
+		CRect rcGroups;
+		m_sidebar.GetGroupsArea(rcGroups);
+		m_GroupTree.MoveWindow(rcGroups);
+	}
+	else
+	{
+		m_sidebar.ShowWindow(SW_HIDE);
+		m_chipBar.ShowWindow(SW_SHOW);
+		chipsHeight = m_DittoWindow.m_dpi.Scale(34);
+		m_chipBar.MoveWindow(0, topOfListBox, cx, chipsHeight);
+	}
+
+	int listTop = topOfListBox + chipsHeight;
+
 	int extraSize = 0;
 
 	// Hide native scrollbar if using modern scrollbar OR if scrollbar is set to not always show
-	bool hideNativeScrollbar = CGetSetOptions::m_useModernScrollBar || 
+	bool hideNativeScrollbar = CGetSetOptions::m_useModernScrollBar ||
 		(m_showScrollBars == false && CGetSetOptions::m_showScrollBar == false);
 
 	if (hideNativeScrollbar)
@@ -715,7 +784,7 @@ void CQPasteWnd::MoveControls()
 		CRect r;
 		m_lstHeader.GetWindowRect(&r);
 
-		rgnRect.CreateRectRgn(0, 0, cx, (cy - listBoxBottomOffset - topOfListBox) );
+		rgnRect.CreateRectRgn(0, 0, contentWidth, (cy - listBoxBottomOffset - listTop));
 
 		m_lstHeader.SetWindowRgn(rgnRect, TRUE);
 	}
@@ -734,14 +803,14 @@ void CQPasteWnd::MoveControls()
 		m_modernScrollBarHorz.ShowWindow(SW_HIDE);
 
 		auto border = m_DittoWindow.m_dpi.Scale(10);
-		m_noSearchResultsStatic.MoveWindow(border, topOfListBox + border, cx - border, cy - listBoxBottomOffset - topOfListBox + 1 - border);
+		m_noSearchResultsStatic.MoveWindow(contentX + border, listTop + border, contentWidth - border, cy - listBoxBottomOffset - listTop + 1 - border);
 	}
 	else
 	{
 		m_lstHeader.ShowWindow(SW_SHOW);
 		m_noSearchResultsStatic.ShowWindow(SW_HIDE);
 
-		m_lstHeader.MoveWindow(0, topOfListBox, cx + extraSize, cy - listBoxBottomOffset - topOfListBox + extraSize + 1);
+		m_lstHeader.MoveWindow(contentX, listTop, contentWidth + extraSize, cy - listBoxBottomOffset - listTop + extraSize + 1);
 		
 		// Update modern scrollbar position and visibility (only if enabled)
 		if (CGetSetOptions::m_useModernScrollBar)
@@ -1657,6 +1726,20 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 
 	CString sql;
 	CString countSql;
+
+	// type filter (chips/sidebar) applies in every view, on top of the
+	// group / starred / search filters built above
+	if (m_typeFilter != CHIP_ALL)
+	{
+		CString csTypeFilter = TypeFilterSql(m_typeFilter);
+		if (csTypeFilter.IsEmpty() == FALSE)
+		{
+			if (strFilter.IsEmpty())
+				strFilter = csTypeFilter;
+			else
+				strFilter += _T(" AND ") + csTypeFilter;
+		}
+	}
 
 	//Format the count and select sql queries for the thread
 	countSql.Format(_T("SELECT COUNT(%s Main.lID) FROM Main %s where %s"), IsDistinct, dataJoin, strFilter);
@@ -6130,30 +6213,127 @@ void CQPasteWnd::OnShowGroupsBottom()
 {
 	m_lstHeader.HidePopup(true);
 
-	if (m_GroupTree.IsWindowVisible())
+	// the folder button cycles: popup tree -> docked sidebar -> off
+	if (m_GroupTree.IsWindowVisible() && m_showSidebar == false)
 	{
 		m_GroupTree.ShowWindow(SW_HIDE);
 		return;
 	}
 
-	m_GroupTree.m_bHide = false;
-	m_bHideWnd = false;
+	m_showSidebar = !m_showSidebar;
+	CGetSetOptions::SetShowSidebar(m_showSidebar);
+	UpdateSidebarTreeDock();
 
-	CRect crWindow, crList;
-	m_lstHeader.GetWindowRect(crList);
-	GetWindowRect(crWindow);
+	if (m_showSidebar)
+	{
+		m_GroupTree.m_selectedFolderID = theApp.m_GroupID;
+		m_GroupTree.FillTree();
+		m_GroupTree.ShowWindow(SW_SHOW);
+	}
 
-	CRect cr(crWindow.left, crWindow.bottom, crWindow.left + crWindow.Width(), crWindow.bottom + 200);
+	MoveControls();
+	return;
+}
 
-	EnsureWindowVisible(&cr);
+// sql fragment restricting the list to one clip type (plan section 5.5);
+// types live in the Data table, links are a cheap description prefix match
+static CString TypeFilterSql(int typeFilter)
+{
+	switch (typeFilter)
+	{
+	case CHIP_TEXT:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_UNICODETEXT'))");
+	case CHIP_IMAGE:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_DIB'))");
+	case CHIP_FILE:
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_HDROP'))");
+	case CHIP_LINK:
+		return _T("(Main.bIsGroup = 0 AND (Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'www.%'))");
+	}
 
-	m_GroupTree.MoveWindow(cr);
-	m_GroupTree.m_selectedFolderID = theApp.m_GroupID;
-	m_GroupTree.FillTree();
-	m_GroupTree.ShowWindow(SW_SHOW);
+	return _T("");
+}
 
-	m_GroupTree.m_bHide = true;
-	m_bHideWnd = true;
+void CQPasteWnd::ApplyTypeFilter()
+{
+	m_chipBar.SetActive(m_typeFilter);
+	m_sidebar.SetActiveView(m_typeFilter <= CHIP_LINK ? m_typeFilter : -1);
+}
+
+LRESULT CQPasteWnd::OnChipClicked(WPARAM wParam, LPARAM lParam)
+{
+	int chip = (int)wParam;
+	if (chip < 0 || chip >= CHIP_COUNT)
+		return 0;
+
+	if (chip != CHIP_ALL)
+		m_bShowStarredClips = false;
+
+	m_typeFilter = chip;
+	ApplyTypeFilter();
+	FillList(m_strSearch);
+
+	return 0;
+}
+
+LRESULT CQPasteWnd::OnSidebarViewClicked(WPARAM wParam, LPARAM lParam)
+{
+	int view = (int)wParam;
+	if (view < 0 || view >= VIEW_COUNT)
+		return 0;
+
+	if (view == VIEW_STARRED)
+	{
+		m_typeFilter = CHIP_ALL;
+		m_bShowStarredClips = true;
+		ApplyTypeFilter();
+		m_sidebar.SetActiveView(VIEW_STARRED);
+		FillList(m_strSearch);
+		return 0;
+	}
+
+	if (view == VIEW_ALL && theApp.m_GroupID > 0)
+	{
+		// "all" also leaves the current group, back to the history root
+		theApp.EnterGroupID(-1);
+	}
+
+	m_typeFilter = view;
+	m_bShowStarredClips = false;
+	ApplyTypeFilter();
+	FillList(m_strSearch);
+
+	return 0;
+}
+
+void CQPasteWnd::UpdateSidebarTreeDock()
+{
+	if (m_showSidebar)
+	{
+		if (m_GroupTree.GetParent() == NULL ||
+			m_GroupTree.GetParent()->GetSafeHwnd() != m_sidebar.GetSafeHwnd())
+		{
+			m_GroupTree.SetParent(m_sidebar);
+		}
+
+		m_GroupTree.ModifyStyle(TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS, TVS_TRACKSELECT | TVS_FULLROWSELECT);
+		m_GroupTree.SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
+		m_GroupTree.SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
+
+		if (m_DittoWindow.m_dpi.GetDPI() > 0)
+			m_GroupTree.SetItemHeight(m_DittoWindow.m_dpi.Scale(22));
+	}
+	else
+	{
+		if (m_GroupTree.GetParent() != NULL &&
+			m_GroupTree.GetParent()->GetSafeHwnd() == m_sidebar.GetSafeHwnd())
+		{
+			m_GroupTree.SetParent(this);
+			m_GroupTree.ShowWindow(SW_HIDE);
+		}
+
+		m_GroupTree.ModifyStyle(TVS_TRACKSELECT | TVS_FULLROWSELECT, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
+	}
 }
 
 LRESULT CQPasteWnd::OnGroupTreeMessage(WPARAM wParam, LPARAM lParam)
@@ -6162,7 +6342,11 @@ LRESULT CQPasteWnd::OnGroupTreeMessage(WPARAM wParam, LPARAM lParam)
 
 	int id = (int)wParam;
 
-	m_GroupTree.ShowWindow(SW_HIDE);
+	// the docked sidebar tree stays visible; only the old popup closes here
+	if (m_showSidebar == false)
+	{
+		m_GroupTree.ShowWindow(SW_HIDE);
+	}
 
 	m_bHandleSearchTextChange = false;
 	m_search.SetWindowText(_T(""));

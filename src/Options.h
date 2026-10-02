@@ -518,6 +518,9 @@ public:
 	static BOOL GetShowGroupsInMainList();
 	static void SetShowGroupsInMainList(BOOL val);
 
+	static BOOL GetShowSidebar();
+	static void SetShowSidebar(BOOL val);
+
 	static void SetGroupDoubleClickTimeMS(int val);
 	static int GetGroupDoubleClickTimeMS();
 
