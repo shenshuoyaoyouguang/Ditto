@@ -69,6 +69,9 @@ void CTheme::LoadDefaults()
 
 	m_captionSize = 25;
 	m_captionFontSize = 19;
+
+	ResetTokenFlags();
+	LoadTokenDefaults();
 }
 
 bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
@@ -93,6 +96,8 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		{
 			LoadWindowsAccentColor();
 		}
+
+		FinalizeTokens();
 
 		m_LastWriteTime = 0;
 		m_lastTheme = _T("");
@@ -159,16 +164,16 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadColor(ItemHeader, "CaptionRightNotConnected", m_CaptionRightNotConnected);
 	LoadColor(ItemHeader, "CaptionTextColor", m_CaptionTextColor);
 	LoadColor(ItemHeader, "ListBoxOddRowsBG", m_ListBoxOddRowsBG);
-	LoadColor(ItemHeader, "ListBoxEvenRowsBG", m_ListBoxEvenRowsBG);
-	LoadColor(ItemHeader, "ListBoxOddRowsText", m_ListBoxOddRowsText);
+	m_hasLegacyListBoxEvenRowsBG = LoadColor(ItemHeader, "ListBoxEvenRowsBG", m_ListBoxEvenRowsBG);
+	m_hasLegacyListBoxOddRowsText = LoadColor(ItemHeader, "ListBoxOddRowsText", m_ListBoxOddRowsText);
 	LoadColor(ItemHeader, "ListBoxEvenRowsText", m_ListBoxEvenRowsText);
 	LoadColor(ItemHeader, "ListBoxSelectedBG", m_ListBoxSelectedBG);
 	LoadColor(ItemHeader, "ListBoxSelectedNoFocusBG", m_ListBoxSelectedNoFocusBG);
 	LoadColor(ItemHeader, "ListBoxSelectedText", m_ListBoxSelectedText);
 	LoadColor(ItemHeader, "ListBoxSelectedNoFocusText", m_ListBoxSelectedNoFocusText);
-	LoadColor(ItemHeader, "ClipPastedColor", m_clipPastedColor);
-	LoadColor(ItemHeader, "MainWindowBG", m_mainWindowBG);
-	LoadColor(ItemHeader, "SearchTextBoxFocusBG", m_searchTextBoxFocusBG);
+	m_hasLegacyClipPastedColor = LoadColor(ItemHeader, "ClipPastedColor", m_clipPastedColor);
+	m_hasLegacyMainWindowBG = LoadColor(ItemHeader, "MainWindowBG", m_mainWindowBG);
+	m_hasLegacySearchTextBoxFocusBG = LoadColor(ItemHeader, "SearchTextBoxFocusBG", m_searchTextBoxFocusBG);
 	LoadColor(ItemHeader, "SearchTextBoxFocusText", m_searchTextBoxFocusText);
 	LoadColor(ItemHeader, "SearchTextBoxFocusBorder", m_searchTextBoxFocusBorder);
 	LoadColor(ItemHeader, "SearchTextHighlight", m_searchTextHighlight);
@@ -191,10 +196,14 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	LoadColor(ItemHeader, "ScrollBarThumbHover", m_scrollBarThumbHover);
 	LoadColor(ItemHeader, "ScrollBarTrack", m_scrollBarTrack);
 
+	LoadTokensFromXml(ItemHeader);
+
 	if (followWindows10Theme)
 	{
 		LoadWindowsAccentColor();
 	}
+
+	FinalizeTokens();
 
 	return true;
 }
@@ -374,4 +383,331 @@ bool CTheme::LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color
 	}
 
 	return true;
+}
+
+// ---- v4 semantic tokens (docs/design/ui-fluent-redesign-plan.md section 3) ----
+// Defaults follow the windows light/dark app setting; explicit xml nodes win;
+// anything still missing is derived from the legacy v3 fields so the 12 shipped
+// theme files keep rendering exactly as before.
+
+void CTheme::ResetTokenFlags()
+{
+	m_hasSurfaceBase = false;
+	m_hasSurfaceElevated = false;
+	m_hasSurfaceRowAlt = false;
+	m_hasTextPrimary = false;
+	m_hasTextSecondary = false;
+	m_hasTextDisabled = false;
+	m_hasAccentDefault = false;
+	m_hasAccentSubtle = false;
+	m_hasAccentText = false;
+	m_hasStrokeCard = false;
+	m_hasStrokeDivider = false;
+	m_hasControlFill = false;
+	m_hasControlHover = false;
+	m_hasControlPressed = false;
+	m_hasControlDisabledBG = false;
+	m_hasStateHover = false;
+	m_hasStateSelectedBG = false;
+	m_hasStateSelectedText = false;
+	m_hasIndicatorBadge = false;
+	m_hasFontFamily = false;
+	m_hasLegacyMainWindowBG = false;
+	m_hasLegacySearchTextBoxFocusBG = false;
+	m_hasLegacyListBoxEvenRowsBG = false;
+	m_hasLegacyListBoxOddRowsText = false;
+	m_hasLegacyClipPastedColor = false;
+	m_hasLegacySmallQuickPasteIndexColor = false;
+	m_bParsedThemeXml = false;
+}
+
+void CTheme::LoadTokenDefaults()
+{
+	bool dark = DarkAppWindows10Setting() ? true : false;
+
+	if (dark)
+	{
+		m_surfaceBase = RGB(0x20, 0x20, 0x20);
+		m_surfaceElevated = RGB(0x2B, 0x2B, 0x2B);
+		m_surfaceRowAlt = RGB(0x26, 0x26, 0x26);
+		m_textPrimary = RGB(0xFF, 0xFF, 0xFF);
+		m_textSecondary = RGB(0xC8, 0xC8, 0xC8);
+		m_textDisabled = RGB(0x71, 0x71, 0x71);
+		m_textOnAccent = RGB(0x00, 0x00, 0x00);
+		m_accentDefault = RGB(0x4C, 0xC2, 0xFF);
+		m_strokeCard = RGB(0x3D, 0x3D, 0x3D);
+		m_strokeDivider = RGB(0x33, 0x33, 0x33);
+		m_controlFill = RGB(0x2D, 0x2D, 0x2D);
+		m_controlHover = RGB(0x38, 0x38, 0x38);
+		m_controlPressed = RGB(0x3A, 0x3A, 0x3A);
+		m_controlDisabledBG = RGB(0x29, 0x29, 0x29);
+		m_stateSelectedText = RGB(0xFF, 0xFF, 0xFF);
+		m_indicatorBadge = RGB(0xC8, 0xC8, 0xC8);
+	}
+	else
+	{
+		m_surfaceBase = RGB(0xF3, 0xF3, 0xF3);
+		m_surfaceElevated = RGB(0xFF, 0xFF, 0xFF);
+		m_surfaceRowAlt = RGB(0xF9, 0xF9, 0xF9);
+		m_textPrimary = RGB(0x1A, 0x1A, 0x1A);
+		m_textSecondary = RGB(0x61, 0x61, 0x61);
+		m_textDisabled = RGB(0x9D, 0x9D, 0x9D);
+		m_textOnAccent = RGB(0xFF, 0xFF, 0xFF);
+		m_accentDefault = RGB(0x00, 0x5F, 0xB8);
+		m_strokeCard = RGB(0xE5, 0xE5, 0xE5);
+		m_strokeDivider = RGB(0xED, 0xED, 0xED);
+		m_controlFill = RGB(0xFB, 0xFB, 0xFB);
+		m_controlHover = RGB(0xF0, 0xF0, 0xF0);
+		m_controlPressed = RGB(0xED, 0xED, 0xED);
+		m_controlDisabledBG = RGB(0xF5, 0xF5, 0xF5);
+		m_stateSelectedText = RGB(0x1A, 0x1A, 0x1A);
+		m_indicatorBadge = RGB(0x61, 0x61, 0x61);
+	}
+
+	m_stateHover = BlendOver(m_surfaceRowAlt, dark ? RGB(255, 255, 255) : RGB(0, 0, 0), 15);
+	m_accentSubtle = BlendOver(m_surfaceBase, m_accentDefault, 31);
+	m_stateSelectedBG = m_accentSubtle;
+	m_accentText = m_accentDefault;
+
+	m_radiusControl = 4;
+	m_rowHeightCompact = 30;
+	m_rowHeightComfortable = 44;
+	m_csFontFamily = _T("auto");
+
+	m_bDarkTheme = RelLuminance(m_surfaceBase) < 0.5;
+}
+
+void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
+{
+	m_bParsedThemeXml = true;
+
+	auto loadToken = [&](const char *csNode, COLORREF &target, bool &has)
+	{
+		if (pParent->FirstChildElement(csNode) != NULL)
+			has = LoadColor(pParent, csNode, target);
+	};
+
+	loadToken("Surface_Base", m_surfaceBase, m_hasSurfaceBase);
+	loadToken("Surface_Elevated", m_surfaceElevated, m_hasSurfaceElevated);
+	loadToken("Surface_RowAlt", m_surfaceRowAlt, m_hasSurfaceRowAlt);
+	loadToken("Text_Primary", m_textPrimary, m_hasTextPrimary);
+	loadToken("Text_Secondary", m_textSecondary, m_hasTextSecondary);
+	loadToken("Text_Disabled", m_textDisabled, m_hasTextDisabled);
+	loadToken("Stroke_Card", m_strokeCard, m_hasStrokeCard);
+	loadToken("Stroke_Divider", m_strokeDivider, m_hasStrokeDivider);
+	loadToken("Control_Fill", m_controlFill, m_hasControlFill);
+	loadToken("Control_Hover", m_controlHover, m_hasControlHover);
+	loadToken("Control_Pressed", m_controlPressed, m_hasControlPressed);
+	loadToken("Control_DisabledBG", m_controlDisabledBG, m_hasControlDisabledBG);
+	loadToken("State_Hover", m_stateHover, m_hasStateHover);
+	loadToken("State_SelectedBG", m_stateSelectedBG, m_hasStateSelectedBG);
+	loadToken("State_SelectedText", m_stateSelectedText, m_hasStateSelectedText);
+	loadToken("Text_OnAccent", m_textOnAccent, m_hasTextOnAccent);
+	loadToken("Accent_Subtle", m_accentSubtle, m_hasAccentSubtle);
+	loadToken("Accent_Text", m_accentText, m_hasAccentText);
+	loadToken("Indicator_Badge", m_indicatorBadge, m_hasIndicatorBadge);
+
+	if (pParent->FirstChildElement("Accent_Default") != NULL)
+	{
+		TiXmlNode *pValue = pParent->FirstChildElement("Accent_Default")->FirstChild();
+		CString csValue = pValue ? pValue->Value() : _T("");
+		csValue.Trim();
+
+		if (csValue.CompareNoCase(_T("accent")) == 0)
+		{
+			DWORD accent = Windows10AccentColor();
+			if (accent != -1)
+				m_accentDefault = RGB(GetBValue(accent), GetGValue(accent), GetRValue(accent));
+			else
+				m_accentDefault = DarkAppWindows10Setting() ? RGB(0x4C, 0xC2, 0xFF) : RGB(0x00, 0x5F, 0xB8);
+
+			m_hasAccentDefault = true;
+		}
+		else
+		{
+			m_hasAccentDefault = LoadColor(pParent, "Accent_Default", m_accentDefault);
+		}
+	}
+
+	if (pParent->FirstChildElement("Radius_Control") != NULL)
+		LoadInt(pParent, "Radius_Control", m_radiusControl);
+	if (pParent->FirstChildElement("RowHeight_Compact") != NULL)
+		LoadInt(pParent, "RowHeight_Compact", m_rowHeightCompact);
+	if (pParent->FirstChildElement("RowHeight_Comfortable") != NULL)
+		LoadInt(pParent, "RowHeight_Comfortable", m_rowHeightComfortable);
+
+	TiXmlElement *pFontNode = pParent->FirstChildElement("Font_Family");
+	if (pFontNode != NULL)
+	{
+		TiXmlNode *pValue = pFontNode->FirstChild();
+		if (pValue != NULL)
+		{
+			m_csFontFamily = pValue->Value();
+			m_csFontFamily.Trim();
+			m_hasFontFamily = true;
+		}
+	}
+}
+
+void CTheme::FinalizeTokens()
+{
+	if (m_bParsedThemeXml)
+		DeriveTokensFromLegacy();
+
+	m_bDarkTheme = RelLuminance(m_surfaceBase) < 0.5;
+
+	RefreshAccentDerived();
+}
+
+void CTheme::DeriveTokensFromLegacy()
+{
+	bool dark = RelLuminance(m_surfaceBase) < 0.5;
+
+	if (!m_hasSurfaceBase)
+		m_surfaceBase = m_mainWindowBG;
+
+	if (!m_hasSurfaceElevated)
+		m_surfaceElevated = m_hasLegacySearchTextBoxFocusBG ? m_searchTextBoxFocusBG
+			: ShiftToward(m_surfaceBase, !dark, 0.04);
+
+	if (!m_hasSurfaceRowAlt)
+		m_surfaceRowAlt = m_hasLegacyListBoxEvenRowsBG ? m_ListBoxEvenRowsBG
+			: ShiftToward(m_surfaceBase, !dark, 0.01);
+
+	if (!m_hasTextPrimary)
+		m_textPrimary = m_ListBoxOddRowsText;
+
+	if (!m_hasTextSecondary)
+		m_textSecondary = BlendOver(m_surfaceBase, m_textPrimary, 158);
+
+	if (!m_hasTextDisabled)
+		m_textDisabled = BlendOver(m_surfaceBase, m_textSecondary, 153);
+
+	if (!m_hasStrokeCard)
+	{
+		m_strokeCard = RGB((GetRValue(m_surfaceBase) + GetRValue(m_surfaceElevated)) / 2,
+			(GetGValue(m_surfaceBase) + GetGValue(m_surfaceElevated)) / 2,
+			(GetBValue(m_surfaceBase) + GetBValue(m_surfaceElevated)) / 2);
+	}
+
+	if (!m_hasStrokeDivider)
+		m_strokeDivider = BlendOver(m_strokeCard, m_surfaceBase, 64);
+
+	if (!m_hasControlFill)
+		m_controlFill = m_surfaceElevated;
+
+	if (!m_hasControlHover)
+		m_controlHover = ShiftToward(m_surfaceBase, !dark, 0.04);
+
+	if (!m_hasControlPressed)
+		m_controlPressed = ShiftToward(m_controlHover, !dark, 0.02);
+
+	if (!m_hasControlDisabledBG)
+		m_controlDisabledBG = ShiftToward(m_surfaceBase, !dark, 0.015);
+
+	if (!m_hasIndicatorBadge)
+		m_indicatorBadge = m_hasLegacySmallQuickPasteIndexColor ? m_listSmallQuickPasteIndexColor : m_textSecondary;
+
+	if (!m_hasStateSelectedText)
+		m_stateSelectedText = m_textPrimary;
+
+	if (!m_hasAccentDefault)
+	{
+		if (m_hasLegacyClipPastedColor)
+			m_accentDefault = m_clipPastedColor;
+		else
+			m_accentDefault = dark ? RGB(0x4C, 0xC2, 0xFF) : RGB(0x00, 0x5F, 0xB8);
+	}
+}
+
+void CTheme::RefreshAccentDerived()
+{
+	if (!m_hasStateHover)
+		m_stateHover = BlendOver(m_surfaceRowAlt, m_bDarkTheme ? RGB(255, 255, 255) : RGB(0, 0, 0), 15);
+
+	if (!m_hasAccentSubtle)
+		m_accentSubtle = BlendOver(m_surfaceBase, m_accentDefault, 31);
+
+	if (!m_hasStateSelectedBG)
+		m_stateSelectedBG = m_accentSubtle;
+
+	if (!m_hasTextOnAccent)
+		m_textOnAccent = PickContrastOn(m_accentDefault, RGB(255, 255, 255), RGB(0, 0, 0));
+
+	if (!m_hasAccentText)
+		m_accentText = EnsureContrastOnBase(m_accentDefault);
+}
+
+COLORREF CTheme::BlendOver(COLORREF under, COLORREF over, int alpha)
+{
+	auto blend = [alpha](int u, int o) -> BYTE
+	{
+		int value = u + MulDiv(o - u, alpha, 255);
+		return (BYTE)max(0, min(255, value));
+	};
+
+	return RGB(blend(GetRValue(under), GetRValue(over)),
+		blend(GetGValue(under), GetGValue(over)),
+		blend(GetBValue(under), GetBValue(over)));
+}
+
+COLORREF CTheme::ShiftToward(COLORREF color, bool towardWhite, double percent)
+{
+	int target = towardWhite ? 255 : 0;
+
+	auto shift = [target, percent](int c) -> BYTE
+	{
+		int value = (int)(c + (target - c) * percent + 0.5);
+		return (BYTE)max(0, min(255, value));
+	};
+
+	return RGB(shift(GetRValue(color)), shift(GetGValue(color)), shift(GetBValue(color)));
+}
+
+double CTheme::RelLuminance(COLORREF color)
+{
+	auto linear = [](int channel) -> double
+	{
+		double c = channel / 255.0;
+		return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+	};
+
+	return 0.2126 * linear(GetRValue(color)) + 0.7152 * linear(GetGValue(color)) + 0.0722 * linear(GetBValue(color));
+}
+
+double CTheme::ContrastRatio(COLORREF a, COLORREF b)
+{
+	double l1 = RelLuminance(a);
+	double l2 = RelLuminance(b);
+
+	if (l1 < l2)
+	{
+		double temp = l1;
+		l1 = l2;
+		l2 = temp;
+	}
+
+	return (l1 + 0.05) / (l2 + 0.05);
+}
+
+COLORREF CTheme::PickContrastOn(COLORREF background, COLORREF first, COLORREF second)
+{
+	return ContrastRatio(background, first) >= ContrastRatio(background, second) ? first : second;
+}
+
+COLORREF CTheme::EnsureContrastOnBase(COLORREF color)
+{
+	if (ContrastRatio(color, m_surfaceBase) >= 4.5)
+		return color;
+
+	bool dark = RelLuminance(m_surfaceBase) < 0.5;
+
+	for (double percent = 0.1; percent <= 0.95; percent += 0.1)
+	{
+		COLORREF adjusted = ShiftToward(color, !dark, percent);
+		if (ContrastRatio(adjusted, m_surfaceBase) >= 4.5)
+			return adjusted;
+	}
+
+	return PickContrastOn(m_surfaceBase, RGB(0, 0, 0), RGB(255, 255, 255));
 }
