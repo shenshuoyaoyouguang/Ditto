@@ -19,7 +19,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(CAbout, CPropertyPage)
 
-CAbout::CAbout() : CPropertyPage(CAbout::IDD)
+CAbout::CAbout() : CFluentPropertyPage(CAbout::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("AboutTitle", "About");
 	m_psp.pszTitle = m_csTitle;

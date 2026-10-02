@@ -26,7 +26,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(COptionsGeneral, CPropertyPage)
 
-COptionsGeneral::COptionsGeneral() : CPropertyPage(COptionsGeneral::IDD)
+COptionsGeneral::COptionsGeneral() : CFluentPropertyPage(COptionsGeneral::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("GeneralTitle", "General");
 	m_psp.pszTitle = m_csTitle;

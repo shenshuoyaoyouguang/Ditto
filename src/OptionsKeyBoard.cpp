@@ -16,7 +16,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(COptionsKeyBoard, CPropertyPage)
 
-COptionsKeyBoard::COptionsKeyBoard() : CPropertyPage(COptionsKeyBoard::IDD)
+COptionsKeyBoard::COptionsKeyBoard() : CFluentPropertyPage(COptionsKeyBoard::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("KeyboardShortcutsTitle", "Keyboard Shortcuts");
 	m_psp.pszTitle = m_csTitle;

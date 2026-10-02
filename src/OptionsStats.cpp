@@ -20,7 +20,7 @@ static char THIS_FILE[] = __FILE__;
 IMPLEMENT_DYNCREATE(COptionsStats, CPropertyPage)
 
 COptionsStats::COptionsStats()
-	: CPropertyPage(COptionsStats::IDD)
+	: CFluentPropertyPage(COptionsStats::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("StatsTitle", "Stats");
 	m_psp.pszTitle = m_csTitle;

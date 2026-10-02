@@ -20,7 +20,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(COptionFriends, CPropertyPage)
 
-COptionFriends::COptionFriends() : CPropertyPage(COptionFriends::IDD)
+COptionFriends::COptionFriends() : CFluentPropertyPage(COptionFriends::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("FriendsTitle", "Friends");
 	m_psp.pszTitle = m_csTitle;

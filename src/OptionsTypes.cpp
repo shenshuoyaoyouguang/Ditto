@@ -19,7 +19,7 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNCREATE(COptionsTypes, CPropertyPage)
 
-COptionsTypes::COptionsTypes() : CPropertyPage(COptionsTypes::IDD)
+COptionsTypes::COptionsTypes() : CFluentPropertyPage(COptionsTypes::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("SupportedTypesTitle", "Supported Types");
 	m_psp.pszTitle = m_csTitle;

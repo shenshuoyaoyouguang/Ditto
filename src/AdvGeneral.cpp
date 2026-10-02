@@ -13,7 +13,7 @@
 IMPLEMENT_DYNAMIC(CAdvGeneral, CDialogEx)
 
 CAdvGeneral::CAdvGeneral(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CAdvGeneral::IDD, pParent)
+	: CFluentDialog(CAdvGeneral::IDD, pParent)
 {
 
 }
