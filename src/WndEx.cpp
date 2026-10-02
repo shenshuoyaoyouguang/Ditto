@@ -55,6 +55,7 @@ BEGIN_MESSAGE_MAP(CWndEx, CWnd)
 	ON_WM_NCHITTEST()
 	ON_WM_NCLBUTTONDOWN()
 	ON_WM_NCMOUSEMOVE()
+	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCLBUTTONUP()
 	ON_WM_ERASEBKGND()
 	ON_WM_TIMER()
@@ -126,6 +127,11 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 {
 	bool bResult;
 
+	// Remember which variant is in use so RefreshThemeColors can re-apply it
+	// after the theme is reloaded, instead of guessing from unrelated state.
+	m_bCaptionPersistant = bPersistant ? true : false;
+	m_bConnectedToClipboard = ConnectedToClipboard ? true : false;
+
 	if(ConnectedToClipboard == false)
 	{
 		bResult = m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.CaptionLeftNotConnected(), CGetSetOptions::m_Theme.CaptionRightNotConnected(), CGetSetOptions::m_Theme.BorderNotConnected());
@@ -145,6 +151,17 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 	m_DittoWindow.SetCaptionTextColor(CGetSetOptions::m_Theme.CaptionTextColor());
 
 	return bResult;
+}
+
+void CWndEx::RefreshThemeColors()
+{
+	// Re-apply whichever caption variant this window was already showing. Every
+	// window caches its caption colours once at creation time, so without this a
+	// theme change left already open windows on the old palette -- a dark main
+	// window next to light edit / tooltip / qr windows.
+	SetCaptionColorActive(m_bCaptionPersistant ? TRUE : FALSE, m_bConnectedToClipboard ? TRUE : FALSE);
+
+	RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void CWndEx::SetCaptionOn(int nPos, bool bOnstartup, int captionSize, int captionFontSize)
@@ -204,6 +221,11 @@ void CWndEx::OnNcLButtonUp(UINT nHitTest, CPoint point)
 }
 
 
+
+void CWndEx::OnNcMouseLeave()
+{
+	m_DittoWindow.DoNcMouseLeave(this);
+}
 
 void CWndEx::OnNcMouseMove(UINT nHitTest, CPoint point) 
 {

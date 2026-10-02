@@ -52,6 +52,7 @@ BEGIN_MESSAGE_MAP(CToolTipEx, CWnd)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCLBUTTONDOWN()
 	ON_WM_NCMOUSEMOVE()
+	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCLBUTTONUP()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_FIRST_REMEMBERWINDOWPOSITION, &CToolTipEx::OnRememberwindowposition)
@@ -1146,6 +1147,11 @@ void CToolTipEx::OnNcLButtonUp(UINT nHitTest, CPoint point)
 	}
 
 	CWnd::OnNcLButtonUp(nHitTest, point);
+}
+
+void CToolTipEx::OnNcMouseLeave()
+{
+	m_DittoWindow.DoNcMouseLeave(this);
 }
 
 void CToolTipEx::OnNcMouseMove(UINT nHitTest, CPoint point) 

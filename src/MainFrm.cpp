@@ -14,6 +14,7 @@
 #include "DittoCopyBuffer.h"
 #include "HotKeys.h"
 #include "GlobalClips.h"
+#include "WndEx.h"
 #include "OptionsSheet.h"
 #include "DeleteClipData.h"
 #include "DatabaseUtilities.h"
@@ -69,6 +70,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_MESSAGE(WM_SHOW_DITTO_GROUP, &CMainFrame::OnShowDittoGroup)
 	ON_COMMAND(ID_FIRST_FIXUPSTICKYCLIPORDER, &CMainFrame::OnFirstFixupstickycliporder)
 	ON_MESSAGE(WM_DISPLAYCHANGE, &CMainFrame::OnResolutionChange)
+	ON_MESSAGE(WM_DWMCOLORIZATIONCOLORCHANGED, &CMainFrame::OnDwmColorizationColorChanged)
 	ON_MESSAGE(WM_TRAYNOTIFY, &CMainFrame::OnTrayNotification)
 	ON_MESSAGE(WM_PLAIN_TEXT_PASTE, &CMainFrame::OnPlainTextPaste)
 	ON_WM_WININICHANGE()
@@ -854,6 +856,7 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 			// the fluent pair follows the windows light/dark app setting,
 			// other themes keep the user's explicit choice
 			bool bFluentPair = (theme == _T("Fluent Light") || theme == _T("Fluent Dark"));
+			bool bModeChanged = false;
 			if (bFluentPair)
 			{
 				CString csWanted = DarkAppWindows10Setting() ? _T("Fluent Dark") : _T("Fluent Light");
@@ -861,10 +864,17 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 				{
 					CGetSetOptions::SetTheme(csWanted);
 					theme = csWanted;
+					bModeChanged = true;
 				}
 			}
 
-			if (theme == _T("") || bFluentPair)
+			// ImmersiveColorSet also fires for accent-only changes (and for taskbar
+			// animation tweaks). Re-parsing the theme and rebuilding the paste
+			// window for those caused a visible flash on every such broadcast, so
+			// only rebuild when the light/dark mode actually flipped. The accent
+			// itself is picked up separately by CTheme::RefreshSystemAccent().
+			if ((theme == _T("") || bFluentPair) &&
+				(bModeChanged || CGetSetOptions::m_Theme.IsDarkTheme() != DarkAppWindows10Setting()))
 			{
 				CGetSetOptions::m_Theme.Load(theme);
 
@@ -875,6 +885,16 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 				{
 					m_quickPaste.ShowQPasteWnd(this, true, false, true);
 				}
+
+				// The paste window is rebuilt, but the other top level windows are
+				// not -- they cache their caption colours at creation time, so
+				// without this they stay on the old palette (half light, half dark).
+				EnumThreadWindows(::GetCurrentThreadId(), [](HWND hwnd) -> BOOL {
+					CWnd* pWnd = CWnd::FromHandle(hwnd);
+					if (pWnd != NULL && pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
+						((CWndEx*)pWnd)->RefreshThemeColors();
+					return TRUE;
+				}, 0);
 			}
 		}
 		break;
@@ -1524,6 +1544,27 @@ void CMainFrame::OnWinIniChange(LPCTSTR lpszSection)
 		KillTimer(SET_WINDOWS_THEME_TIMER);
 		SetTimer(SET_WINDOWS_THEME_TIMER, 1000, NULL);
 	}
+}
+
+LRESULT CMainFrame::OnDwmColorizationColorChanged(WPARAM wParam, LPARAM lParam)
+{
+	// An accent-only change: no light/dark flip, so the paste window must not be
+	// rebuilt. CTheme::Load with bCheckLastWriteTime takes the unchanged-file
+	// path, which re-resolves the "accent" alias against the new system accent.
+	CGetSetOptions::m_Theme.Load(CGetSetOptions::GetTheme(), false, true);
+
+	if (m_quickPaste.GetSafeHwnd() != NULL)
+		m_quickPaste.RefreshNc();
+
+	// The other top level windows (edit frame, description popup, qr viewer,
+	// tooltip) cache their caption colours at creation time, so an accent-only
+	// change has to be pushed to them as well or they keep the old palette.
+	EnumThreadWindows(::GetCurrentThreadId(), [](HWND hwnd) -> BOOL {
+		::RedrawWindow(hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
+		return TRUE;
+	}, 0);
+
+	return 0;
 }
 
 

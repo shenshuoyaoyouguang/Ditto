@@ -41,6 +41,11 @@ public:
 	void MinMaxWindow(long lOption = SWAP_MIN_MAX);
 	void GetWindowRectEx(LPRECT lpRect);
 	bool SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard);
+	// Re-reads the caption colours from the (possibly reloaded) theme and repaints
+	// the frame. Every window caches its caption colours once at creation time, so
+	// without this a theme change left the already open windows on the old
+	// palette -- a dark main window next to light edit / tooltip / viewer windows.
+	void RefreshThemeColors();
 	void SetAutoMaxDelay(long lDelay)	{ m_lDelayMaxSeconds = lDelay; }
 	bool GetMinimized()	{ return m_DittoWindow.m_bMinimized; }
 
@@ -56,6 +61,10 @@ protected:
 	
 	bool m_bMaxSetTimer;	
 	int m_lDelayMaxSeconds;
+	// last arguments of SetCaptionColorActive, so a theme reload can re-apply the
+	// same caption variant instead of guessing
+	bool m_bCaptionPersistant;
+	bool m_bConnectedToClipboard;
 	CToolTipCtrl m_toolTip;
 	SnapWindow m_snap;
 
@@ -72,6 +81,7 @@ protected:
 	afx_msg HITTEST_RET OnNcHitTest(CPoint point);
 	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
 	afx_msg void OnNcMouseMove(UINT nHitTest, CPoint point);
+	afx_msg void OnNcMouseLeave();
 	afx_msg void OnNcLButtonUp(UINT nHitTest, CPoint point);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);

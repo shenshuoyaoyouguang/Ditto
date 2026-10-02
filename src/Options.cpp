@@ -2071,7 +2071,13 @@ void CGetSetOptions::SetTheme(CString csTheme)
 
 CString CGetSetOptions::GetTheme()
 {
-	return GetProfileString(_T("Theme2"), _T("Fluent Light"));
+	// Empty means "follow the windows light/dark app setting", which CTheme::Load
+	// resolves to Fluent Dark / Fluent Light. It must stay empty as the default:
+	// the installers never write Theme2, so a non-empty default would be adopted
+	// verbatim at startup and a fresh install on a dark-mode machine would always
+	// come up light -- the follow-system path (OnWinIniChange) only runs when
+	// Windows broadcasts a change, never on launch.
+	return GetProfileString(_T("Theme2"), _T(""));
 }
 
 long CGetSetOptions::GetKeyStateWaitTimerCount()

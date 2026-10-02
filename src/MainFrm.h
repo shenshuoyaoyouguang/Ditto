@@ -26,6 +26,12 @@
 #define SET_WINDOWS_THEME_TIMER			17
 #define CLOSE_NO_DB_WINDOW_TIMER        18
 
+// Sent by dwm when the system accent colour changes without a light/dark switch.
+// Not declared by every SDK, and there is no NM_ equivalent, so define it here.
+#ifndef WM_DWMCOLORIZATIONCOLORCHANGED
+#define WM_DWMCOLORIZATIONCOLORCHANGED 0x0320
+#endif
+
 class CMainFrame: public CFrameWnd
 {
 public:
@@ -141,6 +147,7 @@ DECLARE_MESSAGE_MAP()public:
 	afx_msg LRESULT OnShowDittoGroup(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnFirstFixupstickycliporder();
 	afx_msg LRESULT OnResolutionChange(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnDwmColorizationColorChanged(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnTrayNotification(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnPlainTextPaste(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnWinIniChange(LPCTSTR lpszSection);
