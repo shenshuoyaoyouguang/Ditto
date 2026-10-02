@@ -2,13 +2,16 @@
 #include ".\dittowindow.h"
 #include "CP_Main.h"
 #include "Options.h"
+#include "Fonts.h"
+#include "DwmTheme.h"
 #include <ShellScalingAPI.h>
 
 CDittoWindow::CDittoWindow(void)
 {
 	m_captionBorderWidth = m_dpi.Scale(25);
 
-	m_borderSize = 2;
+	m_borderSize = m_dpi.Scale(2);
+	m_bDwmDarkApplied = false;
 	m_bMouseOverChevron = false;
 	m_bMouseDownOnChevron = false;
 	m_bMouseDownOnClose = false;
@@ -46,17 +49,24 @@ CDittoWindow::~CDittoWindow(void)
 void CDittoWindow::DoCreate(CWnd *pWnd)
 {
 	m_dpi.SetHwnd(pWnd->m_hWnd);
-	
+
+	AppFonts::Inst().EnsureInitialized();
+	CString csFamily = AppFonts::Inst().ResolvedFamily();
 
 	m_VertFont.CreateFont(-m_dpi.Scale(19), 0, -900, 0, 400, FALSE, FALSE, 0, DEFAULT_CHARSET,
-							OUT_DEFAULT_PRECIS,	CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, 
-							DEFAULT_PITCH|FF_SWISS, _T("Segoe UI"));
+							OUT_DEFAULT_PRECIS,	CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+							DEFAULT_PITCH|FF_SWISS, csFamily);
 
 	m_HorFont.CreateFont(-m_dpi.Scale(19), 0, 0, 0, 500, FALSE, FALSE, 0, DEFAULT_CHARSET,
 						OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
-						DEFAULT_PITCH|FF_SWISS, _T("Segoe UI"));
+						DEFAULT_PITCH|FF_SWISS, csFamily);
 
 	SetTitleTextHeight(pWnd);
+
+	// fluent window chrome: rounded corners follow the theme's light/dark mode
+	// (both fail silently on os builds without the attribute)
+	DwmTheme::ApplyRoundedCorners(pWnd->GetSafeHwnd(), true);
+	m_bDwmDarkApplied = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), CGetSetOptions::m_Theme.IsDarkTheme());
 	
 	m_closeButton.LoadStdImageDPI(m_dpi.GetDPI(), Close_Black_16_16, Close_Black_20_20, Close_Black_24_24, Close_Black_28, Close_Black_32_32, _T("PNG"), close_36, close_40, close_44, close_48, close_52, close_56);
 	m_chevronRightButton.LoadStdImageDPI(m_dpi.GetDPI(), ChevronRight_Black_16_16, ChevronRight_Black_20_20, ChevronRight_Black_24_24, ChevronRight_Black_28, ChevronRight_Black_32_32, _T("PNG"), ChevronRight_Black_36, ChevronRight_Black_40, ChevronRight_Black_44, ChevronRight_Black_48, ChevronRight_Black_52, ChevronRight_Black_56);
@@ -235,6 +245,13 @@ int CDittoWindow::IndexToPos(int index, bool horizontal)
 
 void CDittoWindow::DoNcPaint(CWnd *pWnd)
 {
+	// keep the dwm dark caption in sync when the theme flips at runtime
+	bool bDark = CGetSetOptions::m_Theme.IsDarkTheme();
+	if (bDark != m_bDwmDarkApplied)
+	{
+		m_bDwmDarkApplied = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
+	}
+
 	CWindowDC dc(pWnd);
 
 	CRect rcFrame;
@@ -460,13 +477,53 @@ void CDittoWindow::DoNcPaint(CWnd *pWnd)
 	DrawMinimizeBtn(dc, pWnd);
 }
 
+// caption button hover background: lighten dark captions, darken light ones
+static COLORREF CaptionHoverColor(COLORREF captionColor, double percent)
+{
+	int average = (GetRValue(captionColor) + GetGValue(captionColor) + GetBValue(captionColor)) / 3;
+	int target = average < 128 ? 255 : 0;
+
+	auto shift = [target, percent](int c) -> BYTE
+	{
+		int value = (int)(c + (target - c) * percent + 0.5);
+		return (BYTE)max(0, min(255, value));
+	};
+
+	return RGB(shift(GetRValue(captionColor)), shift(GetGValue(captionColor)), shift(GetBValue(captionColor)));
+}
+
+void CDittoWindow::DrawCaptionButtonBackground(CWindowDC &dc, const CRect &rcButton, bool bMouseOver, bool bMouseDown, bool bCloseButton)
+{
+	if (bMouseOver == false && bMouseDown == false)
+		return;
+
+	COLORREF background;
+	if (bCloseButton)
+	{
+		background = bMouseDown ? RGB(150, 30, 20) : RGB(196, 43, 28);
+	}
+	else
+	{
+		background = CaptionHoverColor(m_CaptionColorRight, bMouseDown ? 0.22 : 0.14);
+	}
+
+	CRect rcFill(rcButton);
+	rcFill.DeflateRect(m_dpi.Scale(2), m_dpi.Scale(2));
+
+	HBRUSH brush = CreateSolidBrush(background);
+	::FillRect(dc, &rcFill, brush);
+	DeleteObject(brush);
+}
+
 void CDittoWindow::DrawChevronBtn(CWindowDC &dc, CWnd *pWnd)
 {
 	if(m_bDrawChevron == false)
 	{
 		return;
 	}
-		
+
+	DrawCaptionButtonBackground(dc, m_crChevronBT, m_bMouseOverChevron, m_bMouseDownOnChevron, false);
+
 	if(this->m_bMinimized)
 	{
 		m_chevronLeftButton.Draw(&dc, m_dpi, pWnd, m_crChevronBT, m_bMouseOverChevron, m_bMouseDownOnChevron);
@@ -488,7 +545,9 @@ void CDittoWindow::DrawCloseBtn(CWindowDC &dc, CWnd *pWnd)
 	{
 		return;
 	}
-	
+
+	DrawCaptionButtonBackground(dc, m_crCloseBT, m_bMouseOverClose, m_bMouseDownOnClose, true);
+
 	m_closeButton.Draw(&dc, m_dpi, pWnd, m_crCloseBT, m_bMouseOverClose, m_bMouseDownOnClose);
 }
 
@@ -499,6 +558,8 @@ void CDittoWindow::DrawMinimizeBtn(CWindowDC &dc, CWnd *pWnd)
 		return;
 	}
 
+	DrawCaptionButtonBackground(dc, m_crMinimizeBT, m_bMouseOverMinimize, m_bMouseDownOnMinimize, false);
+
 	m_minimizeButton.Draw(&dc, m_dpi, pWnd, m_crMinimizeBT, m_bMouseOverMinimize, m_bMouseDownOnMinimize);
 }
 
@@ -508,6 +569,8 @@ void CDittoWindow::DrawMaximizeBtn(CWindowDC &dc, CWnd *pWnd)
 	{
 		return;
 	}
+
+	DrawCaptionButtonBackground(dc, m_crMaximizeBT, m_bMouseOverMaximize, m_bMouseDownOnMaximize, false);
 
 	m_maximizeButton.Draw(&dc, m_dpi, pWnd, m_crMaximizeBT, m_bMouseOverMaximize, m_bMouseDownOnMaximize);
 }
@@ -654,9 +717,8 @@ long CDittoWindow::DoNcLButtonUp(CWnd *pWnd, UINT nHitTest, CPoint point)
 	return lRet;
 }
 
-void CDittoWindow::DoNcMouseMove(CWnd *pWnd, UINT nHitTest, CPoint point) 
+void CDittoWindow::DoNcMouseMove(CWnd *pWnd, UINT nHitTest, CPoint point)
 {
-	return;
 	CRect crWindow;
 	pWnd->GetWindowRect(crWindow);
 
@@ -716,15 +778,18 @@ void CDittoWindow::SetCaptionOn(CWnd *pWnd, int nPos, bool bOnstartup, int capti
 {
 	m_captionFontSize = captionFontSize;
 
+	AppFonts::Inst().EnsureInitialized();
+	CString csFamily = AppFonts::Inst().ResolvedFamily();
+
 	m_VertFont.DeleteObject();
 	m_VertFont.CreateFont(-m_dpi.Scale(captionFontSize), 0, -900, 0, 400, FALSE, FALSE, 0, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS, _T("Segoe UI"));
+		DEFAULT_PITCH | FF_SWISS, csFamily);
 
 	m_HorFont.DeleteObject();
 	m_HorFont.CreateFont(-m_dpi.Scale(captionFontSize), 0, 0, 0, 500, FALSE, FALSE, 0, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS, _T("Segoe UI"));
+		DEFAULT_PITCH | FF_SWISS, csFamily);
 
 	SetTitleTextHeight(pWnd);
 
@@ -884,19 +949,22 @@ void CDittoWindow::OnDpiChanged(CWnd *pParent, int dpi)
 {
 	m_dpi.Update(dpi);
 
-	m_captionBorderWidth = m_dpi.Scale(25);
+	m_captionBorderWidth = m_dpi.Scale(CGetSetOptions::m_Theme.GetCaptionSize());
 	m_borderSize = m_dpi.Scale(2);
+
+	AppFonts::Inst().EnsureInitialized();
+	CString csFamily = AppFonts::Inst().ResolvedFamily();
 
 	m_VertFont.DeleteObject();
 	m_HorFont.DeleteObject();
 
 	m_VertFont.CreateFont(-m_dpi.Scale(m_captionFontSize), 0, -900, 0, 400, FALSE, FALSE, 0, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS, _T("Segoe UI"));
+		DEFAULT_PITCH | FF_SWISS, csFamily);
 
 	m_HorFont.CreateFont(-m_dpi.Scale(m_captionFontSize), 0, 0, 0, 500, FALSE, FALSE, 0, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS, _T("Segoe UI"));
+		DEFAULT_PITCH | FF_SWISS, csFamily);
 
 	m_closeButton.Reset();
 	m_closeButton.LoadStdImageDPI(m_dpi.GetDPI(), Close_Black_16_16, Close_Black_20_20, Close_Black_24_24, Close_Black_28, Close_Black_32_32, _T("PNG"), close_36, close_40, close_44, close_48, close_52, close_56);
