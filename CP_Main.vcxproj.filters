@@ -394,6 +394,18 @@
     <ClCompile Include="src\DrawHTML.C">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\DwmTheme.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FluentButton.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FluentDialog.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Fonts.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\TinyXml\tinystr.cpp">
       <Filter>src\TinyXml</Filter>
     </ClCompile>
@@ -623,6 +635,18 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\DrawHTML.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DwmTheme.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FluentButton.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FluentDialog.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Fonts.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\EditWithButton.h">
