@@ -167,6 +167,9 @@ public:
 protected:
 	BOOL GetClipData(int nItem, CClipFormat &Clip);
 	BOOL DrawBitMap(int nItem, CRect &crRect, CDC *pDC, const CString &csDescription);
+	void UpdateHover(CPoint point);
+	void RedrawItem(int item);
+	void ClearHover();
 	void LoadDittoCopyBufferHotkeys();
 	bool MouseInScrollBarArea(CRect crWindow, CPoint point);
 	BOOL DrawRtfText(int nItem, CRect &crRect, CDC *pDC);
@@ -200,6 +203,8 @@ protected:
 	CAccels *m_pToolTipActions;
 	CRichEditCtrlEx m_rtfFormater;
 	CDPI *m_windowDpi;
+	int m_hoverItem;
+	bool m_bHoverTracked;
 
 
 	// Generated message map functions
@@ -219,6 +224,7 @@ protected:
 	afx_msg BOOL OnToolTipText(UINT id, NMHDR * pNMHDR, LRESULT * pResult);
 	afx_msg void MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnMouseLeave();
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnKillFocus(CWnd* pNewWnd);
