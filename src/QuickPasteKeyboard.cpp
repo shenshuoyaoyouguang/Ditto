@@ -13,7 +13,7 @@
 IMPLEMENT_DYNAMIC(CQuickPasteKeyboard, CPropertyPage)
 
 CQuickPasteKeyboard::CQuickPasteKeyboard()
-	: CPropertyPage(CQuickPasteKeyboard::IDD)
+	: CFluentPropertyPage(CQuickPasteKeyboard::IDD)
 {
 	m_csTitle = theApp.m_Language.GetString("QuickPasteKeyboardTitle", "Quick Paste Keyboard");
 	m_psp.pszTitle = m_csTitle;
