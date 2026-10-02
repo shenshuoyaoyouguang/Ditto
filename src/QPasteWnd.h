@@ -141,6 +141,12 @@ public:
     CGroupStatic m_stGroup;
     CFont m_groupFont;
     CString m_Title;
+	// Declared before the group tree on purpose: the tree gets re-parented into
+	// the sidebar, and members are destroyed in reverse declaration order, so the
+	// child (tree) has to be destroyed before its parent (sidebar). With the old
+	// order the sidebar died first and took the tree's HWND with it, leaving
+	// CGroupTree holding a destroyed handle.
+	CSidebar m_sidebar;
 	CGroupTree m_GroupTree;
     CGdipButton m_ShowGroupsFolderBottom;
     CGdipButton m_BackButton;
@@ -148,7 +154,6 @@ public:
 	CGdipButton m_systemMenu;
 	CGroupStatic m_noSearchResultsStatic;
 	CChipBar m_chipBar;
-	CSidebar m_sidebar;
 	int m_typeFilter;		// ChipFilter value
 	bool m_showSidebar;
 

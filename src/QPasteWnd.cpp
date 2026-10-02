@@ -460,7 +460,14 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		CGetSetOptions::m_Theme.ScrollBarThumbHover()
 	);
 
-	((CWnd*)&m_GroupTree)->CreateEx(NULL, _T("SysTreeView32"), NULL, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS, CRect(0, 0, 100, 100), this, 0);
+	// WS_CHILD is required: without it the tree is a top-level popup, so the later
+	// SetParent(&m_sidebar) only changes the *owner* (not the parent), the tree is
+	// never clipped or moved with the sidebar, and MoveWindow() then interprets the
+	// sidebar's client rect as screen coordinates -- the group tree ends up parked
+	// in the top-left corner of the monitor instead of inside the sidebar.
+	((CWnd*)&m_GroupTree)->CreateEx(NULL, _T("SysTreeView32"), NULL,
+		WS_CHILD | WS_CLIPSIBLINGS | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS,
+		CRect(0, 0, 100, 100), this, 0);
 	m_GroupTree.ModifyStyle(WS_CAPTION | WS_TABSTOP, 0);
 
 	m_GroupTree.SetNotificationWndEx(m_hWnd);
@@ -6323,6 +6330,14 @@ void CQPasteWnd::UpdateSidebarTreeDock()
 
 		if (m_DittoWindow.m_dpi.GetDPI() > 0)
 			m_GroupTree.SetItemHeight(m_DittoWindow.m_dpi.Scale(22));
+
+		// Place it straight away: the parent is now the sidebar, so GetGroupsArea
+		// (sidebar client coordinates) is already the right space. Without this the
+		// tree keeps whatever rect it had and only snaps into place on the next
+		// MoveControls().
+		CRect rcGroups;
+		m_sidebar.GetGroupsArea(rcGroups);
+		m_GroupTree.MoveWindow(rcGroups);
 	}
 	else
 	{
