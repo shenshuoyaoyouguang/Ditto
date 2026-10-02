@@ -10,7 +10,7 @@
 
 // CQuickPasteKeyboard dialog
 
-IMPLEMENT_DYNAMIC(CQuickPasteKeyboard, CPropertyPage)
+IMPLEMENT_DYNAMIC(CQuickPasteKeyboard, CFluentPropertyPage)
 
 CQuickPasteKeyboard::CQuickPasteKeyboard()
 	: CFluentPropertyPage(CQuickPasteKeyboard::IDD)
@@ -36,7 +36,7 @@ void CQuickPasteKeyboard::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CQuickPasteKeyboard, CPropertyPage)
+BEGIN_MESSAGE_MAP(CQuickPasteKeyboard, CFluentPropertyPage)
 	ON_NOTIFY(LVN_ITEMACTIVATE, IDC_LIST1, &CQuickPasteKeyboard::OnLvnItemActivateList1)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST1, &CQuickPasteKeyboard::OnLvnItemchangedList1)
 	ON_BN_CLICKED(IDC_ASSIGN, &CQuickPasteKeyboard::OnBnClickedAssign)

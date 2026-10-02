@@ -17,7 +17,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CAbout property page
 
-IMPLEMENT_DYNCREATE(CAbout, CPropertyPage)
+IMPLEMENT_DYNCREATE(CAbout, CFluentPropertyPage)
 
 CAbout::CAbout() : CFluentPropertyPage(CAbout::IDD)
 {
@@ -45,7 +45,7 @@ void CAbout::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CAbout, CPropertyPage)
+BEGIN_MESSAGE_MAP(CAbout, CFluentPropertyPage)
 	//{{AFX_MSG_MAP(CAbout)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()

@@ -8,7 +8,7 @@
 
 // COptionsCopyBuffers dialog
 
-IMPLEMENT_DYNCREATE(COptionsCopyBuffers, CPropertyPage)
+IMPLEMENT_DYNCREATE(COptionsCopyBuffers, CFluentPropertyPage)
 
 COptionsCopyBuffers::COptionsCopyBuffers() : CFluentPropertyPage(COptionsCopyBuffers::IDD)
 {
@@ -44,7 +44,7 @@ void COptionsCopyBuffers::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsCopyBuffers, CPropertyPage)
+BEGIN_MESSAGE_MAP(COptionsCopyBuffers, CFluentPropertyPage)
 END_MESSAGE_MAP()
 
 BOOL COptionsCopyBuffers::OnInitDialog()
