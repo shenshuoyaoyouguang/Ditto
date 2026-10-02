@@ -2071,7 +2071,7 @@ void CGetSetOptions::SetTheme(CString csTheme)
 
 CString CGetSetOptions::GetTheme()
 {
-	return GetProfileString(_T("Theme2"), "");
+	return GetProfileString(_T("Theme2"), _T("Fluent Light"));
 }
 
 long CGetSetOptions::GetKeyStateWaitTimerCount()

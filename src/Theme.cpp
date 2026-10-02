@@ -67,8 +67,8 @@ void CTheme::LoadDefaults()
 	m_scrollBarThumbHover = RGB(140, 140, 140);
 	m_scrollBarTrack = RGB(240, 240, 240);
 
-	m_captionSize = 25;
-	m_captionFontSize = 19;
+	m_captionSize = 32;
+	m_captionFontSize = 14;
 
 	ResetTokenFlags();
 	LoadTokenDefaults();
@@ -81,11 +81,9 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	{
 		followWindows10Theme = true;
 
-		if (DarkAppWindows10Setting())
-		{
-			csTheme = _T("DarkerDitto");
-			Log(_T("Loading theme based on windows setting of dark mode for apps"));			
-		}
+		// empty theme name follows the windows light/dark app setting
+		csTheme = DarkAppWindows10Setting() ? _T("Fluent Dark") : _T("Fluent Light");
+		Log(_T("Loading theme based on windows setting of dark mode for apps"));
 	}
 
 	if (csTheme.IsEmpty() || csTheme == _T("Ditto") || csTheme == _T("(Default)") || csTheme == _T("(Ditto)"))

@@ -850,7 +850,21 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 		{
 			KillTimer(SET_WINDOWS_THEME_TIMER);
 			auto theme = CGetSetOptions::GetTheme();
-			if (theme == _T(""))
+
+			// the fluent pair follows the windows light/dark app setting,
+			// other themes keep the user's explicit choice
+			bool bFluentPair = (theme == _T("Fluent Light") || theme == _T("Fluent Dark"));
+			if (bFluentPair)
+			{
+				CString csWanted = DarkAppWindows10Setting() ? _T("Fluent Dark") : _T("Fluent Light");
+				if (theme != csWanted)
+				{
+					CGetSetOptions::SetTheme(csWanted);
+					theme = csWanted;
+				}
+			}
+
+			if (theme == _T("") || bFluentPair)
 			{
 				CGetSetOptions::m_Theme.Load(theme);
 
