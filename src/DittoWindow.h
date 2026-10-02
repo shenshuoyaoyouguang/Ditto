@@ -92,6 +92,11 @@ public:
 	COleDateTime m_TimeMinimized;
 	COleDateTime m_TimeMaximized;
 
+protected:
+	void DrawCaptionButtonBackground(CWindowDC &dc, const CRect &rcButton, bool bMouseOver, bool bMouseDown, bool bCloseButton);
 
+	bool m_bDwmDarkApplied;
+
+public:
 	CDPI m_dpi;
 };
