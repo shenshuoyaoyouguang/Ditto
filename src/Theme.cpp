@@ -553,6 +553,8 @@ void CTheme::FinalizeTokens()
 {
 	if (m_bParsedThemeXml)
 		DeriveTokensFromLegacy();
+	else if (!m_hasAccentDefault)
+		m_accentDefault = m_clipPastedColor; // built-in palette: LoadWindowsAccentColor may have stored the system accent here
 
 	m_bDarkTheme = RelLuminance(m_surfaceBase) < 0.5;
 
