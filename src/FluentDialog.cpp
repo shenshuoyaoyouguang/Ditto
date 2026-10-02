@@ -24,6 +24,8 @@ CFluentDialog::CFluentDialog(LPCTSTR lpszTemplateName, CWnd* pParentWnd)
 {
 }
 
+IMPLEMENT_DYNAMIC(CFluentDialog, CDialog)
+
 BEGIN_MESSAGE_MAP(CFluentDialog, CDialog)
 	ON_WM_ERASEBKGND()
 	ON_WM_CTLCOLOR()
@@ -152,6 +154,8 @@ CFluentPropertyPage::CFluentPropertyPage(UINT nIDTemplate, UINT nIDCaption, DWOR
 	: CPropertyPage(nIDTemplate, nIDCaption, dwSize)
 {
 }
+
+IMPLEMENT_DYNAMIC(CFluentPropertyPage, CPropertyPage)
 
 BEGIN_MESSAGE_MAP(CFluentPropertyPage, CPropertyPage)
 	ON_WM_ERASEBKGND()

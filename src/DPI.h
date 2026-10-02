@@ -10,7 +10,10 @@ public:
 		m_hWnd = hwnd;
 	}
 
-	void Update(int dpi) { m_dpi = dpi;  m_Initialized = true; }
+	// Never store a non-positive dpi: Scale() would collapse every layout value
+	// to 0 and UnScale() would divide by zero (MulDiv returns -1), which then
+	// gets persisted as window sizes / font heights.
+	void Update(int dpi) { m_dpi = (dpi > 0 ? dpi : 96); m_Initialized = true; }
 
 	// Get screen DPI.
 	int GetDPI() { Init(); return m_dpi; }
@@ -40,8 +43,12 @@ private:
 					if (getDpi)
 					{
 						int dpi = getDpi(m_hWnd);
-						this->Update(dpi);
-						m_Initialized = true;
+						if (dpi > 0)
+						{
+							this->Update(dpi);
+							FreeLibrary(hUser32);
+							return;
+						}
 					}
 					else
 					{
@@ -56,26 +63,40 @@ private:
 							{
 								UINT x = 0;
 								UINT y = 0;
-								monDpi(monitor, MDT_EFFECTIVE_DPI, &x, &y);
-
-								this->Update(x);
-								m_Initialized = true;
+								if (SUCCEEDED(monDpi(monitor, MDT_EFFECTIVE_DPI, &x, &y)) && x > 0)
+								{
+									this->Update(x);
+									FreeLibrary(shCore);
+									FreeLibrary(hUser32);
+									return;
+								}
 							}
+							FreeLibrary(shCore);
 						}
 					}
+					FreeLibrary(hUser32);
 				}
 			}
 
-			if (m_Initialized == false)
+			// Fallback: device caps for the window (screen dc when m_hWnd is NULL).
+			HDC hdc = GetDC(m_hWnd);
+			if (hdc)
 			{
-				HDC hdc = GetDC(m_hWnd);
-				if (hdc)
+				int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+				// A window dc must be released with the same hwnd it was taken
+				// from; ReleaseDC(NULL, ...) leaks it.
+				ReleaseDC(m_hWnd, hdc);
+
+				if (dpi > 0)
 				{
-					m_dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-					ReleaseDC(NULL, hdc);
-					m_Initialized = true;
-				}				
+					this->Update(dpi);
+					return;
+				}
 			}
+
+			// Last resort. Always mark initialized so a failing probe is not
+			// retried on every Scale() call (which leaked a dc each time).
+			this->Update(96);
 		}
 	}
 
