@@ -510,7 +510,7 @@ void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
 	if (pParent->FirstChildElement("Accent_Default") != NULL)
 	{
 		TiXmlNode *pValue = pParent->FirstChildElement("Accent_Default")->FirstChild();
-		CString csValue = pValue ? pValue->Value() : _T("");
+		CString csValue = pValue ? pValue->Value() : "";
 		csValue.Trim();
 
 		if (csValue.CompareNoCase(_T("accent")) == 0)

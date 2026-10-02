@@ -178,7 +178,7 @@ protected:
 
 	// true when the value came from the theme xml, false when defaulted/derived
 	bool m_hasSurfaceBase, m_hasSurfaceElevated, m_hasSurfaceRowAlt;
-	bool m_hasTextPrimary, m_hasTextSecondary, m_hasTextDisabled;
+	bool m_hasTextPrimary, m_hasTextSecondary, m_hasTextDisabled, m_hasTextOnAccent;
 	bool m_hasAccentDefault, m_hasAccentSubtle, m_hasAccentText;
 	bool m_hasStrokeCard, m_hasStrokeDivider;
 	bool m_hasControlFill, m_hasControlHover, m_hasControlPressed, m_hasControlDisabledBG;
