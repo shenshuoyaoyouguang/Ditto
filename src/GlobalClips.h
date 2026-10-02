@@ -4,7 +4,9 @@
 #include "ShowTaskBarIcon.h"
 // GlobalClips dialog
 
-class GlobalClips : public CDialogEx
+#include "FluentDialog.h"
+
+class GlobalClips : public CFluentDialog
 {
 	DECLARE_DYNAMIC(GlobalClips)
 

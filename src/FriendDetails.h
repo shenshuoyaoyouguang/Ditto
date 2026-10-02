@@ -10,7 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CFriendDetails dialog
 
-class CFriendDetails : public CDialog
+#include "FluentDialog.h"
+
+class CFriendDetails : public CFluentDialog
 {
 // Construction
 public:

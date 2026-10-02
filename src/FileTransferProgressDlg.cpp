@@ -16,14 +16,14 @@ static char THIS_FILE[] = __FILE__;
 
 
 CFileTransferProgressDlg::CFileTransferProgressDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CFileTransferProgressDlg::IDD, pParent)
+	: CFluentDialog(CFileTransferProgressDlg::IDD, pParent)
 {
 	m_bCancelled = false;
 }
 
 void CFileTransferProgressDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CFileTransferProgressDlg)
 	DDX_Control(pDX, IDC_FILE_COPY, m_FileCopy);
 	DDX_Control(pDX, IDCANCEL, m_m_CancelButton);
@@ -35,7 +35,7 @@ void CFileTransferProgressDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CFileTransferProgressDlg, CDialog)
+BEGIN_MESSAGE_MAP(CFileTransferProgressDlg, CFluentDialog)
 	//{{AFX_MSG_MAP(CFileTransferProgressDlg)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
@@ -45,18 +45,29 @@ END_MESSAGE_MAP()
 
 void CFileTransferProgressDlg::PostNcDestroy() 
 {
-	CDialog::PostNcDestroy();
+	CFluentDialog::PostNcDestroy();
 
 	delete this;
 }
 
-BOOL CFileTransferProgressDlg::OnInitDialog() 
+BOOL CFileTransferProgressDlg::OnInitDialog()
 {
-	CDialog::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
-	m_FileCopy.Open(IDR_FILE_COPY);
-	m_FileCopy.Play(0, -1, -1);
-	
+	// the old avi animation is replaced by a themed progress bar at the
+	// same spot; the animate control from the template stays hidden
+	m_FileCopy.ShowWindow(SW_HIDE);
+
+	CRect rcAvi;
+	m_FileCopy.GetWindowRect(rcAvi);
+	ScreenToClient(rcAvi);
+
+	CDPI dpi;
+	dpi.SetHwnd(m_hWnd);
+	rcAvi.DeflateRect(0, dpi.Scale(4), 0, dpi.Scale(4));
+
+	m_progressBar.Create(WS_CHILD | WS_VISIBLE, rcAvi, this, 0x380);
+
 	SetNumFiles(0);
 
 	::SetWindowPos(m_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE|SWP_SHOWWINDOW);
@@ -95,11 +106,14 @@ void CFileTransferProgressDlg::SetNumFiles(int nFiles)
 	m_ProgressSingleFile.SetRange32(0, 100);
 	m_ProgressSingleFile.SetStep(1);
 	m_ProgressSingleFile.SetPos(0);
+
+	m_progressBar.SetPos(0);
 }
 
 void CFileTransferProgressDlg::ResetSingleFileProgress()
 {
 	m_ProgressSingleFile.SetPos(0);
+	m_progressBar.SetPos(0);
 }
 
 void CFileTransferProgressDlg::StepAllFiles()
@@ -110,6 +124,7 @@ void CFileTransferProgressDlg::StepAllFiles()
 void CFileTransferProgressDlg::SetSingleFilePos(int nPos)
 {
 	m_ProgressSingleFile.SetPos(nPos);
+	m_progressBar.SetPos(nPos);
 }
 
 void CFileTransferProgressDlg::PumpMessages()

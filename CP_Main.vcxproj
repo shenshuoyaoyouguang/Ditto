@@ -587,6 +587,7 @@
     <ClCompile Include="src\FileRecieve.cpp" />
     <ClCompile Include="src\FileSend.cpp" />
     <ClCompile Include="src\FileTransferProgressDlg.cpp" />
+    <ClCompile Include="src\FluentProgressBar.cpp" />
     <ClCompile Include="src\FormatSQL.cpp" />
     <ClCompile Include="src\FormattedTextDraw.cpp" />
     <ClCompile Include="src\FriendDetails.cpp" />
@@ -848,6 +849,7 @@
     <ClInclude Include="src\DwmTheme.h" />
     <ClInclude Include="src\FluentButton.h" />
     <ClInclude Include="src\FluentDialog.h" />
+    <ClInclude Include="src\FluentProgressBar.h" />
     <ClInclude Include="src\Fonts.h" />
     <ClInclude Include="src\DrawHTML.h" />
     <ClInclude Include="src\EditFrameWnd.h" />

@@ -19,7 +19,7 @@ static char THIS_FILE[] = __FILE__;
 
 
 CCopyProperties::CCopyProperties(long lCopyID, CWnd* pParent, CClip *pMemoryClip)
-	: CDialog(CCopyProperties::IDD, pParent)
+	: CFluentDialog(CCopyProperties::IDD, pParent)
 {
 	m_lCopyID = lCopyID;
 	m_bDeletedData = false;
@@ -40,7 +40,7 @@ CCopyProperties::CCopyProperties(long lCopyID, CWnd* pParent, CClip *pMemoryClip
 
 void CCopyProperties::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CCopyProperties)
 	DDX_Control(pDX, IDC_EDIT_QUICK_PASTE, m_QuickPasteText);
 	DDX_Control(pDX, IDC_EDIT_PROPERTIES, m_description);
@@ -57,13 +57,12 @@ void CCopyProperties::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CCopyProperties, CDialog)
+BEGIN_MESSAGE_MAP(CCopyProperties, CFluentDialog)
 	//{{AFX_MSG_MAP(CCopyProperties)
 	ON_BN_CLICKED(IDC_DELETE_COPY_DATA, OnDeleteCopyData)
 	ON_WM_ACTIVATE()
 	ON_WM_SIZE()
 	//}}AFX_MSG_MAP
-	ON_WM_CTLCOLOR()
 	ON_LBN_SELCHANGE(IDC_COPY_DATA, &CCopyProperties::OnLbnSelchangeCopyData)
 	ON_WM_NCLBUTTONDOWN()
 END_MESSAGE_MAP()
@@ -73,7 +72,7 @@ END_MESSAGE_MAP()
 
 BOOL CCopyProperties::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	//remove the default icon in top left of window
 	int extendedStyle = GetWindowLong(m_hWnd, GWL_EXSTYLE);
@@ -280,7 +279,7 @@ void CCopyProperties::LoadDataFromCClip(CClip &Clip)
 
 void CCopyProperties::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized) 
 {
-	CDialog::OnActivate(nState, pWndOther, bMinimized);
+	CFluentDialog::OnActivate(nState, pWndOther, bMinimized);
 
 	if (nState == WA_INACTIVE)
 	{
@@ -354,7 +353,7 @@ void CCopyProperties::OnOK()
 	}
 	CATCH_SQLITE_EXCEPTION
 
-	CDialog::OnOK();
+	CFluentDialog::OnOK();
 }
 
 BOOL CCopyProperties::CheckGlobalHotKey(CClip &clip)
@@ -492,12 +491,12 @@ void CCopyProperties::OnCancel()
 {
 	m_bHandleKillFocus = true;
 		
-	CDialog::OnCancel();
+	CFluentDialog::OnCancel();
 }
 
 void CCopyProperties::OnSize(UINT nType, int cx, int cy) 
 {
-	CDialog::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 	
 	if (((GetKeyState(VK_LBUTTON) & 0x100) != 0) &&
 		m_mouseDownOnCaption == false)
@@ -508,16 +507,6 @@ void CCopyProperties::OnSize(UINT nType, int cx, int cy)
 	{
 		m_Resize.SetParent(m_hWnd);
 	}
-}
-
-HBRUSH CCopyProperties::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
-{
-	HBRUSH hbr = CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
-
-	// TODO:  Change any attributes of the DC here
-
-	// TODO:  Return a different brush if the default is not desired
-	return hbr;
 }
 
 
@@ -596,5 +585,5 @@ void CCopyProperties::OnNcLButtonDown(UINT nHitTest, CPoint point)
 		m_mouseDownOnCaption = true;
 	}
 
-	CDialog::OnNcLButtonDown(nHitTest, point);
+	CFluentDialog::OnNcLButtonDown(nHitTest, point);
 }

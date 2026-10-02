@@ -4,7 +4,9 @@
 
 // CFriendPromptDlg dialog
 
-class CFriendPromptDlg : public CDialogEx
+#include "FluentDialog.h"
+
+class CFriendPromptDlg : public CFluentDialog
 {
 	DECLARE_DYNAMIC(CFriendPromptDlg)
 
@@ -37,7 +39,6 @@ public:
 	afx_msg void OnBnClickedOk();
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	CEdit m_textBox;
 	afx_msg void OnBnClickedCancel();
 	CEdit m_description;

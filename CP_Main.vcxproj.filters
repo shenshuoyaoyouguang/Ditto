@@ -142,6 +142,9 @@
     <ClCompile Include="src\FileTransferProgressDlg.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\FluentProgressBar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\FormatSQL.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -650,6 +653,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\FluentDialog.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FluentProgressBar.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Fonts.h">

@@ -10,7 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CGroupName dialog
 
-class CGroupName : public CDialog
+#include "FluentDialog.h"
+
+class CGroupName : public CFluentDialog
 {
 // Construction
 public:

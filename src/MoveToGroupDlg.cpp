@@ -18,7 +18,7 @@ static char THIS_FILE[] = __FILE__;
 
 
 CMoveToGroupDlg::CMoveToGroupDlg(CWnd* pParent /*=NULL*/, CString windowTitle /*= _T("")*/)
-	: CDialog(CMoveToGroupDlg::IDD, pParent)
+	: CFluentDialog(CMoveToGroupDlg::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CMoveToGroupDlg)
 		// NOTE: the ClassWizard will add member initialization here
@@ -30,14 +30,14 @@ CMoveToGroupDlg::CMoveToGroupDlg(CWnd* pParent /*=NULL*/, CString windowTitle /*
 
 void CMoveToGroupDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CFluentDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMoveToGroupDlg)
 	DDX_Control(pDX, IDC_TREE, m_Tree);
 	//}}AFX_DATA_MAP
 }
 
 
-BEGIN_MESSAGE_MAP(CMoveToGroupDlg, CDialog)
+BEGIN_MESSAGE_MAP(CMoveToGroupDlg, CFluentDialog)
 	//{{AFX_MSG_MAP(CMoveToGroupDlg)
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BUTTON_NEW_GROUP, OnButtonNewGroup)
@@ -50,7 +50,7 @@ END_MESSAGE_MAP()
 
 BOOL CMoveToGroupDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	CFluentDialog::OnInitDialog();
 
 	if(!m_windowTitle.IsEmpty())
 	{
@@ -87,12 +87,12 @@ void CMoveToGroupDlg::OnOK()
 {
 	m_nSelectedGroup = m_Tree.GetSelectedTree();
 	
-	CDialog::OnOK();
+	CFluentDialog::OnOK();
 }
 
 void CMoveToGroupDlg::OnSize(UINT nType, int cx, int cy) 
 {
-	CDialog::OnSize(nType, cx, cy);
+	CFluentDialog::OnSize(nType, cx, cy);
 	
 	// TODO: Add your message handler code here
 	

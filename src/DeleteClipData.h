@@ -30,7 +30,9 @@ public:
 	
 	
 	
-class CDeleteClipData : public CDialog
+#include "FluentDialog.h"
+
+class CDeleteClipData : public CFluentDialog
 {
 	DECLARE_DYNAMIC(CDeleteClipData)
 
