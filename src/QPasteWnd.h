@@ -21,6 +21,8 @@
 #include "Popup.h"
 #include "CustomFriendsHelper.h"
 #include "ModernScrollBar.h"
+#include "ChipBar.h"
+#include "Sidebar.h"
 
 class CMainTable
 {
@@ -139,12 +141,16 @@ public:
     CGroupStatic m_stGroup;
     CFont m_groupFont;
     CString m_Title;
-    CGroupTree m_GroupTree;
+	CGroupTree m_GroupTree;
     CGdipButton m_ShowGroupsFolderBottom;
     CGdipButton m_BackButton;
 	CGroupStatic m_alwaysOnToWarningStatic;
 	CGdipButton m_systemMenu;
 	CGroupStatic m_noSearchResultsStatic;
+	CChipBar m_chipBar;
+	CSidebar m_sidebar;
+	int m_typeFilter;		// ChipFilter value
+	bool m_showSidebar;
 
     long m_lRecordCount;
     bool m_bStopQuery;
@@ -444,6 +450,10 @@ protected:
     afx_msg LRESULT OnRefreshView(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnReloadClipInUI(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnGroupTreeMessage(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnChipClicked(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSidebarViewClicked(WPARAM wParam, LPARAM lParam);
+	void ApplyTypeFilter();
+	void UpdateSidebarTreeDock();
     afx_msg LRESULT OnFillRestOfList(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnRefeshRow(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSetListCount(WPARAM wParam, LPARAM lParam);

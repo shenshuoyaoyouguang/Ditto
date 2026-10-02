@@ -542,6 +542,7 @@
     <ClCompile Include="src\Client.cpp" />
     <ClCompile Include="src\Clip.cpp" />
     <ClCompile Include="src\ClipboardSaveRestore.cpp" />
+    <ClCompile Include="src\ChipBar.cpp" />
     <ClCompile Include="src\ClipboardViewer.cpp" />
     <ClCompile Include="src\ClipCompare.cpp" />
     <ClCompile Include="src\ClipEditThread.cpp" />
@@ -728,6 +729,7 @@
     <ClCompile Include="src\ScriptEditor.cpp" />
     <ClCompile Include="src\ScrollHelper.cpp" />
     <ClCompile Include="src\SearchEditBox.cpp" />
+    <ClCompile Include="src\Sidebar.cpp" />
     <ClCompile Include="src\SelectDB.cpp" />
     <ClCompile Include="src\SendKeys.cpp" />
     <ClCompile Include="src\SendMail.cpp" />
@@ -824,6 +826,7 @@
     <ClInclude Include="src\CopyProperties.h" />
     <ClInclude Include="src\CopyThread.h" />
     <ClInclude Include="src\CP_Main.h" />
+    <ClInclude Include="src\ChipBar.h" />
     <ClInclude Include="src\CP_Main_i.h" />
     <ClInclude Include="src\Crc32Dynamic.h" />
     <ClInclude Include="src\CreateQRCodeImage.h" />
@@ -886,6 +889,7 @@
     <ClInclude Include="src\Misc.h" />
     <ClInclude Include="src\ModernScrollBar.h" />
     <ClInclude Include="src\MoveToGroupDlg.h" />
+    <ClInclude Include="src\Sidebar.h" />
     <ClInclude Include="src\MultiLanguage.h" />
     <ClInclude Include="src\MyDropTarget.h" />
     <ClInclude Include="src\NoDbFrameWnd.h" />

@@ -2483,6 +2483,16 @@ void CGetSetOptions::SetShowGroupsInMainList(BOOL val)
 	SetProfileLong(_T("ShowGroupsInMainList"), val);
 }
 
+BOOL CGetSetOptions::GetShowSidebar()
+{
+	return GetProfileLong(_T("ShowSidebar"), 0);
+}
+
+void CGetSetOptions::SetShowSidebar(BOOL val)
+{
+	SetProfileLong(_T("ShowSidebar"), val);
+}
+
 void CGetSetOptions::SetGroupDoubleClickTimeMS(int val)
 {
 	SetProfileLong(_T("GroupDoubleClickTimeMS"), val);
