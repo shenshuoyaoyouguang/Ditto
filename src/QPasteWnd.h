@@ -483,7 +483,6 @@ protected:
 	afx_msg void OnMenuShowStarredClips();
 	afx_msg void OnMenuSimpleTextSearch();
 	afx_msg LRESULT OnPostOptions(WPARAM wParam, LPARAM lParam);
-	afx_msg LRESULT OnDpiChanged(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnMakeTopStickyClip();
 	afx_msg void OnMakeLastStickyClip();
 	afx_msg void OnRemoveSticky();

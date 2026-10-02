@@ -229,7 +229,6 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 	ON_MESSAGE(NM_UPDATE_SCROLLBAR, OnUpdateScrollBar)
 	ON_MESSAGE(NM_CANCEL_SEARCH, OnCancelFilter)
 	ON_MESSAGE(NM_POST_OPTIONS_WINDOW, OnPostOptions)
-	ON_MESSAGE(WM_DPICHANGED, OnDpiChanged)
 	ON_COMMAND(ID_MENU_SEARCHDESCRIPTION, OnMenuSearchDescription)
 	ON_COMMAND(ID_MENU_SEARCHFULLTEXT, OnMenuSearchFullText)
 	ON_COMMAND(ID_MENU_SEARCHQUICKPASTE, OnMenuSearchQuickPaste)
@@ -650,35 +649,6 @@ void CQPasteWnd::SetSearchImages()
 	//	m_search.SetBitmaps(IDB_BITMAP_SEARCH_NORMAL, IDB_BITMAP_SEARCH_CLOSE);
 	//	break;
 	//}
-}
-
-LRESULT CQPasteWnd::OnDpiChanged(WPARAM wParam, LPARAM lParam)
-{
-	UINT newDpi = HIWORD(wParam);
-	RECT* pSuggested = (RECT*)lParam;
-
-	SetWindowPos(NULL, pSuggested->left, pSuggested->top,
-		pSuggested->right - pSuggested->left, pSuggested->bottom - pSuggested->top,
-		SWP_NOZORDER | SWP_NOACTIVATE);
-
-	m_DittoWindow.OnDpiChanged(this, newDpi);
-	m_DittoWindow.SetCaptionOn(this, m_DittoWindow.m_captionPosition, true,
-		CGetSetOptions::m_Theme.GetCaptionSize(), CGetSetOptions::m_Theme.GetCaptionFontSize());
-
-	m_search.SetDpiInfo(&m_DittoWindow.m_dpi);
-	m_lstHeader.SetDpiInfo(&m_DittoWindow.m_dpi);
-	m_modernScrollBar.SetDPI(&m_DittoWindow.m_dpi);
-	m_modernScrollBarHorz.SetDPI(&m_DittoWindow.m_dpi);
-	m_ShowGroupsFolderBottom.SetDpiInfo(&m_DittoWindow.m_dpi);
-	m_BackButton.SetDpiInfo(&m_DittoWindow.m_dpi);
-	m_systemMenu.SetDpiInfo(&m_DittoWindow.m_dpi);
-
-	UpdateFont();
-	MoveControls();
-
-	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ERASE);
-
-	return 0;
 }
 
 void CQPasteWnd::OnSize(UINT nType, int cx, int cy)
