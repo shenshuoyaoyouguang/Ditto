@@ -86,6 +86,24 @@ public:
 
 	CString LastError() const { return m_csLastError; }
 
+	// Colour maths, public because the owner-drawn option controls
+	// (FluentOptionPaint) need them to resolve foreground colours against
+	// whatever the active theme resolved to. They are pure functions apart
+	// from EnsureContrastOnBase, which reads m_surfaceBase.
+	//
+	// Exposed by moving the access level only -- the implementations in
+	// Theme.cpp are unchanged and still used internally by the token
+	// derivation in FinalizeTokens() / RefreshAccentDerived().
+	static COLORREF BlendOver(COLORREF under, COLORREF over, int alpha);
+	static COLORREF ShiftToward(COLORREF color, bool towardWhite, double percent);
+	static double RelLuminance(COLORREF color);
+	// WCAG 2.1 relative contrast ratio, 1.0 .. 21.0
+	static double ContrastRatio(COLORREF a, COLORREF b);
+	// Returns whichever of first/ second contrasts better against background.
+	static COLORREF PickContrastOn(COLORREF background, COLORREF first, COLORREF second);
+	// Nudges color until it clears 4.5:1 against this theme's Surface.Base.
+	COLORREF EnsureContrastOnBase(COLORREF color);
+
 protected:
 	bool LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color, int &intValue);
 
@@ -96,7 +114,7 @@ protected:
 	// v4 token handling
 	void LoadTokenDefaults();
 	void LoadTokensFromXml(TiXmlElement *pParent);
-	void FinalizeTokens();
+	void FinalizeTokens(const CString& csThemeName);
 	void DeriveTokensFromLegacy();
 	void RefreshAccentDerived();
 	// Re-resolves Accent_Default from the live Windows accent (the "accent"
@@ -104,12 +122,12 @@ protected:
 	void RefreshSystemAccent();
 	void ResetTokenFlags();
 
-	static COLORREF BlendOver(COLORREF under, COLORREF over, int alpha);
-	static COLORREF ShiftToward(COLORREF color, bool towardWhite, double percent);
-	static double RelLuminance(COLORREF color);
-	static double ContrastRatio(COLORREF a, COLORREF b);
-	static COLORREF PickContrastOn(COLORREF background, COLORREF first, COLORREF second);
-	COLORREF EnsureContrastOnBase(COLORREF color);
+	// Reports the theme's resolved token pairs to the debugger, flagging any
+	// that fall under their WCAG AA threshold. Called at the end of
+	// FinalizeTokens(), i.e. on every full Load(). Header-only loads return
+	// before FinalizeTokens() and so stay quiet -- that is the path the options
+	// dialog takes while enumerating the theme list.
+	void AuditContrast(const CString& csThemeName);
 
 protected:
 	COLORREF m_CaptionLeft;
