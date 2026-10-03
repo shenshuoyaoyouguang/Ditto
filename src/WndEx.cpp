@@ -161,7 +161,7 @@ void CWndEx::RefreshThemeColors()
 	// window next to light edit / tooltip / qr windows.
 	SetCaptionColorActive(m_bCaptionPersistant ? TRUE : FALSE, m_bConnectedToClipboard ? TRUE : FALSE);
 
-	RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void CWndEx::SetCaptionOn(int nPos, bool bOnstartup, int captionSize, int captionFontSize)

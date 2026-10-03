@@ -889,12 +889,7 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 				// The paste window is rebuilt, but the other top level windows are
 				// not -- they cache their caption colours at creation time, so
 				// without this they stay on the old palette (half light, half dark).
-				EnumThreadWindows(::GetCurrentThreadId(), [](HWND hwnd) -> BOOL {
-					CWnd* pWnd = CWnd::FromHandle(hwnd);
-					if (pWnd != NULL && pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
-						((CWndEx*)pWnd)->RefreshThemeColors();
-					return TRUE;
-				}, 0);
+				EnumThreadWindows(::GetCurrentThreadId(), RefreshCaptionColorsProc, 0);
 			}
 		}
 		break;
@@ -1533,6 +1528,22 @@ LRESULT CMainFrame::OnResolutionChange(WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
+// EnumThreadWindows takes a __stdcall WNDENUMPROC, which a captureless lambda
+// (a __cdecl function pointer) cannot satisfy.
+static BOOL CALLBACK RefreshCaptionColorsProc(HWND hwnd, LPARAM lParam)
+{
+	CWnd* pWnd = CWnd::FromHandle(hwnd);
+	if (pWnd != NULL && pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
+		((CWndEx*)pWnd)->RefreshThemeColors();
+	return TRUE;
+}
+
+static BOOL CALLBACK RedrawTopLevelProc(HWND hwnd, LPARAM lParam)
+{
+	::RedrawWindow(hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
+	return TRUE;
+}
+
 void CMainFrame::OnWinIniChange(LPCTSTR lpszSection)
 {
 	CFrameWnd::OnWinIniChange(lpszSection);
@@ -1553,16 +1564,11 @@ LRESULT CMainFrame::OnDwmColorizationColorChanged(WPARAM wParam, LPARAM lParam)
 	// path, which re-resolves the "accent" alias against the new system accent.
 	CGetSetOptions::m_Theme.Load(CGetSetOptions::GetTheme(), false, true);
 
-	if (m_quickPaste.GetSafeHwnd() != NULL)
-		m_quickPaste.RefreshNc();
-
-	// The other top level windows (edit frame, description popup, qr viewer,
+	// The top level windows (paste, edit frame, description popup, qr viewer,
 	// tooltip) cache their caption colours at creation time, so an accent-only
 	// change has to be pushed to them as well or they keep the old palette.
-	EnumThreadWindows(::GetCurrentThreadId(), [](HWND hwnd) -> BOOL {
-		::RedrawWindow(hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
-		return TRUE;
-	}, 0);
+	EnumThreadWindows(::GetCurrentThreadId(), RefreshCaptionColorsProc, 0);
+	EnumThreadWindows(::GetCurrentThreadId(), RedrawTopLevelProc, 0);
 
 	return 0;
 }
