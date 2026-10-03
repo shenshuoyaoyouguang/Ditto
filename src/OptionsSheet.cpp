@@ -49,6 +49,9 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 	m_hWndParent = NULL;
 	m_navWidth = 0;
 	m_bNavCreated = false;
+	m_bPageOriginValid = false;
+	m_ptPageOrigin = CPoint(0, 0);
+	ZeroMemory(m_bButtonBaseValid, sizeof(m_bButtonBaseValid));
 
 	EnableStackedTabs(TRUE);
 
@@ -92,6 +95,9 @@ COptionsSheet::~COptionsSheet()
 }
 
 #define IDC_NAV_LIST 0x37F
+
+// IDOK / IDCANCEL / ID_APPLY_NOW, in m_rcButtonBase index order
+static const int s_frameButtonIds[] = { IDOK, IDCANCEL, ID_APPLY_NOW };
 
 BEGIN_MESSAGE_MAP(COptionsSheet, CPropertySheet)
 	//{{AFX_MSG_MAP(COptionsSheet)
@@ -160,6 +166,11 @@ BOOL COptionsSheet::OnInitDialog()
 	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.SurfaceBase());
 	m_bNavCreated = true;
 	FillNavItems();
+
+	// Record the sheet-native rects before the widening below shifts anything:
+	// every WM_SIZE re-applies the nav offset and must position from this base
+	// instead of the already-shifted current rect.
+	RecordNativeLayout();
 
 	// widen the sheet and push the pages right of the nav column
 	SetWindowPos(NULL, 0, 0, rcWindow.Width() + m_navWidth, rcWindow.Height(),
@@ -234,17 +245,31 @@ void COptionsSheet::LayoutNav(int cx, int cy)
 	m_nav.MoveWindow(0, 0, m_navWidth, cy);
 }
 
-void COptionsSheet::ShiftFrameButtons()
+// The nav offset is re-applied by every WM_SIZE (the widening SetWindowPos
+// fires one, OnInitDialog makes two more explicit calls, and each later resize
+// another). Positioning from the current rect therefore accumulates one nav
+// width per call and slides the pages and buttons off the window, so both
+// shifts position from the pre-widening rects captured here. All pages share
+// one top-left and the active page is the only one with a hwnd at this point;
+// pages created later are laid out by the system at that same origin. Must run
+// before the widening SetWindowPos in OnInitDialog.
+void COptionsSheet::RecordNativeLayout()
 {
-	// CPropertySheet positioned IDOK / IDCANCEL / ID_APPLY_NOW for the original
-	// client width. Widening the window by m_navWidth leaves them where they
-	// were, i.e. overlapping the shifted page instead of hugging the new right
-	// edge.
-	static const int ids[] = { IDOK, IDCANCEL, ID_APPLY_NOW };
-
-	for (int i = 0; i < (int)(sizeof(ids) / sizeof(ids[0])); i++)
+	CWnd* pPage = GetActivePage();
+	if (pPage != NULL && pPage->GetSafeHwnd() != NULL)
 	{
-		CWnd* pButton = GetDlgItem(ids[i]);
+		CRect rcPage;
+		if (::GetWindowRect(pPage->GetSafeHwnd(), &rcPage))
+		{
+			ScreenToClient(rcPage);
+			m_ptPageOrigin = rcPage.TopLeft();
+			m_bPageOriginValid = true;
+		}
+	}
+
+	for (int i = 0; i < (int)(sizeof(s_frameButtonIds) / sizeof(s_frameButtonIds[0])); i++)
+	{
+		CWnd* pButton = GetDlgItem(s_frameButtonIds[i]);
 		if (pButton == NULL || pButton->GetSafeHwnd() == NULL)
 			continue;
 
@@ -253,12 +278,39 @@ void COptionsSheet::ShiftFrameButtons()
 			continue;
 
 		ScreenToClient(rc);
-		pButton->MoveWindow(rc.left + m_navWidth, rc.top, rc.Width(), rc.Height());
+		m_rcButtonBase[i] = rc;
+		m_bButtonBaseValid[i] = true;
+	}
+}
+
+void COptionsSheet::ShiftFrameButtons()
+{
+	// CPropertySheet positioned IDOK / IDCANCEL / ID_APPLY_NOW for the original
+	// client width. Widening the window by m_navWidth leaves them where they
+	// were, i.e. overlapping the shifted page instead of hugging the new right
+	// edge.
+	if (m_bNavCreated == false)
+		return;
+
+	for (int i = 0; i < (int)(sizeof(s_frameButtonIds) / sizeof(s_frameButtonIds[0])); i++)
+	{
+		if (m_bButtonBaseValid[i] == false)
+			continue;
+
+		CWnd* pButton = GetDlgItem(s_frameButtonIds[i]);
+		if (pButton == NULL || pButton->GetSafeHwnd() == NULL)
+			continue;
+
+		pButton->MoveWindow(m_rcButtonBase[i].left + m_navWidth, m_rcButtonBase[i].top,
+			m_rcButtonBase[i].Width(), m_rcButtonBase[i].Height());
 	}
 }
 
 void COptionsSheet::ShiftPages()
 {
+	if (m_bPageOriginValid == false)
+		return;
+
 	int pageCount = (int)GetPageCount();
 
 	for (int i = 0; i < pageCount; i++)
@@ -272,7 +324,9 @@ void COptionsSheet::ShiftPages()
 			continue;
 
 		ScreenToClient(rcPage);
-		pPage->MoveWindow(rcPage.left + m_navWidth, rcPage.top, rcPage.Width(), rcPage.Height());
+		// x is absolute (recorded origin + nav width), never relative to the
+		// current rect -- OnSize re-runs this on every resize.
+		pPage->MoveWindow(m_ptPageOrigin.x + m_navWidth, rcPage.top, rcPage.Width(), rcPage.Height());
 	}
 }
 
@@ -282,6 +336,10 @@ void COptionsSheet::OnNavSelect()
 	if (sel >= 0 && sel < (int)GetPageCount() && sel != GetActiveIndex())
 	{
 		SetActivePage(sel);
+		// A page selected for the first time gets its hwnd inside
+		// SetActivePage, so no earlier ShiftPages call can have covered it and
+		// it would sit at the sheet-native x, under the nav column.
+		ShiftPages();
 	}
 }
 
@@ -312,10 +370,6 @@ void COptionsSheet::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	bool bSelected = (lpDrawItemStruct->itemState & ODS_SELECTED) != 0;
 	bool bFocused = (lpDrawItemStruct->itemState & ODS_FOCUS) != 0;
 
-	CRect rcClient;
-	m_nav.GetClientRect(rcClient);
-	ScreenToClient(rcClient);
-
 	// the nav column paints as one surface; the full-width item background
 	// plus the active accent bar read as a single selection pill
 	pDC->FillSolidRect(rc, bSelected ? theme.AccentSubtle() : theme.SurfaceBase());
@@ -329,10 +383,17 @@ void COptionsSheet::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CString csText;
 	m_nav.GetText(lpDrawItemStruct->itemID, csText);
 
+	CDPI dpi;
+	dpi.SetHwnd(lpDrawItemStruct->hwndItem);
+
 	pDC->SetBkMode(TRANSPARENT);
 	pDC->SetTextColor(bSelected ? theme.TextPrimary() : theme.TextSecondary());
 	CFont* pOld = pDC->SelectObject(bSelected ? AppFonts::Inst().Get(Font_BodyStrong) : AppFonts::Inst().Get(Font_Body));
-	pDC->DrawText(csText, rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	// Same inset as the CSidebar rows: without it the label sits flush against
+	// the window edge and runs over the accent bar drawn at rc.left + 4.
+	CRect rcText(rc);
+	rcText.left += dpi.Scale(12);
+	pDC->DrawText(csText, rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 	pDC->SelectObject(pOld);
 
 	if (bFocused)

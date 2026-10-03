@@ -77,11 +77,20 @@ protected:
 	void ShiftFrameButtons();
 	void ShiftPages();
 	void FillNavItems();
+	void RecordNativeLayout();
 
 	CListBox m_nav;
 	CBrush m_navBg;
 	int m_navWidth;
 	bool m_bNavCreated;
+
+	// Pre-widening rects recorded once in OnInitDialog. The nav offset is
+	// re-applied on every WM_SIZE, so it positions from this fixed base --
+	// shifting from the current rect accumulates one nav width per resize.
+	CPoint m_ptPageOrigin;
+	bool m_bPageOriginValid;
+	CRect m_rcButtonBase[3];
+	bool m_bButtonBaseValid[3];
 };
 
 /////////////////////////////////////////////////////////////////////////////
