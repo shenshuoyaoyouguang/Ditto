@@ -157,7 +157,7 @@ BOOL COptionsSheet::OnInitDialog()
 	m_nav.SetFont(AppFonts::Inst().Get(Font_Body));
 	// The list only owner-draws its items, so the empty area below the last
 	// one kept the system window colour -- a light strip under a dark sheet.
-	m_nav.SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
+	m_nav.SendMessage(LB_SETBKGND, 0, (LPARAM)CGetSetOptions::m_Theme.SurfaceBase());
 	m_bNavCreated = true;
 	FillNavItems();
 

@@ -37,6 +37,7 @@ CChipBar::CChipBar()
 	m_hover = -1;
 	m_bHoverTracked = false;
 	m_bHoverEnabled = true;
+	m_bHasFocus = false;
 }
 
 BEGIN_MESSAGE_MAP(CChipBar, CWnd)
@@ -223,9 +224,6 @@ void CChipBar::OnMouseMove(UINT nFlags, CPoint point)
 	CWnd::OnMouseMove(nFlags, point);
 }
 
-	m_bHoverEnabled = true;
-	m_bHasFocus = false;
-}
 void CChipBar::OnSize(UINT nType, int cx, int cy)
 {
 	CWnd::OnSize(nType, cx, cy);
@@ -255,10 +253,10 @@ void CChipBar::OnKillFocus(CWnd* pNextWnd)
 	Invalidate(FALSE);
 }
 
-LRESULT CChipBar::OnGetDlgCode(WPARAM wParam, LPARAM lParam)
+LRESULT CChipBar::OnGetDlgCode()
 {
 	// Take the arrow keys so the chip row can be traversed with them.
-	return CWnd::OnGetDlgCode(wParam, lParam) | DLGC_WANTARROWS;
+	return CWnd::OnGetDlgCode() | DLGC_WANTARROWS;
 }
 
 void CChipBar::MoveActiveTo(int index)
