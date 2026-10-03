@@ -101,7 +101,22 @@ void log(const TCHAR* msg, bool bFromSendRecieve, CString csFile, long lLine)
 	if(!bFromSendRecieve)
 	{
 		if(!CGetSetOptions::m_bEnableDebugLogging)
+		{
+			// A broken theme file or a font that will not build is a user asset
+			// problem, not a debug message, and the default configuration made it
+			// completely invisible: with file logging off nothing at all was
+			// recorded on the user's machine. Write those to a separate
+			// diagnostics log next to the normal one, so a support request has
+			// something to point at. PATH_LOG_FILE resolves to the roaming
+			// appdata folder, or next to the exe when portable.
+			CString csDiagFile = CGetSetOptions::GetPath(PATH_LOG_FILE);
+			if (csDiagFile.IsEmpty() == false)
+			{
+				csDiagFile += _T("Ditto_diagnostics.log");
+				AppendToFile(csDiagFile, csText);
+			}
 			return;
+		}
 	}
 #endif
 	

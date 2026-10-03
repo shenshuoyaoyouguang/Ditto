@@ -554,7 +554,11 @@ BOOL BackupDB(CString dbPath, CString backupPath)
 	}
 	catch (...)
 	{
-
+		// This left errorMessage empty and the caller only reports when it is
+		// non-empty, so any non-CException failure restored silently and the
+		// user was never told their database was not restored.
+		if (errorMessage.IsEmpty())
+			errorMessage = _T("unhandled exception during restore");
 	}
 
 	if (errorMessage != _T(""))

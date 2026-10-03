@@ -184,7 +184,10 @@ bool CClipIDs::AggregateData(IClipAggregator &Aggregator, UINT cfType, BOOL bRev
 	CATCH_SQLITE_EXCEPTION
 		catch(...)
 	{
-
+			// Swallowing every non-sqlite exception here meant a genuine failure
+			// (bad_alloc, a throwing CString) left bRet looking like success.
+			Log(_T("CClipIDs: unhandled exception while aggregating clipboard ids"));
+			bRet = FALSE;
 	}
 
 	return bRet;

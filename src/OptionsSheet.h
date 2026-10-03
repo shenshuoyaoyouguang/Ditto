@@ -73,6 +73,9 @@ protected:
 
 protected:
 	void LayoutNav(int cx, int cy);
+	// Move the frame buttons / pages right of the nav column (see the impl).
+	void ShiftFrameButtons();
+	void ShiftPages();
 	void FillNavItems();
 
 	CListBox m_nav;
