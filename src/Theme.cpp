@@ -704,7 +704,24 @@ void CTheme::RefreshAccentDerived()
 		m_accentSubtle = BlendOver(m_surfaceBase, m_accentDefault, 31);
 
 	if (!m_hasStateSelectedBG)
+	{
 		m_stateSelectedBG = m_accentSubtle;
+
+		// The selection pill has to be distinguishable from the row it sits on.
+		// Accent.Subtle only mixes the accent in at 12%, so with a dark accent on
+		// a dark surface (or a dark accent from the Windows colourisation colour on
+		// a light-mode machine) the result measured 1.05-1.09:1 against the row --
+		// the selected row was effectively invisible. Walk the mix towards the
+		// accent until the row separates, with a hard cap so it cannot loop.
+		const double kMinSeparation = 1.25;
+		for (int step = 0; step < 12 && ContrastRatio(m_stateSelectedBG, m_surfaceBase) < kMinSeparation; step++)
+		{
+			COLORREF previous = m_stateSelectedBG;
+			m_stateSelectedBG = BlendOver(m_stateSelectedBG, m_accentDefault, 24);
+			if (m_stateSelectedBG == previous)
+				break;
+		}
+	}
 
 	if (!m_hasTextOnAccent)
 		m_textOnAccent = PickContrastOn(m_accentDefault, RGB(255, 255, 255), RGB(0, 0, 0));

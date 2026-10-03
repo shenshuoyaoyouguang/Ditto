@@ -73,6 +73,7 @@ BEGIN_MESSAGE_MAP(CSymbolEdit, CEdit)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCPAINT()
 	ON_WM_TIMER()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 BOOL CSymbolEdit::PreTranslateMessage(MSG* pMsg)
@@ -443,7 +444,9 @@ void CSymbolEdit::SetPromptFont(const LOGFONT* lpLogFont, BOOL redraw)
 
 void CSymbolEdit::RecalcLayout()
 {
-	int width = GetSystemMetrics(SM_CXSMICON);
+	// GetSystemMetrics answers for the system dpi, not this window's, so on a
+	// secondary monitor with a different scaling the margin was wrong.
+	int width = m_windowDpi != NULL ? m_windowDpi->Scale(16) : GetSystemMetrics(SM_CXSMICON);
 
 	if (m_hSymbolIcon)
 	{
@@ -544,12 +547,16 @@ void CSymbolEdit::OnPaint()
 		dc.SelectObject(oldFont);
 	}
 
+	// The glyphs are drawn at their dpi-scaled size, so the old fixed y of 4
+	// clipped their bottom at 150% and sat too high in a taller client area.
+	int nIconY = (rect.Height() - m_windowDpi->Scale(16)) / 2;
+
 	int right = rect.right;
 	if ((text.GetLength() > 0 || this == GetFocus()))
 	{
 		m_searchesButtonRect.SetRect(rect.right - m_windowDpi->Scale(18), 0, rect.right, rect.bottom);
 		right = rect.right - m_windowDpi->Scale(18);
-		m_searchesButton.Draw(&dc, *m_windowDpi, this, m_searchesButtonRect.left, 4, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
+		m_searchesButton.Draw(&dc, *m_windowDpi, this, m_searchesButtonRect.left, nIconY, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
 	}
 	else
 	{
@@ -562,7 +569,7 @@ void CSymbolEdit::OnPaint()
 		//OutputDebugString(_T("showing close button\n"));
 
 		m_closeButtonRect.SetRect(right - m_windowDpi->Scale(16), 0, right, rect.bottom);
-		m_closeButton.Draw(&dc, *m_windowDpi, this, m_closeButtonRect.left, 4, m_mouseHoveringOverClose, m_mouseDownOnClose);
+		m_closeButton.Draw(&dc, *m_windowDpi, this, m_closeButtonRect.left, nIconY, m_mouseHoveringOverClose, m_mouseDownOnClose);
 	}
 	else
 	{

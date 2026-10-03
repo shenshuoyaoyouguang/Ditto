@@ -19,8 +19,14 @@ public:
 	void DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int posY, bool mouseHover, bool mouseDown, COLORREF tintColor);
 	BOOL LoadRaw(unsigned char* bitmapData, int imageSize);
 
-	UINT ImageWidth() { return m_pStdImage->m_pBitmap->GetWidth(); }
-	UINT ImageHeight() { return m_pStdImage->m_pBitmap->GetHeight(); }
+	// Whether a bitmap is actually loaded. Every entry point below dereferences
+	// m_pStdImage->m_pBitmap, and a failed PNG load (missing resource, GDI+
+	// failure) leaves it NULL -- the crash then surfaced seconds later inside
+	// an unrelated repaint.
+	bool HasImage() const;
+
+	UINT ImageWidth();
+	UINT ImageHeight();
 
 	void Reset();
 

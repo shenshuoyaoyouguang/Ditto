@@ -86,6 +86,9 @@ BOOL CGdiImageDrawer::LoadStdImageDPI(int dpi, UINT id96, UINT id120, UINT id144
 
 void CGdiImageDrawer::Draw(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, CRect rc, bool mouseHover, bool mouseDown)
 {
+	if (HasImage() == false)
+		return;
+
 	int width = m_pStdImage->m_pBitmap->GetWidth();
 	int height = m_pStdImage->m_pBitmap->GetHeight();
 
@@ -97,6 +100,9 @@ void CGdiImageDrawer::Draw(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, CRect rc, bool
 
 void CGdiImageDrawer::Draw(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int posY, bool mouseHover, bool mouseDown, int forceWidth, int forceHeight)
 {
+	if (HasImage() == false)
+		return;
+
 	int width = m_pStdImage->m_pBitmap->GetWidth();
 	if (forceWidth != INT_MAX)
 		width = forceWidth;
@@ -148,8 +154,26 @@ void CGdiImageDrawer::Draw(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int 
 	//}
 }
 
+UINT CGdiImageDrawer::ImageWidth()
+{
+	return HasImage() ? m_pStdImage->m_pBitmap->GetWidth() : 0;
+}
+
+UINT CGdiImageDrawer::ImageHeight()
+{
+	return HasImage() ? m_pStdImage->m_pBitmap->GetHeight() : 0;
+}
+
+bool CGdiImageDrawer::HasImage() const
+{
+	return m_pStdImage != NULL && m_pStdImage->m_pBitmap != NULL;
+}
+
 void CGdiImageDrawer::DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int posY, bool mouseHover, bool mouseDown, COLORREF tintColor)
 {
+	if (HasImage() == false)
+		return;
+
 	int width = m_pStdImage->m_pBitmap->GetWidth();
 	int height = m_pStdImage->m_pBitmap->GetHeight();
 
@@ -162,12 +186,24 @@ void CGdiImageDrawer::DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX
 
 	Graphics graphics(pScreenDC->m_hDC);
 
-	ColorMap map;
-	map.oldColor = Color(255, 0, 0, 0);
-	map.newColor = Color(255, GetRValue(tintColor), GetGValue(tintColor), GetBValue(tintColor));
+	// A remap table only replaces pixels that match exactly, so only the fully
+	// opaque core of the glyph was tinted: the anti-aliased semi-transparent
+	// edge pixels stayed black and left a dark fringe on hover and on the
+	// accent tinted selection pill, and a coloured glyph (the yellow star) was
+	// not tinted at all. A colour matrix keeps alpha and substitutes RGB.
+	ColorMatrix cm;
+	cm.Matrix[0][0] = 0.0f; cm.Matrix[0][1] = 0.0f; cm.Matrix[0][2] = 0.0f; cm.Matrix[0][3] = 0.0f; cm.Matrix[0][4] = 0.0f;
+	cm.Matrix[1][0] = 0.0f; cm.Matrix[1][1] = 0.0f; cm.Matrix[1][2] = 0.0f; cm.Matrix[1][3] = 0.0f; cm.Matrix[1][4] = 0.0f;
+	cm.Matrix[2][0] = 0.0f; cm.Matrix[2][1] = 0.0f; cm.Matrix[2][2] = 0.0f; cm.Matrix[2][3] = 0.0f; cm.Matrix[2][4] = 0.0f;
+	cm.Matrix[3][0] = 0.0f; cm.Matrix[3][1] = 0.0f; cm.Matrix[3][2] = 0.0f; cm.Matrix[3][3] = 1.0f; cm.Matrix[3][4] = 0.0f;
+	cm.Matrix[4][0] = (float)GetRValue(tintColor) / 255.0f;
+	cm.Matrix[4][1] = (float)GetGValue(tintColor) / 255.0f;
+	cm.Matrix[4][2] = (float)GetBValue(tintColor) / 255.0f;
+	cm.Matrix[4][3] = 0.0f;
+	cm.Matrix[4][4] = 1.0f;
 
 	ImageAttributes attributes;
-	attributes.SetRemapTable(1, &map);
+	attributes.SetColorMatrix(&cm);
 
 	graphics.DrawImage(*m_pStdImage, Rect(posX, posY, width, height), 0, 0, width, height, UnitPixel, &attributes);
 }
