@@ -792,6 +792,7 @@ void CTheme::AuditContrast(const CString& csThemeName)
 	csMsg.Format(_T("[theme] '%s' (%s)\r\n"),
 		csThemeName.IsEmpty() ? _T("<builtin>") : (LPCTSTR)csThemeName,
 		m_bDarkTheme ? _T("dark") : _T("light"));
+	OutputDebugString(csMsg);
 
 	int nFail = 0;
 	for (int i = 0; i < nCount; i++)

@@ -3,32 +3,10 @@
 #include "Fonts.h"
 #include "DPI.h"
 #include "Options.h"
+#include "FluentOptionPaint.h"
 
-static COLORREF ShiftColor(COLORREF color, bool towardWhite, double percent)
-{
-	int target = towardWhite ? 255 : 0;
-
-	auto shift = [target, percent](int c) -> BYTE
-	{
-		int value = (int)(c + (target - c) * percent + 0.5);
-		return (BYTE)max(0, min(255, value));
-	};
-
-	return RGB(shift(GetRValue(color)), shift(GetGValue(color)), shift(GetBValue(color)));
-}
-
-static void AddRoundPath(GraphicsPath& path, const RectF& rect, float radius)
-{
-	float r = min(radius, rect.Height / 2);
-	r = max(1.0f, r);
-	float d = r * 2;
-
-	path.AddArc(rect.X, rect.Y, d, d, 180, 90);
-	path.AddArc(rect.X + rect.Width - d, rect.Y, d, d, 270, 90);
-	path.AddArc(rect.X + rect.Width - d, rect.Y + rect.Height - d, d, d, 0, 90);
-	path.AddArc(rect.X, rect.Y + rect.Height - d, d, d, 90, 90);
-	path.CloseFigure();
-}
+// Painting lives in FluentOptionPaint so the owner-drawn option controls and
+// this button share the theme's accent shifts and the corner radius clamp.
 
 CFluentButton::CFluentButton()
 	: m_style(Style_Secondary)
@@ -128,98 +106,32 @@ void CFluentButton::DrawItem(LPDRAWITEMSTRUCT pDrawItemStruct)
 	if (pDrawItemStruct == NULL || pDrawItemStruct->CtlType != ODT_BUTTON)
 		return;
 
-	CDC* pDC = CDC::FromHandle(pDrawItemStruct->hDC);
 	CRect rc(pDrawItemStruct->rcItem);
 	if (rc.IsRectEmpty())
 		return;
 
-	CTheme& theme = CGetSetOptions::m_Theme;
-	bool enabled = (pDrawItemStruct->itemState & ODS_DISABLED) == 0;
-	bool focused = (pDrawItemStruct->itemState & ODS_FOCUS) != 0;
+	// The actual painting moved to FluentOptionPaint so this button and the
+	// owner-drawn option controls (checkbox / radio / combo) cannot drift apart
+	// -- they used to carry their own copies of the same colour and radius
+	// logic. The state is marshalled into the same struct the subclass path
+	// uses, which keeps one DrawItem implementation for both routes.
+	FluentControlState state;
+	state.hwnd = GetSafeHwnd();
+	state.kind = FK_Button;
+	state.bHover = m_bHover;
+	state.bPressed = m_bPressed;
+	state.bFocus = (pDrawItemStruct->itemState & ODS_FOCUS) != 0;
+	state.bEnabled = (pDrawItemStruct->itemState & ODS_DISABLED) == 0;
+	state.bMouseTracked = false;
+	state.hFont = NULL;
 
-	CDPI dpi;
-	dpi.SetHwnd(GetSafeHwnd());
-	float radius = (float)max(1, dpi.Scale(m_radius));
+	const FluentOptionPaint::Metrics metrics = FluentOptionPaint::GetMetrics(GetSafeHwnd());
 
-	COLORREF background;
-	COLORREF text;
-	bool drawStroke = false;
-	COLORREF stroke = 0;
-
-	if (!enabled)
+	switch (m_style)
 	{
-		background = theme.ControlDisabledBG();
-		text = theme.TextDisabled();
-	}
-	else
-	{
-		switch (m_style)
-		{
-		case Style_Accent:
-			background = theme.AccentDefault();
-			if (m_bPressed)
-				background = ShiftColor(background, false, 0.08);
-			else if (m_bHover)
-				background = ShiftColor(background, true, 0.08);
-			text = theme.TextOnAccent();
-			break;
-
-		case Style_Secondary:
-			background = m_bPressed ? theme.ControlPressed()
-				: m_bHover ? theme.ControlHover()
-				: theme.ControlFill();
-			text = theme.TextPrimary();
-			drawStroke = true;
-			stroke = theme.StrokeCard();
-			break;
-
-		case Style_Subtle:
-		default:
-			background = m_bPressed ? theme.ControlPressed()
-				: m_bHover ? theme.ControlHover()
-				: theme.SurfaceBase();
-			text = theme.TextPrimary();
-			break;
-		}
-	}
-
-	RectF rect((REAL)rc.left, (REAL)rc.top, (REAL)rc.Width() - 1, (REAL)rc.Height() - 1);
-
-	Graphics graphics(pDC->GetSafeHdc());
-	graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-
-	GraphicsPath path;
-	AddRoundPath(path, rect, radius);
-
-	SolidBrush backgroundBrush(Color(255, GetRValue(background), GetGValue(background), GetBValue(background)));
-	graphics.FillPath(&backgroundBrush, &path);
-
-	if (drawStroke)
-	{
-		Pen strokePen(Color(255, GetRValue(stroke), GetGValue(stroke), GetBValue(stroke)));
-		graphics.DrawPath(&strokePen, &path);
-	}
-
-	if (focused && enabled)
-	{
-		RectF inner(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4);
-		GraphicsPath focusPath;
-		AddRoundPath(focusPath, inner, max(1.0f, radius - 2));
-		COLORREF ring = theme.AccentDefault();
-		Pen focusPen(Color(255, GetRValue(ring), GetGValue(ring), GetBValue(ring)));
-		graphics.DrawPath(&focusPen, &focusPath);
-	}
-
-	CString csText;
-	GetWindowText(csText);
-
-	if (!csText.IsEmpty())
-	{
-		pDC->SetBkMode(TRANSPARENT);
-		pDC->SetTextColor(text);
-
-		CFont* pOldFont = pDC->SelectObject(AppFonts::Inst().Get(Font_Body));
-		pDC->DrawText(csText, rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-		pDC->SelectObject(pOldFont);
+	case Style_Accent:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Accent, m_radius); break;
+	case Style_Subtle:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Subtle, m_radius); break;
+	case Style_Secondary:
+	default:				FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Secondary, m_radius); break;
 	}
 }

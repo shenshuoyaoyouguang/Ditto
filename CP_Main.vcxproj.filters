@@ -409,6 +409,9 @@
     <ClCompile Include="src\FluentButton.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\FluentOptionPaint.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\FluentDialog.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -653,6 +656,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\FluentDialog.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FluentOptionPaint.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\FluentProgressBar.h">
