@@ -452,7 +452,8 @@ Load(themeName):
 
 ### 6.2 默认主题与自动切换
 
-- 新增 `Debug/Themes/Fluent Light.xml`、`Fluent Dark.xml`（完整 v4 字段集，值 = 3.1 表），注册表 `Theme2` 默认值从空改为 `Fluent Light`（升级安装时保留用户已有选择——`GetTheme()` 为空才落默认）；
+- 新增 `Debug/Themes/Fluent Light.xml`、`Fluent Dark.xml`（完整 v4 字段集，值 = 3.1 表）。**注册表 `Theme2` 保持空默认值** —— 空即「跟随系统明暗」，`Theme.cpp` 的空名路径会按 `DarkAppWindows10Setting()` 解析为 Fluent Dark / Fluent Light。
+  **不可**把默认值改成 `Fluent Light`：安装脚本从不写 `Theme2`，非空默认值会被启动时原样采用，而跟随系统的路径（`OnWinIniChange`）只在 Windows 广播变更时触发、启动时不跑 —— 暗色系统的全新安装会永远停在浅色。用户的显式选择（含第三方主题）仍写进 `Theme2`，不受影响；
 - 自动切换链路（已存在，改造点加粗）：`MainFrm.cpp:855` 定时器检测 `DarkAppWindows10Setting()` 变化 → **当前主题为 Fluent Light/Dark 成对时互换，用户手选的第三方主题不自动切**（弹托盘气泡提示一次）→ `m_Theme.Load` → `RefreshThemeColors()` 广播（`QPasteWnd.cpp:8122` 现链路）→ 各窗口 `DwmTheme::ApplyDarkCaption` + 重绘；
 - `Theme.cpp:74` 现有"空主题名 + 系统暗色 → DarkerDitto"逻辑废弃，改走 Fluent Dark。
 
@@ -536,7 +537,7 @@ Load(themeName):
 | owner-data 列表 hover 重绘引入性能回退 | 中 | hover 只 Invalidate 单行（新旧两行矩形），不整表 |
 | CPropertySheet 剥 tab 迁移破坏页面切换/Apply 隐藏逻辑 | 中 | 页面对象与 DDX 不动，仅外壳；P2 单独走全页回归 |
 | 12 个旧主题派生色视觉劣化 | 中 | P0.1 字段级 dump 对比 + 每主题截图走查 |
-| 三方主题用户被强制换默认主题 | 低 | 仅空 Theme2 落 Fluent Light；已有设置不动 |
+| 三方主题用户被强制换默认主题 | 低 | `Theme2` 默认为空（跟随系统明暗），已有非空设置原样保留、不被改写 |
 | 新 .cpp 忘记登记 vcxproj（MSBuild 不 glob） | 高 | 每票 checklist 含 vcxproj + .filters 两项 |
 
 ---

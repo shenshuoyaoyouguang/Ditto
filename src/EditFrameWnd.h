@@ -34,6 +34,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnDummy();
 	afx_msg void OnNcPaint();
+	// Re-reads the caption colours after a theme reload (see CWndEx::RefreshThemeColors)
+	void RefreshThemeColors();
 	afx_msg void OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp);
 	afx_msg HITTEST_RET OnNcHitTest(CPoint point);
 protected:

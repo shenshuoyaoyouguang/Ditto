@@ -277,11 +277,20 @@ void CDittoWindow::DoNcPaint(CWnd *pWnd)
 	bool bDark = CGetSetOptions::m_Theme.IsDarkTheme();
 	if (bDark != m_bDwmDarkApplied)
 	{
+		// Record the request either way, so this branch is not re-entered on
+		// every WM_NCPAINT.
 		m_bDwmDarkApplied = bDark;
-		m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
 
-		::SetWindowPos(pWnd->GetSafeHwnd(), NULL, 0, 0, 0, 0,
-			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+		// On builds that do not know DWMWA_USE_IMMERSIVE_DARK_MODE (win7, early
+		// win10) the call can never succeed, so re-issuing it and forcing a frame
+		// change just burns a refresh on every theme flip. Ask once, then stop.
+		if (m_bDwmDarkSupported)
+		{
+			m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
+
+			::SetWindowPos(pWnd->GetSafeHwnd(), NULL, 0, 0, 0, 0,
+				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+		}
 	}
 
 	CWindowDC dc(pWnd);

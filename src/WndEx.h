@@ -17,6 +17,11 @@
 
 class CWndEx : public CWnd
 {
+	// Needed for RUNTIME_CLASS(CWndEx): without it the macro expands to an
+	// undeclared &CWndEx::classCWndEx, and IsKindOf would silently fall back
+	// to the base class -- making a static_cast to CWndEx hit the wrong object.
+	DECLARE_DYNAMIC(CWndEx)
+
 // Construction
 public:
 	CWndEx();

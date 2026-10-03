@@ -12,6 +12,10 @@
 
 class CToolTipEx : public CWnd
 {
+	// See CWndEx: RUNTIME_CLASS(CToolTipEx) needs this, otherwise IsKindOf
+	// resolves against CWnd and the cast would target the wrong object.
+	DECLARE_DYNAMIC(CToolTipEx)
+
 // Construction
 public:
 	CToolTipEx();
@@ -32,6 +36,8 @@ public:
 	void SetNotifyWnd(CWnd *pNotify)		{ m_pNotifyWnd = pNotify;	}
 	void HideWindowInXMilliSeconds(long lms);
 	CRect GetBoundsRect();
+	// Re-reads the caption colours after a theme reload (see CWndEx::RefreshThemeColors)
+	void RefreshThemeColors();
 
 	void SetClipId(int clipId) { m_clipId = clipId; }
 	int GetClipId() { return m_clipId; }

@@ -47,6 +47,8 @@ void CWndEx::GetWindowRectEx(LPRECT lpRect)
 	CWnd::GetWindowRect(lpRect);
 }
 
+IMPLEMENT_DYNAMIC(CWndEx, CWnd)
+
 BEGIN_MESSAGE_MAP(CWndEx, CWnd)
 //{{AFX_MSG_MAP(CWndEx)
 	ON_WM_CREATE()

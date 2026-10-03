@@ -40,6 +40,8 @@ CToolTipEx::~CToolTipEx()
 	m_clipDataFont.DeleteObject();
 }
 
+IMPLEMENT_DYNAMIC(CToolTipEx, CWnd)
+
 BEGIN_MESSAGE_MAP(CToolTipEx, CWnd)
 	//{{AFX_MSG_MAP(CToolTipEx)
 	ON_WM_PAINT()
@@ -1090,6 +1092,17 @@ void CToolTipEx::OnTimer(UINT_PTR nIDEvent)
 void CToolTipEx::OnNcPaint()
 {
 	m_DittoWindow.DoNcPaint(this);
+}
+
+
+void CToolTipEx::RefreshThemeColors()
+{
+	// Replays exactly what OnCreate applied; see CWndEx::RefreshThemeColors.
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void CToolTipEx::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp) 

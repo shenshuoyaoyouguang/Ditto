@@ -183,6 +183,17 @@ void QRCodeViewer::OnNcPaint()
 	m_DittoWindow.DoNcPaint(this);
 }
 
+
+void QRCodeViewer::RefreshThemeColors()
+{
+	// Replays exactly what OnCreate applied; see CWndEx::RefreshThemeColors.
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+}
+
 void QRCodeViewer::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp) 
 {
 	CWnd::OnNcCalcSize(bCalcValidRects, lpncsp);

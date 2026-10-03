@@ -15,6 +15,9 @@
 #include "HotKeys.h"
 #include "GlobalClips.h"
 #include "WndEx.h"
+#include "EditFrameWnd.h"
+#include "QRCodeViewer.h"
+#include "ToolTipEx.h"
 #include "OptionsSheet.h"
 #include "DeleteClipData.h"
 #include "DatabaseUtilities.h"
@@ -92,6 +95,37 @@ END_MESSAGE_MAP()
 	ID_SEPARATOR,  // status line indicator
 	ID_INDICATOR_CAPS, ID_INDICATOR_NUM, ID_INDICATOR_SCRL, 
 };
+
+// EnumThreadWindows takes a __stdcall WNDENUMPROC, which a captureless lambda
+// (a __cdecl function pointer) cannot satisfy. Defined up here because the
+// theme handlers below use them long before the old position.
+static BOOL CALLBACK RefreshCaptionColorsProc(HWND hwnd, LPARAM lParam)
+{
+	CWnd* pWnd = CWnd::FromHandle(hwnd);
+	if (pWnd == NULL)
+		return TRUE;
+
+	// dynamic_cast is useless here: only CQPasteWnd derives from CWndEx, and
+	// CEditFrameWnd sits on the CFrameWnd branch entirely. Every window
+	// caches its caption colours at creation time, so each of them needs its
+	// own hook or a light/dark switch leaves them on the old palette.
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
+		((CWndEx*)pWnd)->RefreshThemeColors();
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CEditFrameWnd)))
+		((CEditFrameWnd*)pWnd)->RefreshThemeColors();
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(QRCodeViewer)))
+		((QRCodeViewer*)pWnd)->RefreshThemeColors();
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CToolTipEx)))
+		((CToolTipEx*)pWnd)->RefreshThemeColors();
+
+	return TRUE;
+}
+
+static BOOL CALLBACK RedrawTopLevelProc(HWND hwnd, LPARAM lParam)
+{
+	::RedrawWindow(hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
+	return TRUE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame construction/destruction
@@ -1525,22 +1559,6 @@ LRESULT CMainFrame::OnResolutionChange(WPARAM wParam, LPARAM lParam)
 		SetTimer(SCREEN_RESOLUTION_CHANGED, 1000, NULL);
 	}
 
-	return TRUE;
-}
-
-// EnumThreadWindows takes a __stdcall WNDENUMPROC, which a captureless lambda
-// (a __cdecl function pointer) cannot satisfy.
-static BOOL CALLBACK RefreshCaptionColorsProc(HWND hwnd, LPARAM lParam)
-{
-	CWnd* pWnd = CWnd::FromHandle(hwnd);
-	if (pWnd != NULL && pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
-		((CWndEx*)pWnd)->RefreshThemeColors();
-	return TRUE;
-}
-
-static BOOL CALLBACK RedrawTopLevelProc(HWND hwnd, LPARAM lParam)
-{
-	::RedrawWindow(hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
 	return TRUE;
 }
 

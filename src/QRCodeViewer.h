@@ -29,6 +29,8 @@ protected:
 	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point); 
 	afx_msg void OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp); 
 	afx_msg void OnNcPaint();
+	// Re-reads the caption colours after a theme reload (see CWndEx::RefreshThemeColors)
+	void RefreshThemeColors();
 	DECLARE_MESSAGE_MAP()
 	afx_msg void OnPaint();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
