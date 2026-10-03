@@ -702,8 +702,14 @@ void CQPasteWnd::MoveControls()
 		m_stGroup.ShowWindow(SW_SHOW);
 		m_BackButton.ShowWindow(SW_SHOW);
 
-		m_BackButton.MoveWindow(m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
-		m_stGroup.MoveWindow(m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(2), cx - m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(16));
+		// The docked sidebar is created after these two and is opaque, so with the
+		// sidebar open they were positioned underneath it: the back button and
+		// the group title became invisible and unclickable. Offset them by the
+		// same content origin the list uses.
+		int groupLeft = m_showSidebar ? m_DittoWindow.m_dpi.Scale(210) : 0;
+
+		m_BackButton.MoveWindow(groupLeft + m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
+		m_stGroup.MoveWindow(groupLeft + m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(2), cx - groupLeft - m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(16));
 
 		topOfListBox = m_DittoWindow.m_dpi.Scale(20);
 	}
@@ -776,7 +782,7 @@ void CQPasteWnd::MoveControls()
 	}
 
 	if (m_noSearchResults &&
-		(m_strSearch != _T("") || m_bShowStarredClips))
+		(m_strSearch != _T("") || m_bShowStarredClips || m_typeFilter != CHIP_ALL))
 	{
 		m_lstHeader.ShowWindow(SW_HIDE);
 		m_noSearchResultsStatic.ShowWindow(SW_SHOW);
@@ -1512,9 +1518,13 @@ static CString TypeFilterSql(int typeFilter)
 	switch (typeFilter)
 	{
 	case CHIP_TEXT:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_UNICODETEXT'))");
+		// CF_TEXT is the ANSI clipboard format; Ditto stores ASCII-only clips
+		// under it, so testing only CF_UNICODETEXT silently dropped them.
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat IN ('CF_UNICODETEXT', 'CF_TEXT')))");
 	case CHIP_IMAGE:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_DIB'))");
+		// Ditto registers its own 'PNG' clipboard format for image clips that are
+		// stored as png rather than as a DIB, so CF_DIB alone missed those.
+		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat IN ('CF_DIB', 'PNG')))");
 	case CHIP_FILE:
 		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_HDROP'))");
 	case CHIP_LINK:
@@ -6224,7 +6234,7 @@ void CQPasteWnd::OnShowGroupsBottom()
 void CQPasteWnd::ApplyTypeFilter()
 {
 	m_chipBar.SetActive(m_typeFilter);
-	m_sidebar.SetActiveView(m_typeFilter <= CHIP_LINK ? m_typeFilter : -1);
+	m_sidebar.SetActiveView(ChipFilterToView(m_typeFilter));
 }
 
 LRESULT CQPasteWnd::OnChipClicked(WPARAM wParam, LPARAM lParam)
@@ -7713,6 +7723,12 @@ LRESULT CQPasteWnd::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 
 	m_search.OnDpiChanged();
 	m_lstHeader.OnDpiChanged();
+
+	// The chip row and the sidebar cache their geometry and recompute it lazily;
+	// their m_windowDpi now points at the new dpi, so drop the caches explicitly
+	// (MoveControls below may move them by zero pixels, which sends no WM_SIZE).
+	m_chipBar.InvalidateLayout();
+	m_sidebar.InvalidateLayout();
 
 	UpdateFont();
 	this->SetLinesPerRow(CGetSetOptions::GetLinesPerRow(), true, false);

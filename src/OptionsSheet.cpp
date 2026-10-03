@@ -102,6 +102,7 @@ BEGIN_MESSAGE_MAP(COptionsSheet, CPropertySheet)
 	ON_WM_MEASUREITEM()
 	ON_LBN_SELCHANGE(IDC_NAV_LIST, OnNavSelect)
 	ON_WM_SIZE()
+	ON_WM_CTLCOLOR()
 	//ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
@@ -148,9 +149,15 @@ BOOL COptionsSheet::OnInitDialog()
 		GetTabControl()->ShowWindow(SW_HIDE);
 	}
 
-	m_nav.Create(WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_OWNERDRAWVARIABLE | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | LBS_HASSTRINGS,
+	// WS_TABSTOP: without it the new page selector cannot be reached with the
+	// keyboard at all.
+	m_nav.Create(WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL | LBS_OWNERDRAWVARIABLE | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | LBS_HASSTRINGS,
 		CRect(0, 0, m_navWidth, rcWindow.Height()), this, IDC_NAV_LIST);
 	m_nav.SetFont(AppFonts::Inst().Get(Font_Body));
+	// The list only owner-draws its items, so the empty area below the last
+	// one kept the system window colour -- a light strip under a dark sheet.
+	m_navBg.DeleteObject();
+	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.SurfaceBase());
 	m_bNavCreated = true;
 	FillNavItems();
 
@@ -158,15 +165,9 @@ BOOL COptionsSheet::OnInitDialog()
 	SetWindowPos(NULL, 0, 0, rcWindow.Width() + m_navWidth, rcWindow.Height(),
 		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
-	int pageCount = (int)GetPageCount();
-	for (int i = 0; i < pageCount; i++)
-	{
-		CPropertyPage* pPage = GetPage(i);
-		CRect rcPage;
-		pPage->GetWindowRect(rcPage);
-		ScreenToClient(rcPage);
-		pPage->MoveWindow(rcPage.left + m_navWidth, rcPage.top, rcPage.Width(), rcPage.Height());
-	}
+	ShiftFrameButtons();
+
+	ShiftPages();
 
 	m_nav.SetCurSel(GetActiveIndex());
 
@@ -206,12 +207,73 @@ void COptionsSheet::FillNavItems()
 	}
 }
 
+HBRUSH COptionsSheet::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	// The nav list only owner-draws its items, so the empty area below the
+	// last one falls back to the system window colour -- a light strip under a
+	// dark sheet. A list box background can only be set through its parent's
+	// WM_CTLCOLORLISTBOX (CListBox has no SetBkColor and there is no
+	// LB_SETBKGND message).
+	if (nCtlColor == CTLCOLOR_LISTBOX && pWnd != NULL && m_bNavCreated &&
+		pWnd->GetSafeHwnd() == m_nav.GetSafeHwnd())
+	{
+		pDC->SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
+		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
+		if (m_navBg.GetSafeHandle() != NULL)
+			return (HBRUSH)m_navBg.GetSafeHandle();
+	}
+
+	return CPropertySheet::OnCtlColor(pDC, pWnd, nCtlColor);
+}
+
 void COptionsSheet::LayoutNav(int cx, int cy)
 {
 	if (m_bNavCreated == false)
 		return;
 
 	m_nav.MoveWindow(0, 0, m_navWidth, cy);
+}
+
+void COptionsSheet::ShiftFrameButtons()
+{
+	// CPropertySheet positioned IDOK / IDCANCEL / ID_APPLY_NOW for the original
+	// client width. Widening the window by m_navWidth leaves them where they
+	// were, i.e. overlapping the shifted page instead of hugging the new right
+	// edge.
+	static const int ids[] = { IDOK, IDCANCEL, ID_APPLY_NOW };
+
+	for (int i = 0; i < (int)(sizeof(ids) / sizeof(ids[0])); i++)
+	{
+		CWnd* pButton = GetDlgItem(ids[i]);
+		if (pButton == NULL || pButton->GetSafeHwnd() == NULL)
+			continue;
+
+		CRect rc;
+		if (::GetWindowRect(pButton->GetSafeHwnd(), &rc) == FALSE)
+			continue;
+
+		ScreenToClient(rc);
+		pButton->MoveWindow(rc.left + m_navWidth, rc.top, rc.Width(), rc.Height());
+	}
+}
+
+void COptionsSheet::ShiftPages()
+{
+	int pageCount = (int)GetPageCount();
+
+	for (int i = 0; i < pageCount; i++)
+	{
+		CPropertyPage* pPage = GetPage(i);
+		if (pPage == NULL || pPage->GetSafeHwnd() == NULL)
+			continue; // pages are created lazily; an untouched page has no hwnd yet
+
+		CRect rcPage(0, 0, 0, 0);
+		if (::GetWindowRect(pPage->GetSafeHwnd(), &rcPage) == FALSE)
+			continue;
+
+		ScreenToClient(rcPage);
+		pPage->MoveWindow(rcPage.left + m_navWidth, rcPage.top, rcPage.Width(), rcPage.Height());
+	}
 }
 
 void COptionsSheet::OnNavSelect()
@@ -290,6 +352,15 @@ void COptionsSheet::OnSize(UINT nType, int cx, int cy)
 {
 	CPropertySheet::OnSize(nType, cx, cy);
 	LayoutNav(cx, cy);
+
+	// CPropertySheet::OnSize re-lays out the pages from the left edge against
+	// the (now hidden) tab control, so any resize after init would slide the
+	// page back under the nav column. Re-apply the offset.
+	if (m_bNavCreated)
+	{
+		ShiftFrameButtons();
+		ShiftPages();
+	}
 }
 
 void COptionsSheet::OnNcDestroy()

@@ -67,14 +67,19 @@ protected:
 	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	afx_msg void OnNavSelect();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
 protected:
 	void LayoutNav(int cx, int cy);
+	// Move the frame buttons / pages right of the nav column (see the impl).
+	void ShiftFrameButtons();
+	void ShiftPages();
 	void FillNavItems();
 
 	CListBox m_nav;
+	CBrush m_navBg;
 	int m_navWidth;
 	bool m_bNavCreated;
 };

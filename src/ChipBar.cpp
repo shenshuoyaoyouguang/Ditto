@@ -37,6 +37,7 @@ CChipBar::CChipBar()
 	m_hover = -1;
 	m_bHoverTracked = false;
 	m_bHoverEnabled = true;
+	m_bHasFocus = false;
 }
 
 BEGIN_MESSAGE_MAP(CChipBar, CWnd)
@@ -45,6 +46,10 @@ BEGIN_MESSAGE_MAP(CChipBar, CWnd)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSELEAVE()
+	ON_WM_SIZE()
+	ON_WM_SETFOCUS()
+	ON_WM_KILLFOCUS()
+	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 BOOL CChipBar::Create(CWnd* pParent, UINT nID)
@@ -53,7 +58,9 @@ BOOL CChipBar::Create(CWnd* pParent, UINT nID)
 		return FALSE;
 
 	if (CreateEx(0, AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW, ::LoadCursor(NULL, IDC_ARROW)),
-		NULL, WS_CHILD | WS_CLIPSIBLINGS, CRect(0, 0, 0, 0), pParent, nID) == FALSE)
+		// WS_TABSTOP: the row was mouse-only, so keyboard users could not reach
+		// the type filters at all.
+		NULL, WS_CHILD | WS_CLIPSIBLINGS | WS_TABSTOP, CRect(0, 0, 0, 0), pParent, nID) == FALSE)
 	{
 		return FALSE;
 	}
@@ -140,6 +147,16 @@ void CChipBar::OnPaint()
 		{
 			FillChipRect(&dc, rc, radius, theme.AccentSubtle(), theme.AccentDefault());
 			dc.SetTextColor(theme.TextPrimary());
+
+			// Focus ring, so the keyboard path is visible. Without it the row
+			// gave no indication that it had focus at all. The fill matches the
+			// row background so only the stroke shows.
+			if (m_bHasFocus)
+			{
+				CRect rcFocus = rc;
+				rcFocus.InflateRect(m_dpi != NULL ? m_dpi->Scale(2) : 2, m_dpi != NULL ? m_dpi->Scale(2) : 2);
+				FillChipRect(&dc, rcFocus, radius, theme.SurfaceBase(), theme.AccentDefault());
+			}
 		}
 		else if (bHover)
 		{
@@ -204,6 +221,83 @@ void CChipBar::OnMouseMove(UINT nFlags, CPoint point)
 	}
 
 	CWnd::OnMouseMove(nFlags, point);
+}
+
+void CChipBar::OnSize(UINT nType, int cx, int cy)
+{
+	CWnd::OnSize(nType, cx, cy);
+
+	// Drop the cached geometry: the chip sizes come from font metrics scaled by
+	// the dpi and the hit rects are derived from them, so a resize (or a dpi
+	// change, which resizes us) has to invalidate the layout.
+	if (nType != SIZE_MINIMIZED)
+		m_bChipsLaidOut = false;
+
+	Invalidate(FALSE);
+}
+
+void CChipBar::OnSetFocus(CWnd* pPrevWnd)
+{
+	CWnd::OnSetFocus(pPrevWnd);
+
+	m_bHasFocus = true;
+	Invalidate(FALSE);
+}
+
+void CChipBar::OnKillFocus(CWnd* pNextWnd)
+{
+	CWnd::OnKillFocus(pNextWnd);
+
+	m_bHasFocus = false;
+	Invalidate(FALSE);
+}
+
+void CChipBar::MoveActiveTo(int index)
+{
+	if (index < 0 || index >= CHIP_COUNT)
+		return;
+
+	m_active = index;
+	Invalidate(FALSE);
+
+	if (GetParent() != NULL)
+		GetParent()->SendMessage(NM_CHIP_CLICKED, (WPARAM)index, 0);
+}
+
+void CChipBar::OnKeyDown(UINT nChar, UINT nRepCount, UINT nFlags)
+{
+	int next = m_active;
+
+	switch (nChar)
+	{
+	case VK_LEFT:
+		next = (m_active <= 0) ? CHIP_COUNT - 1 : m_active - 1;
+		break;
+
+	case VK_RIGHT:
+		next = (m_active >= CHIP_COUNT - 1) ? 0 : m_active + 1;
+		break;
+
+	case VK_HOME:
+		next = 0;
+		break;
+
+	case VK_END:
+		next = CHIP_COUNT - 1;
+		break;
+
+	case VK_SPACE:
+	case VK_RETURN:
+		// The arrows already moved the active chip, so it is what the user means.
+		MoveActiveTo(m_active);
+		return;
+
+	default:
+		CWnd::OnKeyDown(nChar, nRepCount, nFlags);
+		return;
+	}
+
+	MoveActiveTo(next);
 }
 
 void CChipBar::OnMouseLeave()

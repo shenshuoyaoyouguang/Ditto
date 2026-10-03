@@ -668,7 +668,11 @@ BOOL CGetSetOptions::SetProfileString(CString csName, CString csValue)
 	if(lResult != ERROR_SUCCESS)
 		return FALSE;
 
-	::RegSetValueEx(hkKey, csName, NULL, REG_SZ,
+	// The write result is the one that matters: RegCreateKeyEx can succeed and
+	// the value write still fail (disk full, acl). Reporting the create result
+	// made a failed save look successful, so the setting silently reverted on
+	// the next launch.
+	lResult = ::RegSetValueEx(hkKey, csName, NULL, REG_SZ,
 		(BYTE*)(LPCTSTR)csValue, csValue.GetLength()*sizeof(TCHAR));
 
 	RegCloseKey(hkKey);

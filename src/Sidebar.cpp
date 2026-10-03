@@ -216,6 +216,11 @@ void CSidebar::OnSize(UINT nType, int cx, int cy)
 {
 	CWnd::OnSize(nType, cx, cy);
 
-	// the tree area depends on the client size
+	// The rows and GetGroupsArea() are cached in m_bViewsLaidOut and only reset
+	// by the constructor and Create(), so a dpi change (or any resize) left the
+	// tree at the old scale -- the docked group tree and the view list were
+	// then positioned for a client size the control no longer has.
+	m_bViewsLaidOut = false;
+
 	Invalidate(FALSE);
 }
