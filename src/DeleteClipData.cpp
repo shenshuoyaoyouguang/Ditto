@@ -154,7 +154,11 @@ void CDeleteClipData::LoadItems()
 
 	if (m_clipboardFomatCombo.GetCount() == 0)
 	{
-		CppSQLite3Query qFormats = theApp.m_db.execQueryEx(_T("select DISTINCT(strClipBoardFormat) from Data"));
+		// ORDER BY supplies the alphabetical list order. The combo lost its
+		// CBS_SORT style, which used to sort on every AddString -- that
+		// reorders mid-insert and does not compose with the owner-drawn drop
+		// list the fluent redesign adds.
+		CppSQLite3Query qFormats = theApp.m_db.execQueryEx(_T("select DISTINCT(strClipBoardFormat) from Data ORDER BY strClipBoardFormat"));
 		while (qFormats.eof() == false)
 		{
 			CString format = qFormats.getStringField(_T("strClipBoardFormat"));

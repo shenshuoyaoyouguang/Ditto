@@ -187,23 +187,51 @@ void COptionsGeneral::FillLanguages()
 
 	CString csLanguage = CGetSetOptions::GetLanguageFile();
 
+	// Collect first, insert second. The combos lost their CBS_SORT style (it
+	// fights the owner-drawn drop list added for the fluent redesign and it
+	// reorders on every AddString, which invalidates the index AddString
+	// returns), so the alphabetical order the list used to rely on the system
+	// for is applied explicitly here. Insertion sort on an already tiny array:
+	// this runs once per dialog open over ~30 files.
+	CStringArray names;
 	CFileFind find;
 	BOOL bCont = find.FindFile(csFile);
-	int nEnglishIndex = NO_MATCH;
 
-	while(bCont)
+	while (bCont && names.GetSize() < 256)
 	{
+		// FindNextFile advances to the entry; FindFile only primes the search
+		// (see GetLastWriteTime in Misc.cpp). Reading the title before
+		// advancing would yield an empty string on the first pass.
 		bCont = find.FindNextFile();
-		int nIndex = m_cbLanguage.AddString(find.GetFileTitle());
+		CString csName = find.GetFileTitle();
 
-		if(find.GetFileTitle() == csLanguage)
+		if (csName.IsEmpty())
+			continue;
+
+		// Stable insertion sort, CompareNoCase so the order does not flip with
+		// the system locale.
+		int i = names.GetSize() - 1;
+		for (; i >= 0; i--)
+		{
+			if (names[i].CompareNoCase(csName) <= 0)
+				break;
+		}
+		names.InsertAt(i + 1, csName);
+	}
+
+	int nEnglishIndex = NO_MATCH;
+	for (int i = 0; i < names.GetSize(); i++)
+	{
+		int nIndex = m_cbLanguage.AddString(names[i]);
+
+		if (names[i] == csLanguage)
 		{
 			nEnglishIndex = -1;
 			m_cbLanguage.SetCurSel(nIndex);
 		}
-		else if(find.GetFileTitle() == _T("English"))
+		else if (names[i] == _T("English"))
 		{
-			if(nEnglishIndex == NO_MATCH)
+			if (nEnglishIndex == NO_MATCH)
 				nEnglishIndex = nIndex;
 		}
 	}
@@ -445,36 +473,60 @@ void COptionsGeneral::FillThemes()
 	csFile += "*.xml";
 
 	CString csTheme = CGetSetOptions::GetTheme();
-	
+
 	m_cbTheme.Clear();
 
+	// Item data contract, relied on by OnApply / ApplySelectedThemeToPreview:
+	//   0 = "follow the windows light/dark setting" sentinel
+	//   1 = a real theme file (or the built-in default)
 	int windowsSettingIndex = m_cbTheme.AddString(theApp.m_Language.GetString("FollowWindowsTheme", "(Follow windows light/dark themes)"));
-		
-		//_T("(Follow windows light/dark themes)"));
 	m_cbTheme.SetItemData(windowsSettingIndex, 0);
 
+	// Collect the loadable theme names, then insert them sorted. These combos
+	// lost their CBS_SORT style (it reorders on every AddString, so the index
+	// AddString returns stops being the insertion point, and it fights the
+	// owner-drawn drop list), so the ordering is applied explicitly. The
+	// sentinel stays at index 0 because it is a different kind of entry, not a
+	// theme name.
+	CStringArray names;
 	CFileFind find;
 	BOOL bCont = find.FindFile(csFile);
-	bool bSetCurSel = false;
 
-	while (bCont)
+	while (bCont && names.GetSize() < 256)
 	{
+		// FindNextFile advances to the entry; FindFile only primes the search.
 		bCont = find.FindNextFile();
+		CString csName = find.GetFileTitle();
+
+		if (csName.IsEmpty())
+			continue;
 
 		CTheme theme;
-		if (theme.Load(find.GetFileTitle(), true, false))
+		if (theme.Load(csName, true, false) && theme.FileVersion() >= 2 && theme.FileVersion() < 100)
 		{
-			if (theme.FileVersion() >= 2 && theme.FileVersion() < 100)
+			// Stable insertion sort, case-insensitive so the order does not
+			// flip with the system locale.
+			int i = names.GetSize() - 1;
+			for (; i >= 0; i--)
 			{
-				int nIndex = m_cbTheme.AddString(find.GetFileTitle());
-				m_cbTheme.SetItemData(nIndex, 1);
-
-				if (find.GetFileTitle() == csTheme)
-				{
-					m_cbTheme.SetCurSel(nIndex);
-					bSetCurSel = true;
-				}
+				if (names[i].CompareNoCase(csName) <= 0)
+					break;
 			}
+			names.InsertAt(i + 1, csName);
+		}
+	}
+
+	bool bSetCurSel = false;
+
+	for (int i = 0; i < names.GetSize(); i++)
+	{
+		int nIndex = m_cbTheme.AddString(names[i]);
+		m_cbTheme.SetItemData(nIndex, 1);
+
+		if (names[i] == csTheme)
+		{
+			m_cbTheme.SetCurSel(nIndex);
+			bSetCurSel = true;
 		}
 	}
 
