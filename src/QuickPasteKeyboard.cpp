@@ -727,8 +727,6 @@ void CQuickPasteKeyboard::LoadHotKey(KeyboardAB ab)
 		CheckDlgButton(IDC_RADIO_KEYBOARD_1, BST_CHECKED);
 		CheckDlgButton(IDC_RADIO_KEYBOARD_2, BST_CHECKED);
 
-		CheckDlgButton(IDC_CHECK_ENABLE_SECOND_PRESS, BST_UNCHECKED);
-		CheckDlgButton(IDC_RADIO_KEYBOARD_2, BST_CHECKED);
 
 		::ShowWindow(::GetDlgItem(m_hWnd, IDC_RADIO_MOUSE_2), SW_HIDE);
 		::ShowWindow(::GetDlgItem(m_hWnd, IDC_RADIO_KEYBOARD_2), SW_HIDE);

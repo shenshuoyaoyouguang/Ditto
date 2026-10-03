@@ -845,8 +845,7 @@ bool CClip::AddToDB(bool bCheckForDuplicates)
 	}
 	
 	// should be emptied by AddToDataTable
-	//ASSERT(m_Formats.GetSize() == 0);
-	
+
 	return bResult;
 }
 
@@ -1344,13 +1343,11 @@ bool CClip::RemoveStickySetting(int clipId, int parentId)
 	bool reset = false;
 	if (parentId < 0)
 	{
-		int c = theApp.m_db.execDMLEx(_T("UPDATE Main SET stickyClipOrder = %f WHERE lID = %d"), (double)INVALID_STICKY, clipId);
-		int y = 0;
+		theApp.m_db.execDMLEx(_T("UPDATE Main SET stickyClipOrder = %f WHERE lID = %d"), (double)INVALID_STICKY, clipId);
 	}
 	else
 	{
-		int c = theApp.m_db.execDMLEx(_T("UPDATE Main SET stickyClipGroupOrder = %f WHERE lID = %d"), (double)INVALID_STICKY, clipId);
-		int y = 0;
+		theApp.m_db.execDMLEx(_T("UPDATE Main SET stickyClipGroupOrder = %f WHERE lID = %d"), (double)INVALID_STICKY, clipId);
 	}
 
 	return reset;

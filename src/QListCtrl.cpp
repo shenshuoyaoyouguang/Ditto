@@ -2294,9 +2294,6 @@ bool CQListCtrl::MouseInScrollBarArea(CRect crWindow, CPoint point)
 	crRight.left = crRight.right - scrollBarWidth - extraMargin;
 	crBottom.top = crBottom.bottom - scrollBarHeight - extraMargin;
 
-	/*CString cs;
-	cs.Format(_T("point.x: %d, Width: %d, Height: %d\n"), point.x, crWindow.Width(), crWindow.Height());
-	OutputDebugString(cs);*/
 
 	if (crRight.PtInRect(point) || crBottom.PtInRect(point))
 	{

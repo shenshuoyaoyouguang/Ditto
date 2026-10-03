@@ -252,12 +252,6 @@ void CTheme::LoadWindowsAccentColor()
 		m_searchTextBoxFocusBorder = m_clipPastedColor;
 		m_searchTextHighlight = m_clipPastedColor;
 
-		//if (Windows10ColorTitleBar())
-		//{
-		//	m_CaptionRight = m_clipPastedColor;
-		//	m_CaptionLeft = m_clipPastedColor;
-		//	m_Border = m_clipPastedColor;
-		//}
 	}
 }
 

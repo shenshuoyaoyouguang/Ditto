@@ -36,16 +36,16 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 	m_themeChanged = FALSE;
 	m_pKeyBoardOptions = NULL;
 	m_pGeneralOptions = NULL;
-	//m_pQuickPasteOptions = NULL;
+
 	m_pCopyBuffers = NULL;
 	m_pStats = NULL;
 	m_pTypes = NULL;
 	m_pAbout = NULL;
 	m_pFriends = NULL;
-	m_pCopyBuffers = NULL;
+
 	m_pQuickPasteShortCuts = NULL;
 	
-	m_pUtilites = NULL;
+
 	m_hWndParent = NULL;
 	m_navWidth = 0;
 	m_bNavCreated = false;
@@ -54,7 +54,6 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 
 	m_pGeneralOptions = new COptionsGeneral;
 	m_pKeyBoardOptions = new COptionsKeyBoard;
-	//m_pQuickPasteOptions = new COptionsQuickPaste;
 	m_pQuickPasteShortCuts = new CQuickPasteKeyboard;
 
 	m_pCopyBuffers = new COptionsCopyBuffers;
@@ -66,7 +65,7 @@ COptionsSheet::COptionsSheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectP
 	AddPage(m_pTypes);
 	AddPage(m_pKeyBoardOptions);
 	AddPage(m_pCopyBuffers);
-	//AddPage(m_pQuickPasteOptions);
+
 	AddPage(m_pQuickPasteShortCuts);
 	if(CGetSetOptions::GetAllowFriends())
 	{
@@ -83,13 +82,12 @@ COptionsSheet::~COptionsSheet()
 {
 	delete m_pGeneralOptions;
 	delete m_pKeyBoardOptions;
-	//delete m_pQuickPasteOptions;
 	delete m_pCopyBuffers;
 	delete m_pStats;
 	delete m_pTypes;
 	delete m_pAbout;	
 	delete m_pFriends;
-	delete m_pUtilites;
+
 	delete m_pQuickPasteShortCuts;	
 }
 

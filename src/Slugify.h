@@ -115,6 +115,9 @@ std::wstring slugify(std::wstring input, std::wstring separator)
 	std::wregex e2(_T("\\s+"));
 	input = std::regex_replace(input, e2, _T(" "));
 
+	// Keep this: trim() mutates its argument, and without it slugify(" hello ")
+	// yields "-hello-". The original deslop pass deleted it as a no-op and the
+	// regression was caught only by review (fixed in b6f361d).
 	trim(input);
 
 	auto replaceSpacesAndSep = _T("[") + separator + _T("\\s]+");
