@@ -9,19 +9,6 @@ using namespace Gdiplus;
 // ---------------------------------------------------------------------------
 // helpers
 
-COLORREF FluentOptionPaint::ShiftToward(COLORREF color, bool towardWhite, double percent)
-{
-	int target = towardWhite ? 255 : 0;
-
-	auto shift = [target, percent](int c) -> BYTE
-	{
-		int value = (int)(c + (target - c) * percent + 0.5);
-		return (BYTE)max(0, min(255, value));
-	};
-
-	return RGB(shift(GetRValue(color)), shift(GetGValue(color)), shift(GetBValue(color)));
-}
-
 void FluentOptionPaint::AddRoundPath(GraphicsPath& path, const RectF& rect, float radius)
 {
 	// The clamp is load bearing, not defensive tidiness. AddArc takes the arc
@@ -202,10 +189,10 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	if (bChecked)
 	{
 		fill = bEnabled ? theme.AccentDefault() : theme.ControlDisabledBG();
-		if (bEnabled && state.bHover)
-			fill = ShiftToward(fill, true, 0.08);
-		else if (bEnabled && state.bPressed)
-			fill = ShiftToward(fill, false, 0.08);
+		if (bEnabled && state.bPressed)
+			fill = CTheme::ShiftToward(fill, false, 0.08);
+		else if (bEnabled && state.bHover)
+			fill = CTheme::ShiftToward(fill, true, 0.08);
 		stroke = fill;		// a filled box carries no separate outline
 	}
 	else
@@ -263,14 +250,15 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 		return;
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
-	pFont->SelectObject(CDC::FromHandle(hdc));
+	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
 	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
 	// No DT_NOPREFIX: "&" in a caption is a keyboard accelerator and the system
 	// draws the underline for us, which is what keeps Alt+A working once this
 	// replaces the stock button painting.
-	::DrawTextW(hdc, ControlText(state.hwnd), rcText,
+	::DrawTextW(hdc, ControlText(state.hwnd), -1, &rcText,
 		DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	::SelectObject(hdc, hOldFont);
 }
 
 // ---------------------------------------------------------------------------
@@ -323,11 +311,12 @@ void FluentOptionPaint::PaintRadio(HDC hdc, const CRect& rc, const Metrics& m,
 		return;
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
-	pFont->SelectObject(CDC::FromHandle(hdc));
+	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
 	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
-	::DrawTextW(hdc, ControlText(state.hwnd), rcText,
+	::DrawTextW(hdc, ControlText(state.hwnd), -1, &rcText,
 		DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	::SelectObject(hdc, hOldFont);
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +326,7 @@ void FluentOptionPaint::PaintButton(HDC hdc, const CRect& rc, const Metrics& m,
 	const FluentControlState& state, int nCtrlId)
 {
 	FluentButtonStyle style = FBS_Secondary;
-	if (nCtrlId == IDOK || nCtrlId == ID_APPLY_NOW || nCtrlId == IDYES || nCtrlId == IDYES_TO_ALL)
+	if (nCtrlId == IDOK || nCtrlId == ID_APPLY_NOW || nCtrlId == IDYES)
 		style = FBS_Accent;
 
 	PaintButtonAs(hdc, rc, m, state, style);
@@ -372,9 +361,9 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 	{
 		background = theme.AccentDefault();
 		if (state.bPressed)
-			background = ShiftToward(background, false, 0.08);
+			background = CTheme::ShiftToward(background, false, 0.08);
 		else if (state.bHover)
-			background = ShiftToward(background, true, 0.08);
+			background = CTheme::ShiftToward(background, true, 0.08);
 		text = theme.TextOnAccent();
 	}
 	else if (style == FBS_Subtle)
@@ -413,10 +402,12 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 		return;
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
-	pFont->SelectObject(CDC::FromHandle(hdc));
+	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
 	::SetTextColor(hdc, text);
-	::DrawTextW(hdc, csText, rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	CRect rcText(rc);
+	::DrawTextW(hdc, csText, -1, &rcText, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	::SelectObject(hdc, hOldFont);
 }
 
 // ---------------------------------------------------------------------------
@@ -455,9 +446,10 @@ static void PaintComboFieldImpl(HDC hdc, const CRect& rc, const FluentOptionPain
 		graphics.SetSmoothingMode(SmoothingModeAntiAlias);
 
 		GraphicsPath chevron;
-		chevron.AddLine((REAL)(cx - halfW), (REAL)(cy - halfH / 2));
-		chevron.AddLine(cx, (REAL)(cy + halfH / 2));
-		chevron.AddLine((REAL)(cx + halfW), (REAL)(cy - halfH / 2));
+		chevron.AddLine((REAL)(cx - halfW), (REAL)(cy - halfH / 2),
+			(REAL)cx, (REAL)(cy + halfH / 2));
+		chevron.AddLine((REAL)cx, (REAL)(cy + halfH / 2),
+			(REAL)(cx + halfW), (REAL)(cy - halfH / 2));
 
 		COLORREF pen = bEnabled
 			? ((bFocus || state.bHover) ? theme.TextPrimary() : theme.TextSecondary())
@@ -488,10 +480,11 @@ static void PaintComboFieldImpl(HDC hdc, const CRect& rc, const FluentOptionPain
 		return;
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
-	pFont->SelectObject(CDC::FromHandle(hdc));
+	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
 	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
-	::DrawTextW(hdc, csText, rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	::DrawTextW(hdc, csText, -1, &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+	::SelectObject(hdc, hOldFont);
 }
 
 void FluentOptionPaint::UpdateComboDropWidth(HWND hwndCombo)
@@ -535,7 +528,8 @@ void FluentOptionPaint::UpdateComboDropWidth(HWND hwndCombo)
 		::SendMessageW(hwndCombo, CB_GETLBTEXT, (WPARAM)i, (LPARAM)csItem.GetBuffer(0));
 		csItem.ReleaseBuffer();
 
-		CSize sz = MeasureText(hwndCombo, csItem);
+		CSize sz(0, 0);
+		::GetTextExtentPoint32(hdc, csItem, csItem.GetLength(), &sz);
 		nWidest = max(nWidest, sz.cx);
 	}
 	::SelectObject(hdc, hOld);
@@ -548,8 +542,8 @@ void FluentOptionPaint::UpdateComboDropWidth(HWND hwndCombo)
 	nWant = max(nWant, rcField.Width());	// never shrink below the field
 	nWant = min(nWant, dpi.Scale(360));		// cap so a deep tree cannot leave the screen
 
-	if (nWant != (int)::SendMessageW(hwndCombo, CB_GETDROPDOWNWIDTH, 0, 0))
-		::SendMessageW(hwndCombo, CB_SETDROPDOWNWIDTH, (WPARAM)nWant, 0);
+	if (nWant != (int)::SendMessageW(hwndCombo, CB_GETDROPPEDWIDTH, 0, 0))
+		::SendMessageW(hwndCombo, CB_SETDROPPEDWIDTH, (WPARAM)nWant, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -605,16 +599,15 @@ void FluentOptionPaint::PaintComboItem(LPDRAWITEMSTRUCT pDrawItemStruct, const M
 		return;
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
-	CFont* pOldFont = pFont->SelectObject(pDC);
+	HFONT hOldFont = (HFONT)::SelectObject(pDC->GetSafeHdc(), pFont->GetSafeHandle());
 	::SetBkMode(pDC->GetSafeHdc(), TRANSPARENT);
 	::SetTextColor(pDC->GetSafeHdc(),
 		bDisabled ? theme.TextDisabled()
 		: bSelected ? theme.StateSelectedText()
 		: theme.TextPrimary());
-	::DrawTextW(pDC->GetSafeHdc(), csText, rcText,
+	::DrawTextW(pDC->GetSafeHdc(), csText, -1, &rcText,
 		DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
-	pFont->SelectObject(pDC);
-	(void)pOldFont;
+	::SelectObject(pDC->GetSafeHdc(), hOldFont);
 }
 
 // ---------------------------------------------------------------------------
@@ -636,9 +629,9 @@ LRESULT FluentOptionPaint::Paint(HWND hwnd, FluentControlState* pState)
 	::GetClientRect(hwnd, &rc);
 
 	CDC dc;
-	dc.CreateCompatibleDC(hdc);
+	dc.CreateCompatibleDC(CDC::FromHandle(hdc));
 	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(hdc, max(1, rc.Width()), max(1, rc.Height()));
+	bmp.CreateCompatibleBitmap(CDC::FromHandle(hdc), max(1, rc.Width()), max(1, rc.Height()));
 	CBitmap* pOldBmp = dc.SelectObject(&bmp);
 
 	const Metrics m = GetMetrics(hwnd);

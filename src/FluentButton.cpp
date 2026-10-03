@@ -129,20 +129,11 @@ void CFluentButton::DrawItem(LPDRAWITEMSTRUCT pDrawItemStruct)
 
 	const FluentOptionPaint::Metrics metrics = FluentOptionPaint::GetMetrics(GetSafeHwnd());
 
-	HDC hdc = ::GetDC(GetSafeHwnd());
-	if (hdc == NULL)
-		return;
-
-	CDC* pDC = CDC::FromHandle(hdc);
-
 	switch (m_style)
 	{
-	case Style_Accent:		FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Accent, m_radius); break;
-	case Style_Subtle:		FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Subtle, m_radius); break;
+	case Style_Accent:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Accent, m_radius); break;
+	case Style_Subtle:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Subtle, m_radius); break;
 	case Style_Secondary:
-	default:				FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Secondary, m_radius); break;
+	default:				FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Secondary, m_radius); break;
 	}
-
-	::ReleaseDC(GetSafeHwnd(), hdc);
-	(void)pDC;
 }
