@@ -191,19 +191,20 @@ void CGdiImageDrawer::DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX
 	// edge pixels stayed black and left a dark fringe on hover and on the
 	// accent tinted selection pill, and a coloured glyph (the yellow star) was
 	// not tinted at all. A colour matrix keeps alpha and substitutes RGB.
-	ColorMatrix cm;
-	cm.Matrix[0][0] = 0.0f; cm.Matrix[0][1] = 0.0f; cm.Matrix[0][2] = 0.0f; cm.Matrix[0][3] = 0.0f; cm.Matrix[0][4] = 0.0f;
-	cm.Matrix[1][0] = 0.0f; cm.Matrix[1][1] = 0.0f; cm.Matrix[1][2] = 0.0f; cm.Matrix[1][3] = 0.0f; cm.Matrix[1][4] = 0.0f;
-	cm.Matrix[2][0] = 0.0f; cm.Matrix[2][1] = 0.0f; cm.Matrix[2][2] = 0.0f; cm.Matrix[2][3] = 0.0f; cm.Matrix[2][4] = 0.0f;
-	cm.Matrix[3][0] = 0.0f; cm.Matrix[3][1] = 0.0f; cm.Matrix[3][2] = 0.0f; cm.Matrix[3][3] = 1.0f; cm.Matrix[3][4] = 0.0f;
-	cm.Matrix[4][0] = (float)GetRValue(tintColor) / 255.0f;
-	cm.Matrix[4][1] = (float)GetGValue(tintColor) / 255.0f;
-	cm.Matrix[4][2] = (float)GetBValue(tintColor) / 255.0f;
-	cm.Matrix[4][3] = 0.0f;
-	cm.Matrix[4][4] = 1.0f;
+	// GDI+ exposes no public Matrix member, so the matrix has to be aggregate
+	// initialised (20 REALs, row major) -- same shape as GdipButton.cpp.
+	const REAL r = (REAL)GetRValue(tintColor) / 255.0f;
+	const REAL g = (REAL)GetGValue(tintColor) / 255.0f;
+	const REAL b = (REAL)GetBValue(tintColor) / 255.0f;
+	ColorMatrix tintMatrix = {
+		0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		r,    g,    b,    0.0f, 1.0f };
 
 	ImageAttributes attributes;
-	attributes.SetColorMatrix(&cm);
+	attributes.SetColorMatrix(&tintMatrix);
 
 	graphics.DrawImage(*m_pStdImage, Rect(posX, posY, width, height), 0, 0, width, height, UnitPixel, &attributes);
 }

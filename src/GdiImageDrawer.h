@@ -19,10 +19,11 @@ public:
 	void DrawTinted(CDC* pScreenDC, CDPI &dpi, CWnd *pWnd, int posX, int posY, bool mouseHover, bool mouseDown, COLORREF tintColor);
 	BOOL LoadRaw(unsigned char* bitmapData, int imageSize);
 
-	// Whether a bitmap is actually loaded. Every entry point below dereferences
-	// m_pStdImage->m_pBitmap, and a failed PNG load (missing resource, GDI+
-	// failure) leaves it NULL -- the crash then surfaced seconds later inside
-	// an unrelated repaint.
+	// Whether a bitmap is actually loaded. The three draw entry points and the
+	// two size accessors all dereference m_pStdImage->m_pBitmap, and a failed
+	// PNG load (missing resource, GDI+ failure) leaves it NULL -- the crash
+	// then surfaced seconds later inside an unrelated repaint. HasImage itself
+	// checks it, and Reset never touches it.
 	bool HasImage() const;
 
 	UINT ImageWidth();

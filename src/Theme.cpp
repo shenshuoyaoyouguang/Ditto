@@ -707,15 +707,25 @@ void CTheme::RefreshAccentDerived()
 	{
 		m_stateSelectedBG = m_accentSubtle;
 
-		// The selection pill has to be distinguishable from the row it sits on.
-		// Accent.Subtle only mixes the accent in at 12%, so with a dark accent on
-		// a dark surface (or a dark accent from the Windows colourisation colour on
-		// a light-mode machine) the result measured 1.05-1.09:1 against the row --
-		// the selected row was effectively invisible. Walk the mix towards the
-		// accent until the row separates, with a hard cap so it cannot loop.
+		// The selection pill has to be distinguishable from the row it sits on, and
+		// rows are not all the same colour: QListCtrl fills them with
+		// ListBoxOddRowsBG / ListBoxEvenRowsBG, which in Selenized Dark are
+		// RGB(16,60,72) and RGB(23,73,86). Accent.Subtle mixes the accent in at
+		// only 12%, so the pill measured 1.05:1 against the even row. Walk the mix
+		// towards the accent until it separates from the worst of those three
+		// surfaces, with a hard cap and a no-progress guard.
 		const double kMinSeparation = 1.25;
-		for (int step = 0; step < 12 && ContrastRatio(m_stateSelectedBG, m_surfaceBase) < kMinSeparation; step++)
+		for (int step = 0; step < 12; step++)
 		{
+			// Note: the legacy members, not just m_surfaceRowAlt -- the list draws
+			// the legacy pair, and a v3 theme's odd row is unrelated to RowAlt.
+			bool bSeparated =
+				ContrastRatio(m_stateSelectedBG, m_surfaceBase) >= kMinSeparation &&
+				ContrastRatio(m_stateSelectedBG, m_ListBoxOddRowsBG) >= kMinSeparation &&
+				ContrastRatio(m_stateSelectedBG, m_ListBoxEvenRowsBG) >= kMinSeparation;
+			if (bSeparated)
+				break;
+
 			COLORREF previous = m_stateSelectedBG;
 			m_stateSelectedBG = BlendOver(m_stateSelectedBG, m_accentDefault, 24);
 			if (m_stateSelectedBG == previous)

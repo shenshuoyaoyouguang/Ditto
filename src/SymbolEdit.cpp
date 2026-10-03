@@ -466,6 +466,15 @@ void CSymbolEdit::OnPaint()
 {
 	CPaintDC dc(this);
 
+	// m_windowDpi stays NULL until SetDpiInfo runs. QPasteWnd::OnCreate sets it
+	// before the first paint, so this is defensive rather than reachable, but
+	// OnPaint must not depend on that ordering.
+	if (m_windowDpi == NULL)
+	{
+		CEdit::OnPaint();
+		return;
+	}
+
 	CRect rect;
 	GetClientRect(&rect);
 
@@ -547,16 +556,30 @@ void CSymbolEdit::OnPaint()
 		dc.SelectObject(oldFont);
 	}
 
-	// The glyphs are drawn at their dpi-scaled size, so the old fixed y of 4
-	// clipped their bottom at 150% and sat too high in a taller client area.
-	int nIconY = (rect.Height() - m_windowDpi->Scale(16)) / 2;
+	// CGdiImageDrawer::Draw uses the bitmap's real pixel size, and
+	// LoadStdImageDPI only has five bands (16/20/24/28/32, capped at 32 above
+	// 192 dpi), so Scale(16) is not a valid proxy: at 144 dpi the close asset
+	// is really 20x20 while Scale(16) is 24, and at 256 dpi the bitmap stays
+	// 32 while Scale(16) is 42. Centre each glyph on the bitmap it actually
+	// loaded. The hit rects are fixed Scale(18)/Scale(16) boxes, so a narrower
+	// bitmap has to be centred inside it rather than left aligned.
+	// ImageWidth/ImageHeight return 0 when nothing is loaded.
+	int nSearchIconW = (int)m_searchesButton.ImageWidth();
+	int nSearchIconH = (int)m_searchesButton.ImageHeight();
+	int nCloseIconW = (int)m_closeButton.ImageWidth();
+	int nCloseIconH = (int)m_closeButton.ImageHeight();
+	int nSearchIconY = nSearchIconH > 0 ? (rect.Height() - nSearchIconH) / 2 : 4;
+	int nCloseIconY = nCloseIconH > 0 ? (rect.Height() - nCloseIconH) / 2 : 4;
 
 	int right = rect.right;
 	if ((text.GetLength() > 0 || this == GetFocus()))
 	{
 		m_searchesButtonRect.SetRect(rect.right - m_windowDpi->Scale(18), 0, rect.right, rect.bottom);
 		right = rect.right - m_windowDpi->Scale(18);
-		m_searchesButton.Draw(&dc, *m_windowDpi, this, m_searchesButtonRect.left, nIconY, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
+		int nSearchX = nSearchIconW > 0
+			? m_searchesButtonRect.left + (m_searchesButtonRect.Width() - nSearchIconW) / 2
+			: m_searchesButtonRect.left;
+		m_searchesButton.Draw(&dc, *m_windowDpi, this, nSearchX, nSearchIconY, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
 	}
 	else
 	{
@@ -569,7 +592,10 @@ void CSymbolEdit::OnPaint()
 		//OutputDebugString(_T("showing close button\n"));
 
 		m_closeButtonRect.SetRect(right - m_windowDpi->Scale(16), 0, right, rect.bottom);
-		m_closeButton.Draw(&dc, *m_windowDpi, this, m_closeButtonRect.left, nIconY, m_mouseHoveringOverClose, m_mouseDownOnClose);
+		int nCloseX = nCloseIconW > 0
+			? m_closeButtonRect.left + (m_closeButtonRect.Width() - nCloseIconW) / 2
+			: m_closeButtonRect.left;
+		m_closeButton.Draw(&dc, *m_windowDpi, this, nCloseX, nCloseIconY, m_mouseHoveringOverClose, m_mouseDownOnClose);
 	}
 	else
 	{
