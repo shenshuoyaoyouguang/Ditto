@@ -390,7 +390,7 @@ LRESULT CImageViewer::OnGesture(WPARAM wParam, LPARAM lParam)
 			}
 
 			break;
-			break;
+
 		case GID_ROTATE:
 			OutputDebugString(_T("rotate\r\n"));
 			// Code for rotation goes here

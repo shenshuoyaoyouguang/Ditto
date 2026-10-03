@@ -116,15 +116,9 @@ void CChaiScriptXml::AddToMenu(CMenu *pMenu, CAccels *actions)
 	{
 		pMenu->AppendMenu(MF_SEPARATOR);
 
-		bool addedItem = false;
 		int id = 0;
 		for (auto & element : m_list)
 		{
-			if (addedItem == false)
-			{
-				addedItem = true;
-			}
-
 			CString cs;
 			if (element.m_description != _T(""))
 			{

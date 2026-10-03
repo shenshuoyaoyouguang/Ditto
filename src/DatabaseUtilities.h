@@ -15,7 +15,7 @@
 #define DEFAULT_DB_NAME "Ditto.db"
 #define ERROR_OPENING_DATABASE	2
 
-BOOL CreateBackup(CString csPath);
+
 CString GetDBName();
 CString GetDefaultDBName();
 BOOL OpenDatabase(CString csDB);
@@ -37,7 +37,5 @@ BOOL RestoreDB(CString backupPath);
 
 void ReOrderStickyClips(int parentID, CppSQLite3DB &db);
 
-//BOOL CopyDownDatabase();
-//BOOL CopyUpDatabase();
 
 #endif // !defined(AFX_DATABASEUTILITES_H__039F53EB_228F_4640_8009_3D2B1FF435D4__INCLUDED_)

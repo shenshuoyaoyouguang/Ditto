@@ -766,37 +766,3 @@ void CSendKeys::CarryDelay()
   m_nDelayNow = 0;
 }
 
-/*
-Test Binary search
-void CSendKeys::test()
-{
-  WORD miss(0);
-  for (int i=0;i<MaxSendKeysRecs;i++)
-  {
-    char *p = (char *)KeyNames[i].keyName;
-    WORD v = StringToVKeyB(p);
-    if (v == INVALIDKEY)
-    {
-      miss++;
-    }
-  }
-}
-*/
-
-/*
-Search in a linear manner
-WORD CSendKeys::StringToVKey(const char *KeyString, int &idx)
-{
-for (int i=0;i<MaxSendKeysRecs;i++)
-{
-size_t len = strlen(KeyNames[i].keyName);
-if (strnicmp(KeyNames[i].keyName, KeyString, len) == 0)
-{
-idx = i;
-return KeyNames[i].VKey;
-}
-}
-idx = -1;
-return INVALIDKEY;
-}
-*/

@@ -119,7 +119,7 @@ void CEditWnd::OnDpiChanged(CWnd* pParent, int dpi)
 	m_dpi.Update(dpi);
 
 	m_font.DeleteObject();
-	auto x = m_dpi.Scale(90);
+
 	m_font.CreateFont(-m_dpi.Scale(13), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
 	
 	m_updateDescriptionButton.SetFont(&m_font);
@@ -168,7 +168,7 @@ void CEditWnd::MoveControls()
 
 void CEditWnd::OnSaveAll() 
 {
-	BOOL bUpdateDesc = m_updateDescriptionButton.GetCheck();
+
 	INT_PTR size = m_edits.size();
 	for(int tab = 0; tab < size; tab++)
 	{

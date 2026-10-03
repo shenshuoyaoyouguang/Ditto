@@ -355,20 +355,6 @@ BOOL COptionsGeneral::OnSetActive()
 	return CFluentPropertyPage::OnSetActive();
 }
 
-//void COptionsGeneral::OnSetDbPath() 
-//{
-//	if(m_btSetDatabasePath.GetCheck() == BST_CHECKED)
-//	{
-//		m_ePath.EnableWindow(TRUE);
-//		m_btGetPath.EnableWindow(TRUE);
-//	}
-//	else
-//	{
-//		m_ePath.EnableWindow(FALSE);
-//		m_btGetPath.EnableWindow(FALSE);
-//	}	
-//}
-
 void COptionsGeneral::OnGetPath() 
 {
 	OPENFILENAME	FileName;
@@ -595,26 +581,6 @@ void COptionsGeneral::OnBnClickedButtonFont()
 	}
 }
 
-
-//void COptionsGeneral::OnNMClickSyslinkEnvVarInfo(NMHDR *pNMHDR, LRESULT *pResult)
-//{
-//	CString url = _T("https:////sourceforge.net//p//ditto-cp//wiki//EnvironmentVariables//");
-//
-//	CHyperLink::GotoURL(url, SW_SHOW);
-//
-//	*pResult = 0;
-//}
-//
-//
-//void COptionsGeneral::OnEnChangePath()
-//{
-//	// TODO:  If this is a RICHEDIT control, the control will not
-//	// send this notification unless you override the CFluentPropertyPage::OnInitDialog()
-//	// function and call CRichEditCtrl().SetEventMask()
-//	// with the ENM_CHANGE flag ORed into the mask.
-//
-//	// TODO:  Add your control notification handler code here
-//}
 
 
 void COptionsGeneral::OnEnChangePath()

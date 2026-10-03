@@ -254,7 +254,7 @@ BOOL CClient::SendClipFormat(CClipFormat* pCF)
 	INT_PTR length = GlobalSize(pCF->m_hgData);
 	UCHAR* pOutput = NULL;
 	int nLenOutput = 0;
-	CTextConvert Convert;
+
 	BOOL bRet = FALSE;
 
 	LogSendRecieveInfo(StrF(_T("BEFORE Encrypt clip data %d"), length));
@@ -304,7 +304,7 @@ BOOL CClient::SendClipFormat(CClipFormat* pCF)
 HGLOBAL CClient::RequestCopiedFiles(CClipFormat &HDropFormat, CString csIP, CString csComputerName)
 {
 	CSendInfo Info;
-	bool bBreak = false;
+
 	HGLOBAL hReturn = NULL;
 	CString csErrorString;
 
