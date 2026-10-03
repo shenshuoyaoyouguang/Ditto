@@ -571,6 +571,7 @@
     <ClCompile Include="src\DPI.cpp" />
     <ClCompile Include="src\DwmTheme.cpp" />
     <ClCompile Include="src\FluentButton.cpp" />
+    <ClCompile Include="src\FluentOptionPaint.cpp" />
     <ClCompile Include="src\FluentDialog.cpp" />
     <ClCompile Include="src\Fonts.cpp" />
     <ClCompile Include="src\DrawHTML.C">
@@ -849,6 +850,7 @@
     <ClInclude Include="src\DwmTheme.h" />
     <ClInclude Include="src\FluentButton.h" />
     <ClInclude Include="src\FluentDialog.h" />
+    <ClInclude Include="src\FluentOptionPaint.h" />
     <ClInclude Include="src\FluentProgressBar.h" />
     <ClInclude Include="src\Fonts.h" />
     <ClInclude Include="src\DrawHTML.h" />
