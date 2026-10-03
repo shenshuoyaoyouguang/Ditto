@@ -138,8 +138,4 @@ namespace FluentOptionPaint
 	// radius clamp lives in exactly one place: AddArc with an out-of-range
 	// diameter draws nothing, and the 16px checkbox box is the tight case.
 	void AddRoundPath(Gdiplus::GraphicsPath& path, const Gdiplus::RectF& rect, float radius);
-
-	// Same shift semantics as CTheme::ShiftToward, which is protected; the
-	// option controls need it for the hover / pressed accent variants.
-	COLORREF ShiftToward(COLORREF color, bool towardWhite, double percent);
 }

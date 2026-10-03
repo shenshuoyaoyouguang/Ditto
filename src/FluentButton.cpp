@@ -5,10 +5,8 @@
 #include "Options.h"
 #include "FluentOptionPaint.h"
 
-// ShiftColor and AddRoundPath now live in FluentOptionPaint so that the
-// owner-drawn option controls and this button share one implementation -- the
-// accent hover / pressed shift and the corner radius clamp in particular, where
-// two copies would be free to drift apart.
+// Painting lives in FluentOptionPaint so the owner-drawn option controls and
+// this button share the theme's accent shifts and the corner radius clamp.
 
 CFluentButton::CFluentButton()
 	: m_style(Style_Secondary)
@@ -129,20 +127,11 @@ void CFluentButton::DrawItem(LPDRAWITEMSTRUCT pDrawItemStruct)
 
 	const FluentOptionPaint::Metrics metrics = FluentOptionPaint::GetMetrics(GetSafeHwnd());
 
-	HDC hdc = ::GetDC(GetSafeHwnd());
-	if (hdc == NULL)
-		return;
-
-	CDC* pDC = CDC::FromHandle(hdc);
-
 	switch (m_style)
 	{
-	case Style_Accent:		FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Accent, m_radius); break;
-	case Style_Subtle:		FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Subtle, m_radius); break;
+	case Style_Accent:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Accent, m_radius); break;
+	case Style_Subtle:		FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Subtle, m_radius); break;
 	case Style_Secondary:
-	default:				FluentOptionPaint::PaintButtonAs(hdc, rc, metrics, state, FBS_Secondary, m_radius); break;
+	default:				FluentOptionPaint::PaintButtonAs(pDrawItemStruct->hDC, rc, metrics, state, FBS_Secondary, m_radius); break;
 	}
-
-	::ReleaseDC(GetSafeHwnd(), hdc);
-	(void)pDC;
 }
