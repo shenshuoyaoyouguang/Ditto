@@ -47,7 +47,7 @@ int CEditWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	
 	//m_font.CreatePointFont(m_dpi.Scale(90), _T("Arial Unicode MS"), this->GetDC());
 	m_font.CreateFont(-m_dpi.Scale(13), 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 3, 2, 1, 34, _T("Segoe UI"));
-	m_updateDescriptionButton.Create(theApp.m_Language.GetString("Update_Desc", "Update clip description on save?"), WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX, CRect(0,0,0,0), this, 101);
+	m_updateDescriptionButton.Create(theApp.m_Language.GetString("Update_Desc", "Update clip description on save?"), WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX, CRect(0,0,0,0), this, 101);
 	m_updateDescriptionButton.SetFont(&m_font);
 
 	if(CGetSetOptions::GetUpdateDescWhenSavingClip())

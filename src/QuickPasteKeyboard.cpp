@@ -43,7 +43,6 @@ BEGIN_MESSAGE_MAP(CQuickPasteKeyboard, CFluentPropertyPage)
 	ON_CBN_SELCHANGE(IDC_COMBO_ALL_ASSIGNED, &CQuickPasteKeyboard::OnCbnSelchangeComboAllAssigned)
 	ON_BN_CLICKED(IDC_BUTTON_REMOVE, &CQuickPasteKeyboard::OnBnClickedButtonRemove)
 	ON_BN_CLICKED(IDC_BUTTON_ADD, &CQuickPasteKeyboard::OnBnClickedButtonAdd)
-	ON_CBN_KILLFOCUS(IDC_COMBO_ENTER_MODIFIER, &CQuickPasteKeyboard::OnCbnKillfocusComboEnterModifier)
 	ON_EN_KILLFOCUS(IDC_HOTKEY1, &CQuickPasteKeyboard::OnEnKillfocusEdit1)
 	ON_WM_KILLFOCUS()
 	ON_BN_CLICKED(IDC_BUTTON_ENTER, &CQuickPasteKeyboard::OnBnClickedButtonEnter)
@@ -68,6 +67,11 @@ BOOL CQuickPasteKeyboard::OnInitDialog()
 	InitListCtrlCols();
 	LoadItems();
 
+	// Added in intent order rather than alphabetically: with CBS_SORT gone the
+	// insertion order is what the user sees, and click / double / right /
+	// middle is how the actions are listed everywhere else in the app.
+	// SelectMouseTypeCombo() looks items up by their VK_MOUSE_* data value, so
+	// nothing depends on these positions.
 	int pos = m_mouseType1.AddString(_T("Click"));
 	m_mouseType1.SetItemData(pos, VK_MOUSE_CLICK);
 
@@ -756,12 +760,6 @@ void CQuickPasteKeyboard::SelectMouseTypeCombo(CComboBox &combo, int value)
 			break;
 		}
 	}
-}
-
-
-void CQuickPasteKeyboard::OnCbnKillfocusComboEnterModifier()
-{
-	// TODO: Add your control notification handler code here
 }
 
 
