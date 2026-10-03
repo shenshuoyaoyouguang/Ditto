@@ -46,8 +46,11 @@ BOOL CFluentDialog::OnInitDialog()
 
 // The plan's uniform dialog action (section 5.7): the template's standard
 // OK / Cancel buttons become the fluent owner-draw variants. Controls a
-// derived dialog already owns (DDX_Control or its own subclassing, e.g.
-// FileTransferProgressDlg's cancel button) are left alone.
+// derived dialog already owns are skipped, which covers DDX_Control -- the
+// contract for a derived dialog wanting its own OK/Cancel object is to bind
+// it via DDX_Control (runs inside the CDialog::OnInitDialog chain, before
+// this point). SubclassDlgItem-ing IDOK/IDCANCEL *after* the base call would
+// double-attach and trip CWnd::Attach's assert.
 void CFluentDialog::WireFluentButtons()
 {
 	struct Wiring

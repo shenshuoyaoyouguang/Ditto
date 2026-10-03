@@ -138,6 +138,38 @@ static void test_ensure_contrast_on_dark_base()
 	CHECK_TRUE(GetBValue(fixed) >= GetGValue(fixed));
 }
 
+static void test_ensure_contrast_on_rows_identity_when_compliant()
+{
+	// Fluent Light: Accent.Text #005FB8 clears 4.5:1 against the white and
+	// near-white rows the hit highlight paints on -- nothing to tighten.
+	COLORREF accentText = RGB(0x00, 0x5F, 0xB8);
+	CHECK_TRUE(EnsureContrastOnRows(accentText, RGB(255, 255, 255), RGB(0xF9, 0xF9, 0xF9), false) == accentText);
+}
+
+static void test_ensure_contrast_on_rows_identity_when_compliant_dark()
+{
+	// Fluent Dark: a light accent already clears against the dark rows.
+	COLORREF accentText = RGB(0x4C, 0xC2, 0xFF);
+	CHECK_TRUE(EnsureContrastOnRows(accentText, RGB(0x25, 0x25, 0x25), RGB(0x2B, 0x2B, 0x2B), true) == accentText);
+}
+
+static void test_ensure_contrast_on_rows_tightens_low_contrast()
+{
+	// A light-theme accent dropped on dark rows (the wrong-polarity case a
+	// custom theme omitting the SearchTextHighlight node can produce) must be
+	// stepped until it clears both rows while staying in the accent hue.
+	COLORREF accentText = RGB(0x00, 0x5F, 0xB8);
+	COLORREF odd = RGB(16, 60, 72);
+	COLORREF even = RGB(23, 73, 86);
+	CHECK_TRUE(ContrastRatio(accentText, odd) < 4.5);	// precondition: really fails
+
+	COLORREF fixed = EnsureContrastOnRows(accentText, odd, even, true);
+	CHECK_TRUE(ContrastRatio(fixed, odd) >= 4.5);
+	CHECK_TRUE(ContrastRatio(fixed, even) >= 4.5);
+	CHECK_TRUE(GetBValue(fixed) >= GetRValue(fixed));
+	CHECK_TRUE(GetBValue(fixed) >= GetGValue(fixed));
+}
+
 int main()
 {
 	test_rel_luminance();
@@ -149,6 +181,9 @@ int main()
 	test_ensure_contrast_identity_when_compliant();
 	test_ensure_contrast_fixes_low_contrast();
 	test_ensure_contrast_on_dark_base();
+	test_ensure_contrast_on_rows_identity_when_compliant();
+	test_ensure_contrast_on_rows_identity_when_compliant_dark();
+	test_ensure_contrast_on_rows_tightens_low_contrast();
 
 	if (g_failures > 0)
 	{

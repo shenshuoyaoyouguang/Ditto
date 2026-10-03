@@ -714,12 +714,14 @@ void CTheme::RefreshAccentDerived()
 	if (!m_hasAccentText)
 		m_accentText = EnsureContrast(m_accentDefault, m_surfaceBase);
 
-	// The search hit highlight draws matched text on the row surface, so with
+	// The search hit highlight draws matched text on the row surfaces, so with
 	// no explicit legacy value it follows Accent.Text and re-resolves with the
 	// live system accent (the plan's alias table maps Accent.Text to
-	// SearchTextHighlight). Themes that pin the node keep their value.
+	// SearchTextHighlight). EnsureContrastOnRows tightens it against the odd
+	// and even rows as well, since Accent.Text alone only clears Surface.Base.
+	// Themes that pin the node keep their value.
 	if (!m_hasLegacySearchTextHighlight)
-		m_searchTextHighlight = m_accentText;
+		m_searchTextHighlight = EnsureContrastOnRows(m_accentText, m_ListBoxOddRowsBG, m_ListBoxEvenRowsBG, m_bDarkTheme);
 }
 
 // Contrast self-check.

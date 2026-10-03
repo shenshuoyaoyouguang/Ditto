@@ -972,6 +972,7 @@
     <ClInclude Include="src\SystemTray.h" />
     <ClInclude Include="src\TabCtrl.h" />
     <ClInclude Include="src\Theme.h" />
+    <ClInclude Include="src\ThemeColorMath.h" />
     <ClInclude Include="src\TinyXml\tinystr.h" />
     <ClInclude Include="src\TinyXml\tinyxml.h" />
     <ClInclude Include="src\ToolTipEx.h" />

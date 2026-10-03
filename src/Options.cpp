@@ -1990,11 +1990,6 @@ bool CGetSetOptions::GetMicaBackdrop()
 	return GetProfileLong(_T("MicaBackdrop"), 0) != 0;
 }
 
-void CGetSetOptions::SetMicaBackdrop(bool val)
-{
-	SetProfileLong(_T("MicaBackdrop"), val ? 1 : 0);
-}
-
 long CGetSetOptions::GetAutoMaxDelay()
 {
 	return GetProfileLong(_T("AutoMaxDelaySeconds"), 2);

@@ -16,7 +16,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+        # v1.13.0, pinned by SHA so a tag rewrite cannot change what CI runs
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
       - name: Build theme colour tests
         run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe

@@ -140,3 +140,27 @@ inline COLORREF EnsureContrast(COLORREF color, COLORREF base)
 
 	return PickContrastOn(base, RGB(0, 0, 0), RGB(255, 255, 255));
 }
+
+// Accent.Text is resolved against Surface.Base only, but the search hit
+// highlight paints on the odd and even row backgrounds too. Starting from a
+// colour that clears the base, step it towards the theme polarity's far end
+// until it also clears 4.5:1 against both rows; capped with the same
+// no-progress guard as the selection-pill walk in RefreshAccentDerived.
+inline COLORREF EnsureContrastOnRows(COLORREF color, COLORREF oddRows, COLORREF evenRows, bool darkTheme)
+{
+	COLORREF farEnd = darkTheme ? RGB(255, 255, 255) : RGB(0, 0, 0);
+
+	COLORREF result = color;
+	for (int step = 0; step < 12; step++)
+	{
+		if (ContrastRatio(result, oddRows) >= 4.5 && ContrastRatio(result, evenRows) >= 4.5)
+			return result;
+
+		COLORREF previous = result;
+		result = BlendOver(result, farEnd, 24);
+		if (result == previous)
+			break;
+	}
+
+	return result;
+}

@@ -60,7 +60,7 @@
 | M5 | 标题栏 = 左右两块纯色 `FillRect` 拼接，无圆角、无 DWM 暗色标题栏、无材质 | `DittoWindow.cpp:403-410` |
 | M6 | 字体硬编码：搜索框 Segoe UI 15pt、分组标题 Segoe UI 12pt 下划线（`QPasteWnd.cpp:2214,2221`）；布局魔法数（搜索行 `searchRowStart=33`、按钮 24×24，`QPasteWnd.cpp:667-785`） | 同左 |
 | M7 | 主列表无双缓冲（`memdc.h` 全库仅 `GdipButton.cpp:239`、`ImageViewer.cpp:122` 两处在用），滚动可能闪烁 | `QListCtrl.cpp` OnEraseBkgnd `1214-1239` |
-| M8 | ~~`WM_DPICHANGED` 仅编辑窗链处理（`EditFrameWnd.cpp:45`），QPasteWnd 未注册，跨屏拖动不即时缩放~~ **条目过时（2026-10-03 核对）**：merge-base 的 `QPasteWnd.cpp:322` 上游已有处理器，361562a 移除的是本项目的重复注册 | `QPasteWnd.cpp:322` 附近 |
+| M8 | ~~`WM_DPICHANGED` 仅编辑窗链处理（`EditFrameWnd.cpp:45`），QPasteWnd 未注册，跨屏拖动不即时缩放~~ **条目过时（2026-10-03 核对）**：merge-base 的 `QPasteWnd.cpp:322` 上游已有处理器，361562a（PR #39 "drop duplicate WM_DPICHANGED handler"）移除的是本项目的重复注册 | `QPasteWnd.cpp:322` 附近 |
 | M9 | 硬编码颜色残留：置顶警告条黄底蓝字 `RGB(255,255,0)/RGB(0,0,255)`、prompt 灰 `RGB(127,127,127)` | `QPasteWnd.cpp:510-511`、`SymbolEdit.cpp:22` |
 | M10 | 主题模型无 hover/边框/圆角/字体 token；部分主题文件缺新节点时回退到 LoadDefaults 灰阶，深色主题出现浅色兜底 | `Theme.cpp:23-72` |
 
@@ -417,7 +417,7 @@ class CFluentButton : public CButton {   // BS_OWNERDRAW
 | `CFriendPromptDlg`/`CFriendDetails` | 好友列表行高 32px + hover；IP 输入 Monospace（Consolas → Cascadia Mono 回退） |
 | `CGlobalClips` | 列表接 token；已有 resizer 保留 |
 | `CScriptEditor` | 编辑区底 Surface.Elevated；已有 resizer 保留 |
-| `CFileTransferProgressDlg` | **CAnimateCtrl + FILECOPY.AVI 废弃**，换 `CFluentProgressBar`（新控件：8px 高圆角槽 Stroke.Card + Accent 填充）。**marquee 已移除（2026-10-03，a4e6bb5）**：自绘 marquee 无法与 DWM/GDI 帧节奏稳定同步，不确定进度回退为普通 Accent 填充条；后续只有找到可行方案再恢复 |
+| `CFileTransferProgressDlg` | **CAnimateCtrl + FILECOPY.AVI 废弃**，换 `CFluentProgressBar`（新控件：8px 高圆角槽 Stroke.Card + Accent 填充）。**marquee 已移除（2026-10-03，a4e6bb5，PR #49）**：自绘 marquee 无法与 DWM/GDI 帧节奏稳定同步，不确定进度回退为普通 Accent 填充条；后续只有找到可行方案再恢复 |
 | `CAbout` | HyperLink 换 `Accent.Text` 色 + hover 下划线（保留 CHyperLink 类，改其颜色源）；版本号 Text.Secondary |
 
 ### 5.8 编辑器窗口链与悬浮窗
@@ -476,7 +476,7 @@ Load(themeName):
 |---|---|---|
 | 进程模型 | PMv2 manifest ✅ | 不动 |
 | 布局缩放 | `CDPI::Scale` 102 处 ✅ | 新代码全部经 Scale，禁止裸像素常量 |
-| 主窗口跨屏 | QPasteWnd 已有 `WM_DPICHANGED` 处理（上游 `QPasteWnd.cpp:322`）✅ | 无需补；本项目的重复注册已在 361562a 移除（M8 条目过时） |
+| 主窗口跨屏 | QPasteWnd 已有 `WM_DPICHANGED` 处理（上游 `QPasteWnd.cpp:322`）✅ | 无需补；本项目的重复注册已在 361562a（PR #39）移除（M8 条目过时） |
 | 对话框跨屏 | 无处理 | `CFluentDialog` 统一处理（4.3 第 4 步） |
 | 图标 | per-DPI PNG 五档 ✅ | 新图标按五档导出 |
 
@@ -508,7 +508,7 @@ Load(themeName):
 | 票 | 内容 |
 |---|---|
 | P1.1 | 标题栏：CDittoWindow 对齐 §5.1（DWM 圆角/暗标题栏/按钮组/CaptionSize token） |
-| P1.2 | 搜索行 §5.2（SymbolEdit 去 GetSysColor、focus ring、清除钮）+ UpdateFont 换 AppFonts + QPasteWnd WM_DPICHANGED |
+| P1.2 | 搜索行 §5.2（SymbolEdit 去 GetSysColor、focus ring、清除钮）+ UpdateFont 换 AppFonts |
 | P1.3 | 列表 §5.3（hover/胶囊选中/角标字体/命中色/缩略图缓存/空状态）+ 硬编码色清理（M9） |
 | P1.4 | `CSidebar`（含自绘分组树）+ `CChipBar` + 类型过滤 SQL（线程 COUNT 回传模式，`QListCtrl` owner-data 现有结构内做）+ 显隐持久化 |
 | P1.5 | Fluent Light/Dark 主题 XML + 默认主题切换 + 自动明暗切换链路 + 语言 XML（英/简中）条目 |
