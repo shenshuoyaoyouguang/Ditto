@@ -60,7 +60,7 @@
 | M5 | 标题栏 = 左右两块纯色 `FillRect` 拼接，无圆角、无 DWM 暗色标题栏、无材质 | `DittoWindow.cpp:403-410` |
 | M6 | 字体硬编码：搜索框 Segoe UI 15pt、分组标题 Segoe UI 12pt 下划线（`QPasteWnd.cpp:2214,2221`）；布局魔法数（搜索行 `searchRowStart=33`、按钮 24×24，`QPasteWnd.cpp:667-785`） | 同左 |
 | M7 | 主列表无双缓冲（`memdc.h` 全库仅 `GdipButton.cpp:239`、`ImageViewer.cpp:122` 两处在用），滚动可能闪烁 | `QListCtrl.cpp` OnEraseBkgnd `1214-1239` |
-| M8 | `WM_DPICHANGED` 仅编辑窗链处理（`EditFrameWnd.cpp:45`），QPasteWnd 未注册，跨屏拖动不即时缩放 | `QPasteWnd.cpp:322` 附近 |
+| M8 | ~~`WM_DPICHANGED` 仅编辑窗链处理（`EditFrameWnd.cpp:45`），QPasteWnd 未注册，跨屏拖动不即时缩放~~ **条目过时（2026-10-03 核对）**：merge-base 的 `QPasteWnd.cpp:322` 上游已有处理器，361562a 移除的是本项目的重复注册 | `QPasteWnd.cpp:322` 附近 |
 | M9 | 硬编码颜色残留：置顶警告条黄底蓝字 `RGB(255,255,0)/RGB(0,0,255)`、prompt 灰 `RGB(127,127,127)` | `QPasteWnd.cpp:510-511`、`SymbolEdit.cpp:22` |
 | M10 | 主题模型无 hover/边框/圆角/字体 token；部分主题文件缺新节点时回退到 LoadDefaults 灰阶，深色主题出现浅色兜底 | `Theme.cpp:23-72` |
 
@@ -270,6 +270,7 @@ namespace DwmTheme {
 
 - 全部按函数返回值判断成败，失败**静默回退**（Win10：无圆角、无 Mica，但 `ApplyDarkCaption` 在 1809+ 仍可用）；
 - Mica 前提是 `DwmExtendFrameIntoClientArea` + 客户区对应区域透明绘制，与现有 GDI `FillSolidRect` 擦除冲突，**主窗口默认不开 Mica**，做成注册表开关（默认关），文档标注为实验特性；
+  **实施记录（2026-10-03）**：开关已接线——注册表值 `MicaBackdrop`（默认 0），`CDittoWindow::DoCreate` 里 opt-in 时 `DwmTheme::ExtendFrame` + `ApplyBackdrop(Mica)`；材质只在客户区未被不透明擦除覆盖处可见（标题栏/边距），粗糙边缘即实验属性本身。
 - 暗色标题栏开启后，自绘 `CDittoWindow` 的文字/按钮色同步取 `Caption.*` token（两者叠加时以 token 为准重绘文本）。
 
 ### 4.2 `src/Fonts.h/.cpp` — 字体服务
@@ -384,6 +385,8 @@ class CFluentButton : public CButton {   // BS_OWNERDRAW
 - 显隐：标题栏[菜单]或右键菜单开关，注册表持久化；关闭时 `MoveControls` 单列布局。
 
 > 若实施中发现自绘树工作量超预算，降级方案：保留 CTreeCtrl 但 `TVS_TRACKSELECT`+`TVS_FULLROWSELECT`+`SetBkColor(SetTextColor)` 接 token，去 HASLINES——视觉可达 80%，工作量 20%。两案都写进票里，实施时定。
+>
+> **实施记录（2026-10-03）**：已采用降级案（PR #48：树为 child 窗口停靠侧栏，`TVS_TRACKSELECT`+`TVS_FULLROWSELECT` 接 token、去 HASLINES）；自绘树不再是待办。
 
 ### 5.5 类型 chips（新组件 `CChipBar`）
 
@@ -403,6 +406,8 @@ class CFluentButton : public CButton {   // BS_OWNERDRAW
 
 统一动作：换 `CFluentDialog` 基类 + IDOK 换 `CFluentButton(Accent)` + 取消换 `Secondary` + 挂 resizer。逐个附加项：
 
+> **实施记录（2026-10-03）**：按钮接线已集中到 `CFluentDialog::WireFluentButtons()`（基类 OnInitDialog 统一 SubclassDlgItem，IDOK=Accent、IDCANCEL=Secondary；派生类已通过 DDX_Control 接管的控件自动跳过，如 FileTransferProgressDlg 的取消钮）。逐对话框附加项仍待 P4。
+
 | 对话框 | 附加项 |
 |---|---|
 | `CCopyProperties` | 快速粘贴文本 Edit → Surface.Elevated + Stroke.Card；缩略图预览区加 1px 描边 |
@@ -412,7 +417,7 @@ class CFluentButton : public CButton {   // BS_OWNERDRAW
 | `CFriendPromptDlg`/`CFriendDetails` | 好友列表行高 32px + hover；IP 输入 Monospace（Consolas → Cascadia Mono 回退） |
 | `CGlobalClips` | 列表接 token；已有 resizer 保留 |
 | `CScriptEditor` | 编辑区底 Surface.Elevated；已有 resizer 保留 |
-| `CFileTransferProgressDlg` | **CAnimateCtrl + FILECOPY.AVI 废弃**，换 `CFluentProgressBar`（新控件：8px 高圆角槽 Stroke.Card + Accent 填充；不确定进度用 marquee） |
+| `CFileTransferProgressDlg` | **CAnimateCtrl + FILECOPY.AVI 废弃**，换 `CFluentProgressBar`（新控件：8px 高圆角槽 Stroke.Card + Accent 填充）。**marquee 已移除（2026-10-03，a4e6bb5）**：自绘 marquee 无法与 DWM/GDI 帧节奏稳定同步，不确定进度回退为普通 Accent 填充条；后续只有找到可行方案再恢复 |
 | `CAbout` | HyperLink 换 `Accent.Text` 色 + hover 下划线（保留 CHyperLink 类，改其颜色源）；版本号 Text.Secondary |
 
 ### 5.8 编辑器窗口链与悬浮窗
@@ -471,7 +476,7 @@ Load(themeName):
 |---|---|---|
 | 进程模型 | PMv2 manifest ✅ | 不动 |
 | 布局缩放 | `CDPI::Scale` 102 处 ✅ | 新代码全部经 Scale，禁止裸像素常量 |
-| 主窗口跨屏 | QPasteWnd 未处理 `WM_DPICHANGED` | P1 补：注册消息 → `AppFonts::Init(dpi)` + `MoveControls`（参照 `EditFrameWnd.cpp:45` 现成模式） |
+| 主窗口跨屏 | QPasteWnd 已有 `WM_DPICHANGED` 处理（上游 `QPasteWnd.cpp:322`）✅ | 无需补；本项目的重复注册已在 361562a 移除（M8 条目过时） |
 | 对话框跨屏 | 无处理 | `CFluentDialog` 统一处理（4.3 第 4 步） |
 | 图标 | per-DPI PNG 五档 ✅ | 新图标按五档导出 |
 
@@ -581,7 +586,7 @@ Load(themeName):
 | M5 标题栏纯色拼接 | §5.1 |
 | M6 硬编码字体/魔法数 | §4.2 + §5.2 |
 | M7 无双缓冲 | §4.5 |
-| M8 无 WM_DPICHANGED | §7.1 |
+| M8 无 WM_DPICHANGED | §7.1 | ~~已解决~~ 条目过时：上游本就有处理器 |
 | M9 硬编码色残留 | §5.3 P1.3 |
 | M10 主题模型缺 token | §3 |
 | D1–D4 对话框字体/布局/主题 | §4.3 + §5.6/5.7 |
