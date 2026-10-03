@@ -190,9 +190,9 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	{
 		fill = bEnabled ? theme.AccentDefault() : theme.ControlDisabledBG();
 		if (bEnabled && state.bPressed)
-			fill = CTheme::ShiftToward(fill, false, 0.08);
+			fill = ShiftToward(fill, false, 0.08);
 		else if (bEnabled && state.bHover)
-			fill = CTheme::ShiftToward(fill, true, 0.08);
+			fill = ShiftToward(fill, true, 0.08);
 		stroke = fill;		// a filled box carries no separate outline
 	}
 	else
@@ -361,9 +361,9 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 	{
 		background = theme.AccentDefault();
 		if (state.bPressed)
-			background = CTheme::ShiftToward(background, false, 0.08);
+			background = ShiftToward(background, false, 0.08);
 		else if (state.bHover)
-			background = CTheme::ShiftToward(background, true, 0.08);
+			background = ShiftToward(background, true, 0.08);
 		text = theme.TextOnAccent();
 	}
 	else if (style == FBS_Subtle)

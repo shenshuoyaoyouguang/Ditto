@@ -25,6 +25,11 @@ namespace DwmTheme
 	// DwmExtendFrameIntoClientArea + transparent client painting by the caller
 	bool ApplyBackdrop(HWND hwnd, Backdrop backdrop);
 
+	// sheet of glass: extends the frame over the whole client area, the
+	// prerequisite for a visible mica/acrylic backdrop (the material shows
+	// wherever the client does not paint opaquely)
+	bool ExtendFrame(HWND hwnd);
+
 	// true when the os build supports DWMWA_SYSTEMBACKDROP_TYPE (>= 22621)
 	bool CanUseBackdrop();
 }

@@ -39,8 +39,42 @@ END_MESSAGE_MAP()
 BOOL CFluentDialog::OnInitDialog()
 {
 	BOOL result = CDialog::OnInitDialog();
+	WireFluentButtons();
 	ApplyFluentStyle();
 	return result;
+}
+
+// The plan's uniform dialog action (section 5.7): the template's standard
+// OK / Cancel buttons become the fluent owner-draw variants. Controls a
+// derived dialog already owns are skipped, which covers DDX_Control -- the
+// contract for a derived dialog wanting its own OK/Cancel object is to bind
+// it via DDX_Control (runs inside the CDialog::OnInitDialog chain, before
+// this point). SubclassDlgItem-ing IDOK/IDCANCEL *after* the base call would
+// double-attach and trip CWnd::Attach's assert.
+void CFluentDialog::WireFluentButtons()
+{
+	struct Wiring
+	{
+		CFluentButton& button;
+		UINT id;
+		CFluentButton::Style style;
+	};
+
+	const Wiring wirings[] =
+	{
+		{ m_btnOk,		IDOK,		CFluentButton::Style_Accent },
+		{ m_btnCancel,	IDCANCEL,	CFluentButton::Style_Secondary },
+	};
+
+	for (const Wiring& wiring : wirings)
+	{
+		HWND hwnd = ::GetDlgItem(GetSafeHwnd(), wiring.id);
+		if (hwnd == NULL || CWnd::FromHandlePermanent(hwnd) != NULL)
+			continue;
+
+		if (wiring.button.SubclassDlgItem(wiring.id, this))
+			wiring.button.SetStyle(wiring.style);
+	}
 }
 
 void CFluentDialog::ApplyFluentStyle()

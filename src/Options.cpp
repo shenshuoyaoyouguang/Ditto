@@ -1985,6 +1985,11 @@ bool CGetSetOptions::GetAllowFriends()
 	return (GetProfileLong("AllowFriends", TRUE) == TRUE);
 }
 
+bool CGetSetOptions::GetMicaBackdrop()
+{
+	return GetProfileLong(_T("MicaBackdrop"), 0) != 0;
+}
+
 long CGetSetOptions::GetAutoMaxDelay()
 {
 	return GetProfileLong(_T("AutoMaxDelaySeconds"), 2);

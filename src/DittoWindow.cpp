@@ -87,6 +87,18 @@ void CDittoWindow::DoCreate(CWnd *pWnd)
 	m_bDwmDarkApplied = bDark ? true : false;
 	m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
 
+	// Experimental mica backdrop, registry opt-in, off by default (plan
+	// section 4.1). Gated on the same build check as ApplyBackdrop: on older
+	// builds ExtendFrame alone would turn the whole client into a glass sheet
+	// with no material behind it. Opaque GDI erases still paint over the
+	// client, so the material shows only around the chrome -- rough edges are
+	// expected and are why the switch defaults to off.
+	if (CGetSetOptions::GetMicaBackdrop() && DwmTheme::CanUseBackdrop())
+	{
+		DwmTheme::ExtendFrame(pWnd->GetSafeHwnd());
+		DwmTheme::ApplyBackdrop(pWnd->GetSafeHwnd(), DwmTheme::Backdrop_Mica);
+	}
+
 	// Setting these attributes after the window is visible does not always make
 	// DWM recompute the frame; without a frame change the new colours show up
 	// only after the next unrelated resize.
