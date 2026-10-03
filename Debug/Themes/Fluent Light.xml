@@ -41,7 +41,6 @@
 	<Text_Primary>#1A1A1A</Text_Primary>
 	<Text_Secondary>#616161</Text_Secondary>
 	<Text_Disabled>#9D9D9D</Text_Disabled>
-	<Text_OnAccent>#FFFFFF</Text_OnAccent>
 	<Accent_Default>accent</Accent_Default>
 	<Stroke_Card>#E5E5E5</Stroke_Card>
 	<Stroke_Divider>#EDEDED</Stroke_Divider>

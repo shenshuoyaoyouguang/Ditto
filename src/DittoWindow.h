@@ -28,6 +28,11 @@ public:
 	long DoNcLButtonUp(CWnd *pWnd, UINT nHitTest, CPoint point);
 	int DoNcLButtonDown(CWnd *pWnd, UINT nHitTest, CPoint point);
 	void DoNcMouseMove(CWnd *pWnd, UINT nHitTest, CPoint point) ;
+	// Clears the caption button hover state. The hosts must forward
+	// WM_NCMOUSELEAVE here: without it the highlight set by the last
+	// WM_NCMOUSEMOVE stays stuck when the cursor moves off the buttons into the
+	// client area or leaves the window (no further NCMOUSEMOVE is sent).
+	void DoNcMouseLeave(CWnd *pWnd);
 	bool DoPreTranslateMessage(MSG* pMsg);
 	void SetCaptionOn(CWnd *pWnd, int nPos, bool bOnstartup, int captionSize, int captionFontSize);
 	bool SetCaptionColors(COLORREF left, COLORREF right, COLORREF border);
@@ -95,7 +100,14 @@ public:
 protected:
 	void DrawCaptionButtonBackground(CWindowDC &dc, const CRect &rcButton, bool bMouseOver, bool bMouseDown, bool bCloseButton);
 
+	// True when the last DWM call reported the attribute was accepted, i.e. this
+	// OS build knows DWMWA_USE_IMMERSIVE_DARK_MODE. It is NOT whether dark is
+	// currently applied -- the call succeeds for both values.
+	bool m_bDwmDarkSupported;
+	// The mode we last asked DWM for. Comparing this against the theme is what
+	// makes a runtime theme switch actually re-issue the call.
 	bool m_bDwmDarkApplied;
+	bool m_bNcMouseTracking;
 
 public:
 	CDPI m_dpi;

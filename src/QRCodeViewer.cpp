@@ -35,6 +35,7 @@ BEGIN_MESSAGE_MAP(QRCodeViewer, CWnd)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCLBUTTONDOWN()
 	ON_WM_NCMOUSEMOVE()
+	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCLBUTTONUP()
 	ON_WM_ERASEBKGND()
 	ON_WM_CTLCOLOR()
@@ -182,6 +183,17 @@ void QRCodeViewer::OnNcPaint()
 	m_DittoWindow.DoNcPaint(this);
 }
 
+
+void QRCodeViewer::RefreshThemeColors()
+{
+	// Replays exactly what OnCreate applied; see CWndEx::RefreshThemeColors.
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+}
+
 void QRCodeViewer::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp) 
 {
 	CWnd::OnNcCalcSize(bCalcValidRects, lpncsp);
@@ -236,6 +248,11 @@ void QRCodeViewer::OnNcLButtonUp(UINT nHitTest, CPoint point)
 	KillTimer(TIMER_BUTTON_UP);
 
 	CWnd::OnNcLButtonUp(nHitTest, point);
+}
+
+void QRCodeViewer::OnNcMouseLeave()
+{
+	m_DittoWindow.DoNcMouseLeave(this);
 }
 
 void QRCodeViewer::OnNcMouseMove(UINT nHitTest, CPoint point) 

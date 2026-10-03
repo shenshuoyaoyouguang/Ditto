@@ -8,10 +8,15 @@
 
 CDittoWindow::CDittoWindow(void)
 {
+	// m_dpi has no hwnd yet, so Scale() falls back to GetDC(NULL) and uses the
+	// primary display's dpi. Everything that depends on the real window dpi is
+	// recomputed in DoCreate() once m_dpi.SetHwnd() has run.
 	m_captionBorderWidth = m_dpi.Scale(25);
 
 	m_borderSize = m_dpi.Scale(2);
+	m_bDwmDarkSupported = false;
 	m_bDwmDarkApplied = false;
+	m_bNcMouseTracking = false;
 	m_bMouseOverChevron = false;
 	m_bMouseDownOnChevron = false;
 	m_bMouseDownOnClose = false;
@@ -50,6 +55,13 @@ void CDittoWindow::DoCreate(CWnd *pWnd)
 {
 	m_dpi.SetHwnd(pWnd->m_hWnd);
 
+	// The constructor computed this from the primary display's dpi because there
+	// was no hwnd yet; DoNcCalcSize insets the client area by it and DoNcHitTest
+	// derives the resize hot zones from it, so a window first shown on a
+	// secondary monitor with a different dpi had a mismatched border and
+	// grab zones until a WM_DPICHANGED happened to arrive.
+	m_borderSize = m_dpi.Scale(2);
+
 	AppFonts::Inst().EnsureInitialized();
 	CString csFamily = AppFonts::Inst().ResolvedFamily();
 
@@ -66,8 +78,21 @@ void CDittoWindow::DoCreate(CWnd *pWnd)
 	// fluent window chrome: rounded corners follow the theme's light/dark mode
 	// (both fail silently on os builds without the attribute)
 	DwmTheme::ApplyRoundedCorners(pWnd->GetSafeHwnd(), true);
-	m_bDwmDarkApplied = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), CGetSetOptions::m_Theme.IsDarkTheme());
-	
+
+	// Record the mode we asked for, not whether the call succeeded:
+	// DWMWA_USE_IMMERSIVE_DARK_MODE returns S_OK for both light and dark, so
+	// storing the return value made "light applied at startup" look like "dark
+	// already applied" and every later switch to dark was skipped.
+	BOOL bDark = CGetSetOptions::m_Theme.IsDarkTheme() ? TRUE : FALSE;
+	m_bDwmDarkApplied = bDark ? true : false;
+	m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
+
+	// Setting these attributes after the window is visible does not always make
+	// DWM recompute the frame; without a frame change the new colours show up
+	// only after the next unrelated resize.
+	::SetWindowPos(pWnd->GetSafeHwnd(), NULL, 0, 0, 0, 0,
+		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
 	m_closeButton.LoadStdImageDPI(m_dpi.GetDPI(), Close_Black_16_16, Close_Black_20_20, Close_Black_24_24, Close_Black_28, Close_Black_32_32, _T("PNG"), close_36, close_40, close_44, close_48, close_52, close_56);
 	m_chevronRightButton.LoadStdImageDPI(m_dpi.GetDPI(), ChevronRight_Black_16_16, ChevronRight_Black_20_20, ChevronRight_Black_24_24, ChevronRight_Black_28, ChevronRight_Black_32_32, _T("PNG"), ChevronRight_Black_36, ChevronRight_Black_40, ChevronRight_Black_44, ChevronRight_Black_48, ChevronRight_Black_52, ChevronRight_Black_56);
 	m_chevronLeftButton.LoadStdImageDPI(m_dpi.GetDPI(), ChevronLeft_Black_16_16, ChevronLeft_Black_20_20, ChevronLeft_Black_24_24, ChevronLeft_Black_28, ChevronLeft_Black_32_32, _T("PNG"), ChevronLeft_Black_36, ChevronLeft_Black_40, ChevronLeft_Black_44, ChevronLeft_Black_48, ChevronLeft_Black_52, ChevronLeft_Black_56);
@@ -245,11 +270,27 @@ int CDittoWindow::IndexToPos(int index, bool horizontal)
 
 void CDittoWindow::DoNcPaint(CWnd *pWnd)
 {
-	// keep the dwm dark caption in sync when the theme flips at runtime
+	// Keep the dwm dark caption in sync when the theme flips at runtime. Compare
+	// against the mode we last requested (ApplyDarkCaption returns "the attribute
+	// was accepted", which is the same answer for light and dark), otherwise the
+	// very first switch to dark is skipped and the frame keeps the old colour.
 	bool bDark = CGetSetOptions::m_Theme.IsDarkTheme();
 	if (bDark != m_bDwmDarkApplied)
 	{
-		m_bDwmDarkApplied = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
+		// Record the request either way, so this branch is not re-entered on
+		// every WM_NCPAINT.
+		m_bDwmDarkApplied = bDark;
+
+		// On builds that do not know DWMWA_USE_IMMERSIVE_DARK_MODE (win7, early
+		// win10) the call can never succeed, so re-issuing it and forcing a frame
+		// change just burns a refresh on every theme flip. Ask once, then stop.
+		if (m_bDwmDarkSupported)
+		{
+			m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
+
+			::SetWindowPos(pWnd->GetSafeHwnd(), NULL, 0, 0, 0, 0,
+				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+		}
 	}
 
 	CWindowDC dc(pWnd);
@@ -724,48 +765,67 @@ void CDittoWindow::DoNcMouseMove(CWnd *pWnd, UINT nHitTest, CPoint point)
 
 	CPoint localPoint(point.x - crWindow.left, point.y - crWindow.top);
 
-	if(m_crCloseBT.PtInRect(localPoint))
+	// Ask to be told when the cursor leaves the non-client area. Without this the
+	// flags set below keep their last value when the cursor moves off a caption
+	// button into the client area or out of the window, because Windows sends no
+	// further WM_NCMOUSEMOVE in that case -- leaving e.g. the red close-button
+	// highlight permanently stuck.
+	if (m_bNcMouseTracking == false)
 	{
-		m_bMouseOverClose = true;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+		TRACKMOUSEEVENT tme;
+		ZeroMemory(&tme, sizeof(tme));
+		tme.cbSize = sizeof(tme);
+		tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
+		tme.hwndTrack = pWnd->GetSafeHwnd();
+		tme.dwHoverTime = HOVER_DEFAULT;
+		if (::TrackMouseEvent(&tme))
+			m_bNcMouseTracking = true;
 	}
-	else if(m_bMouseOverClose)
+
+	// Only repaint when a hover flag actually flips. Redrawing on every
+	// WM_NCMOUSEMOVE invalidated the whole window (RDW_INVALIDATE without
+	// RDW_NOCHILDREN), so simply moving the cursor across a button kept
+	// repainting the entire custom drawn list underneath.
+	struct
+	{
+		const CRect* pRect;
+		bool* pOver;
+	} targets[] =
+	{
+		{ &m_crCloseBT, &m_bMouseOverClose },
+		{ &m_crChevronBT, &m_bMouseOverChevron },
+		{ &m_crMinimizeBT, &m_bMouseOverMinimize },
+		{ &m_crMaximizeBT, &m_bMouseOverMaximize },
+	};
+
+	bool bChanged = false;
+	for (int i = 0; i < _countof(targets); i++)
+	{
+		bool bOver = targets[i].pRect->PtInRect(localPoint) ? true : false;
+		if (bOver != *targets[i].pOver)
+		{
+			*targets[i].pOver = bOver;
+			bChanged = true;
+		}
+	}
+
+	if (bChanged)
+		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+}
+
+void CDittoWindow::DoNcMouseLeave(CWnd *pWnd)
+{
+	m_bNcMouseTracking = false;
+
+	if (m_bMouseOverClose || m_bMouseOverChevron || m_bMouseOverMinimize || m_bMouseOverMaximize)
 	{
 		m_bMouseOverClose = false;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-
-	if(m_crChevronBT.PtInRect(localPoint))
-	{
-		m_bMouseOverChevron = true;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-	else if(m_bMouseOverChevron)
-	{
 		m_bMouseOverChevron = false;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-
-	if(m_crMinimizeBT.PtInRect(localPoint))
-	{
-		m_bMouseOverMinimize = true;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-	else if(m_bMouseOverMinimize)
-	{
 		m_bMouseOverMinimize = false;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-
-	if(m_crMaximizeBT.PtInRect(localPoint))
-	{
-		m_bMouseOverMaximize = true;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-	}
-	else if(m_bMouseOverMaximize)
-	{
 		m_bMouseOverMaximize = false;
-		RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+
+		if (pWnd != NULL && pWnd->GetSafeHwnd() != NULL)
+			RedrawWindow(pWnd->m_hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 	}
 }
 

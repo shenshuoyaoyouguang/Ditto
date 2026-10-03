@@ -40,6 +40,8 @@ CToolTipEx::~CToolTipEx()
 	m_clipDataFont.DeleteObject();
 }
 
+IMPLEMENT_DYNAMIC(CToolTipEx, CWnd)
+
 BEGIN_MESSAGE_MAP(CToolTipEx, CWnd)
 	//{{AFX_MSG_MAP(CToolTipEx)
 	ON_WM_PAINT()
@@ -52,6 +54,7 @@ BEGIN_MESSAGE_MAP(CToolTipEx, CWnd)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCLBUTTONDOWN()
 	ON_WM_NCMOUSEMOVE()
+	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCLBUTTONUP()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_FIRST_REMEMBERWINDOWPOSITION, &CToolTipEx::OnRememberwindowposition)
@@ -1091,6 +1094,17 @@ void CToolTipEx::OnNcPaint()
 	m_DittoWindow.DoNcPaint(this);
 }
 
+
+void CToolTipEx::RefreshThemeColors()
+{
+	// Replays exactly what OnCreate applied; see CWndEx::RefreshThemeColors.
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+}
+
 void CToolTipEx::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp) 
 {
 	CWnd::OnNcCalcSize(bCalcValidRects, lpncsp);
@@ -1146,6 +1160,11 @@ void CToolTipEx::OnNcLButtonUp(UINT nHitTest, CPoint point)
 	}
 
 	CWnd::OnNcLButtonUp(nHitTest, point);
+}
+
+void CToolTipEx::OnNcMouseLeave()
+{
+	m_DittoWindow.DoNcMouseLeave(this);
 }
 
 void CToolTipEx::OnNcMouseMove(UINT nHitTest, CPoint point) 

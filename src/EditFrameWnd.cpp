@@ -39,6 +39,7 @@ BEGIN_MESSAGE_MAP(CEditFrameWnd, CFrameWnd)
 	ON_WM_NCLBUTTONDOWN()
 	ON_WM_NCLBUTTONUP()
 	ON_WM_NCMOUSEMOVE()
+	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCLBUTTONDBLCLK()
 	ON_WM_WINDOWPOSCHANGING()
 	ON_WM_TIMER()
@@ -171,6 +172,19 @@ void CEditFrameWnd::OnNcPaint()
 	m_DittoWindow.DoNcPaint(this);	
 }
 
+
+void CEditFrameWnd::RefreshThemeColors()
+{
+	// g_Opt is an extern CGetSetOptions, so g_Opt.m_Theme and
+	// CGetSetOptions::m_Theme are the same object; use the latter like the
+	// other windows do. Replays exactly what OnCreate applied.
+	CTheme& theme = CGetSetOptions::m_Theme;
+	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+
+	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
+}
+
 HITTEST_RET CEditFrameWnd::OnNcHitTest(CPoint point) 
 {
 	UINT Ret = m_DittoWindow.DoNcHitTest(this, point);
@@ -199,6 +213,11 @@ void CEditFrameWnd::OnNcLButtonUp(UINT nHitTest, CPoint point)
 	KillTimer(TIMER_BUTTON_UP);
 
 	CFrameWnd::OnNcLButtonUp(nHitTest, point);
+}
+
+void CEditFrameWnd::OnNcMouseLeave()
+{
+	m_DittoWindow.DoNcMouseLeave(this);
 }
 
 void CEditFrameWnd::OnNcMouseMove(UINT nHitTest, CPoint point)

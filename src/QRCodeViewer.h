@@ -20,15 +20,19 @@ public:
 
 	CStatic m_desc;
 
+	// Re-reads the caption colours after a theme reload; CMainFrame's theme
+	// broadcast calls this from outside the class, so it must be public.
+	void RefreshThemeColors();
+
 protected:
 	afx_msg HITTEST_RET OnNcHitTest(CPoint point);
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 	afx_msg void OnNcMouseMove(UINT nHitTest, CPoint point);
+	afx_msg void OnNcMouseLeave();
 	afx_msg void OnNcLButtonUp(UINT nHitTest, CPoint point); 
 	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point); 
 	afx_msg void OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp); 
-	afx_msg void OnNcPaint();
-	DECLARE_MESSAGE_MAP()
+	afx_msg void OnNcPaint();	DECLARE_MESSAGE_MAP()
 	afx_msg void OnPaint();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnSize(UINT nType, int cx, int cy);

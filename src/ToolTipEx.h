@@ -12,6 +12,10 @@
 
 class CToolTipEx : public CWnd
 {
+	// See CWndEx: RUNTIME_CLASS(CToolTipEx) needs this, otherwise IsKindOf
+	// resolves against CWnd and the cast would target the wrong object.
+	DECLARE_DYNAMIC(CToolTipEx)
+
 // Construction
 public:
 	CToolTipEx();
@@ -32,6 +36,8 @@ public:
 	void SetNotifyWnd(CWnd *pNotify)		{ m_pNotifyWnd = pNotify;	}
 	void HideWindowInXMilliSeconds(long lms);
 	CRect GetBoundsRect();
+	// Re-reads the caption colours after a theme reload (see CWndEx::RefreshThemeColors)
+	void RefreshThemeColors();
 
 	void SetClipId(int clipId) { m_clipId = clipId; }
 	int GetClipId() { return m_clipId; }
@@ -122,6 +128,7 @@ protected:
 	afx_msg HITTEST_RET OnNcHitTest(CPoint point);
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 	afx_msg void OnNcMouseMove(UINT nHitTest, CPoint point);
+	afx_msg void OnNcMouseLeave();
 	afx_msg void OnNcLButtonUp(UINT nHitTest, CPoint point); 
 	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point); 
 	afx_msg void OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS FAR* lpncsp); 

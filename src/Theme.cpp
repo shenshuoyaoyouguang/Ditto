@@ -141,6 +141,17 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		// after the file was fixed, and the UI kept rendering the defaults.
 		m_lastTheme = _T("");
 		m_LastWriteTime = 0;
+
+		// The empty theme name resolves to Fluent Light / Fluent Dark, so a
+		// missing (or not yet installed) file used to lose the system accent
+		// along with it: LoadWindowsAccentColor() only ran on the success path.
+		// Fall back to the full default palette, still following the accent.
+		if (followWindows10Theme)
+		{
+			LoadWindowsAccentColor();
+			FinalizeTokens();
+		}
+
 		return false;
 	}
 
