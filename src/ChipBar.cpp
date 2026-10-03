@@ -49,7 +49,6 @@ BEGIN_MESSAGE_MAP(CChipBar, CWnd)
 	ON_WM_SIZE()
 	ON_WM_SETFOCUS()
 	ON_WM_KILLFOCUS()
-	ON_WM_GETDLGCODE()
 	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
@@ -251,12 +250,6 @@ void CChipBar::OnKillFocus(CWnd* pNextWnd)
 
 	m_bHasFocus = false;
 	Invalidate(FALSE);
-}
-
-LRESULT CChipBar::OnGetDlgCode()
-{
-	// Take the arrow keys so the chip row can be traversed with them.
-	return CWnd::OnGetDlgCode() | DLGC_WANTARROWS;
 }
 
 void CChipBar::MoveActiveTo(int index)

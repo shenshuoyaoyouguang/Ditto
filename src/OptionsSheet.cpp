@@ -104,6 +104,7 @@ BEGIN_MESSAGE_MAP(COptionsSheet, CPropertySheet)
 	ON_WM_MEASUREITEM()
 	ON_LBN_SELCHANGE(IDC_NAV_LIST, OnNavSelect)
 	ON_WM_SIZE()
+	ON_WM_CTLCOLOR()
 	//ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
@@ -157,7 +158,8 @@ BOOL COptionsSheet::OnInitDialog()
 	m_nav.SetFont(AppFonts::Inst().Get(Font_Body));
 	// The list only owner-draws its items, so the empty area below the last
 	// one kept the system window colour -- a light strip under a dark sheet.
-	m_nav.SendMessage(LB_SETBKGND, 0, (LPARAM)CGetSetOptions::m_Theme.SurfaceBase());
+	m_navBg.DeleteObject();
+	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.SurfaceBase());
 	m_bNavCreated = true;
 	FillNavItems();
 
@@ -207,6 +209,25 @@ void COptionsSheet::FillNavItems()
 	}
 }
 
+HBRUSH COptionsSheet::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	// The nav list only owner-draws its items, so the empty area below the
+	// last one falls back to the system window colour -- a light strip under a
+	// dark sheet. A list box background can only be set through its parent's
+	// WM_CTLCOLORLISTBOX (CListBox has no SetBkColor and there is no
+	// LB_SETBKGND message).
+	if (nCtlColor == CTLCOLOR_LISTBOX && pWnd != NULL && m_bNavCreated &&
+		pWnd->GetSafeHwnd() == m_nav.GetSafeHwnd())
+	{
+		pDC->SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
+		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
+		if (m_navBg.GetSafeHandle() != NULL)
+			return (HBRUSH)m_navBg.GetSafeHandle();
+	}
+
+	return CPropertySheet::OnCtlColor(pDC, pWnd, nCtlColor);
+}
+
 void COptionsSheet::LayoutNav(int cx, int cy)
 {
 	if (m_bNavCreated == false)
@@ -230,7 +251,7 @@ void COptionsSheet::ShiftFrameButtons()
 			continue;
 
 		CRect rc;
-		if (pButton->GetWindowRect(rc) == FALSE)
+		if (::GetWindowRect(pButton->GetSafeHwnd(), &rc) == FALSE)
 			continue;
 
 		ScreenToClient(rc);
@@ -249,7 +270,7 @@ void COptionsSheet::ShiftPages()
 			continue; // pages are created lazily; an untouched page has no hwnd yet
 
 		CRect rcPage(0, 0, 0, 0);
-		if (pPage->GetWindowRect(rcPage) == FALSE)
+		if (::GetWindowRect(pPage->GetSafeHwnd(), &rcPage) == FALSE)
 			continue;
 
 		ScreenToClient(rcPage);
