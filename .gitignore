@@ -73,3 +73,6 @@ Debug/portable
 /FocusHighlight
 /focusdll
 /x64
+.workbuddy/*
+/.zcode/
+/dist/
