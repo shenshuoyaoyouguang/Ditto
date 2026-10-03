@@ -2,6 +2,7 @@
 
 #include "tinyxml\Tinyxml.h"
 #include "tinyxml\tinystr.h"
+#include "ThemeColorMath.h"
 
 class CTheme
 {
@@ -86,23 +87,9 @@ public:
 
 	CString LastError() const { return m_csLastError; }
 
-	// Colour maths, public because the owner-drawn option controls
-	// (FluentOptionPaint) need them to resolve foreground colours against
-	// whatever the active theme resolved to. They are pure functions apart
-	// from EnsureContrastOnBase, which reads m_surfaceBase.
-	//
-	// Exposed by moving the access level only -- the implementations in
-	// Theme.cpp are unchanged and still used internally by the token
-	// derivation in FinalizeTokens() / RefreshAccentDerived().
-	static COLORREF BlendOver(COLORREF under, COLORREF over, int alpha);
-	static COLORREF ShiftToward(COLORREF color, bool towardWhite, double percent);
-	static double RelLuminance(COLORREF color);
-	// WCAG 2.1 relative contrast ratio, 1.0 .. 21.0
-	static double ContrastRatio(COLORREF a, COLORREF b);
-	// Returns whichever of first/ second contrasts better against background.
-	static COLORREF PickContrastOn(COLORREF background, COLORREF first, COLORREF second);
-	// Nudges color until it clears 4.5:1 against this theme's Surface.Base.
-	COLORREF EnsureContrastOnBase(COLORREF color);
+	// Colour maths used here and by FluentOptionPaint live in ThemeColorMath.h
+	// as free functions (BlendOver, ShiftToward, RelLuminance, ContrastRatio,
+	// PickContrastOn, EnsureContrast).
 
 protected:
 	bool LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color, int &intValue);
@@ -208,7 +195,7 @@ protected:
 	// legacy nodes read during derivation
 	bool m_hasLegacyMainWindowBG, m_hasLegacySearchTextBoxFocusBG, m_hasLegacyListBoxEvenRowsBG;
 	bool m_hasLegacyListBoxOddRowsText, m_hasLegacyClipPastedColor, m_hasLegacySmallQuickPasteIndexColor;
-	bool m_hasLegacyDescriptionWindowBG;
+	bool m_hasLegacyDescriptionWindowBG, m_hasLegacySearchTextHighlight;
 	// true when Accent_Default is the "accent" alias and must re-resolve from
 	// the live Windows setting even when the theme file itself did not change
 	bool m_bFollowSystemAccent;

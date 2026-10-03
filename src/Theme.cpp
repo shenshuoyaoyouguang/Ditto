@@ -206,7 +206,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 	m_hasLegacySearchTextBoxFocusBG = LoadColor(ItemHeader, "SearchTextBoxFocusBG", m_searchTextBoxFocusBG);
 	LoadColor(ItemHeader, "SearchTextBoxFocusText", m_searchTextBoxFocusText);
 	LoadColor(ItemHeader, "SearchTextBoxFocusBorder", m_searchTextBoxFocusBorder);
-	LoadColor(ItemHeader, "SearchTextHighlight", m_searchTextHighlight);
+	m_hasLegacySearchTextHighlight = LoadColor(ItemHeader, "SearchTextHighlight", m_searchTextHighlight);
 
 	LoadColor(ItemHeader, "Border", m_Border);
 	LoadColor(ItemHeader, "BorderTopMost", m_BorderTopMost);
@@ -250,43 +250,7 @@ void CTheme::LoadWindowsAccentColor()
 
 		m_clipPastedColor = RGB(b, g, r);
 		m_searchTextBoxFocusBorder = m_clipPastedColor;
-		m_searchTextHighlight = m_clipPastedColor;
-
 	}
-}
-
-COLORREF HslToRgb(float h, float s, float l)
-{
-	if (s == 0.0f)
-	{
-		// Grayscale, achromatic
-		BYTE gray = static_cast<BYTE>(l * 255.0f + 0.5f);
-		return RGB(gray, gray, gray);
-	}
-
-	auto hueToRgb = [](float p, float q, float t) -> float
-	{
-		if (t < 0.0f) t += 1.0f;
-		if (t > 1.0f) t -= 1.0f;
-		if (t < 1.0f / 6.0f) return p + (q - p) * 6.0f * t;
-		if (t < 1.0f / 2.0f) return q;
-		if (t < 2.0f / 3.0f) return p + (q - p) * (2.0f / 3.0f - t) * 6.0f;
-		return p;
-	};
-
-	float q = l < 0.5f ? l * (1.0f + s) : l + s - l * s;
-	float p = 2.0f * l - q;
-	float h_norm = h / 360.0f;
-
-	float r_f = hueToRgb(p, q, h_norm + 1.0f / 3.0f);
-	float g_f = hueToRgb(p, q, h_norm);
-	float b_f = hueToRgb(p, q, h_norm - 1.0f / 3.0f);
-
-	BYTE r = static_cast<BYTE>(r_f * 255.0f + 0.5f);
-	BYTE g = static_cast<BYTE>(g_f * 255.0f + 0.5f);
-	BYTE b = static_cast<BYTE>(b_f * 255.0f + 0.5f);
-
-	return RGB(r, g, b);
 }
 
 bool CTheme::LoadColor(TiXmlElement *pParent, CStringA csNode, COLORREF &Color)
@@ -458,6 +422,7 @@ void CTheme::ResetTokenFlags()
 	m_hasLegacyClipPastedColor = false;
 	m_hasLegacySmallQuickPasteIndexColor = false;
 	m_hasLegacyDescriptionWindowBG = false;
+	m_hasLegacySearchTextHighlight = false;
 	m_bFollowSystemAccent = false;
 	m_bParsedThemeXml = false;
 }
@@ -747,7 +712,14 @@ void CTheme::RefreshAccentDerived()
 		m_textOnAccent = PickContrastOn(m_accentDefault, RGB(255, 255, 255), RGB(0, 0, 0));
 
 	if (!m_hasAccentText)
-		m_accentText = EnsureContrastOnBase(m_accentDefault);
+		m_accentText = EnsureContrast(m_accentDefault, m_surfaceBase);
+
+	// The search hit highlight draws matched text on the row surface, so with
+	// no explicit legacy value it follows Accent.Text and re-resolves with the
+	// live system accent (the plan's alias table maps Accent.Text to
+	// SearchTextHighlight). Themes that pin the node keep their value.
+	if (!m_hasLegacySearchTextHighlight)
+		m_searchTextHighlight = m_accentText;
 }
 
 // Contrast self-check.
@@ -756,7 +728,7 @@ void CTheme::RefreshAccentDerived()
 // WCAG ratios for the default Light/Dark token values, but the 12 third-party
 // theme files carry only v3 nodes and have every v4 token derived from their
 // own colours -- and that derivation only validates the accent chain
-// (EnsureContrastOnBase), never Text.Secondary / Text.Disabled / Stroke.Card.
+// (EnsureContrast), never Text.Secondary / Text.Disabled / Stroke.Card.
 // So a theme can load, look plausible, and still ship unreadable text.
 //
 // Emitted on every full load rather than behind a setting: it is a few dozen
@@ -815,86 +787,4 @@ void CTheme::AuditContrast(const CString& csThemeName)
 		csMsg.Format(_T("[theme]   %d of %d pairs below the threshold\r\n"), nFail, nCount);
 
 	OutputDebugString(csMsg);
-}
-
-COLORREF CTheme::BlendOver(COLORREF under, COLORREF over, int alpha)
-{
-	auto blend = [alpha](int u, int o) -> BYTE
-	{
-		int value = u + MulDiv(o - u, alpha, 255);
-		return (BYTE)max(0, min(255, value));
-	};
-
-	return RGB(blend(GetRValue(under), GetRValue(over)),
-		blend(GetGValue(under), GetGValue(over)),
-		blend(GetBValue(under), GetBValue(over)));
-}
-
-COLORREF CTheme::ShiftToward(COLORREF color, bool towardWhite, double percent)
-{
-	int target = towardWhite ? 255 : 0;
-
-	auto shift = [target, percent](int c) -> BYTE
-	{
-		int value = (int)(c + (target - c) * percent + 0.5);
-		return (BYTE)max(0, min(255, value));
-	};
-
-	return RGB(shift(GetRValue(color)), shift(GetGValue(color)), shift(GetBValue(color)));
-}
-
-double CTheme::RelLuminance(COLORREF color)
-{
-	auto linear = [](int channel) -> double
-	{
-		double c = channel / 255.0;
-		return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
-	};
-
-	return 0.2126 * linear(GetRValue(color)) + 0.7152 * linear(GetGValue(color)) + 0.0722 * linear(GetBValue(color));
-}
-
-double CTheme::ContrastRatio(COLORREF a, COLORREF b)
-{
-	double l1 = RelLuminance(a);
-	double l2 = RelLuminance(b);
-
-	if (l1 < l2)
-	{
-		double temp = l1;
-		l1 = l2;
-		l2 = temp;
-	}
-
-	return (l1 + 0.05) / (l2 + 0.05);
-}
-
-COLORREF CTheme::PickContrastOn(COLORREF background, COLORREF first, COLORREF second)
-{
-	return ContrastRatio(background, first) >= ContrastRatio(background, second) ? first : second;
-}
-
-COLORREF CTheme::EnsureContrastOnBase(COLORREF color)
-{
-	if (ContrastRatio(color, m_surfaceBase) >= 4.5)
-		return color;
-
-	bool dark = RelLuminance(m_surfaceBase) < 0.5;
-
-	// Step away from the surface, not towards it: passing !dark moved the accent
-	// towards the background, so every iteration lowered the ratio further and the
-	// loop could never reach 4.5:1 -- it always fell through to the black/white
-	// fallback and the accent hue was lost. Try both directions to be safe.
-	for (int direction = 0; direction < 2; direction++)
-	{
-		for (int step = 1; step <= 9; step++)
-		{
-			double percent = step / 10.0;
-			COLORREF adjusted = ShiftToward(color, direction == 0 ? dark : !dark, percent);
-			if (ContrastRatio(adjusted, m_surfaceBase) >= 4.5)
-				return adjusted;
-		}
-	}
-
-	return PickContrastOn(m_surfaceBase, RGB(0, 0, 0), RGB(255, 255, 255));
 }

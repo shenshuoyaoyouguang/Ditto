@@ -937,6 +937,9 @@
     <ClInclude Include="src\Theme.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\ThemeColorMath.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="src\ToolTipEx.h">
       <Filter>src</Filter>
     </ClInclude>

@@ -23,7 +23,6 @@
 	<SearchTextBoxFocusBG>#FFFFFF</SearchTextBoxFocusBG>
 	<SearchTextBoxFocusText>#1A1A1A</SearchTextBoxFocusText>
 	<SearchTextBoxFocusBorder>#005FB8</SearchTextBoxFocusBorder>
-	<SearchTextHighlight>#005FB8</SearchTextHighlight>
 	<GroupTreeBG>#F3F3F3</GroupTreeBG>
 	<GroupTreeText>#1A1A1A</GroupTreeText>
 	<DescriptionWindowBG>#FFFFFF</DescriptionWindowBG>

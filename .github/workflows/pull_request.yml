@@ -9,6 +9,21 @@ env:
   SOLUTION_FILE_PATH: CP_Main_10.sln
 
 jobs:
+  tests:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build theme colour tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe
+
+      - name: Run tests
+        run: .\test_theme_colors.exe
+
   build:
     runs-on: windows-latest
 

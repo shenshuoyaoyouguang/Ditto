@@ -23,7 +23,6 @@
 	<SearchTextBoxFocusBG>#2B2B2B</SearchTextBoxFocusBG>
 	<SearchTextBoxFocusText>#FFFFFF</SearchTextBoxFocusText>
 	<SearchTextBoxFocusBorder>#4CC2FF</SearchTextBoxFocusBorder>
-	<SearchTextHighlight>#4CC2FF</SearchTextHighlight>
 	<GroupTreeBG>#202020</GroupTreeBG>
 	<GroupTreeText>#FFFFFF</GroupTreeText>
 	<DescriptionWindowBG>#2B2B2B</DescriptionWindowBG>
