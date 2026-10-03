@@ -39,7 +39,6 @@ public:
 	void SetNumFiles(int nFiles);
 	void StepAllFiles();
 	void SetSingleFilePos(int nPos);
-	void ResetSingleFileProgress();
 
 	bool Cancelled()	{ return m_bCancelled; }
 

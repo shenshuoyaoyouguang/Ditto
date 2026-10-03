@@ -223,7 +223,13 @@ void CScriptEditor::OnSize(UINT nType, int cx, int cy)
 	// CFluentDialog::RescaleChildren. Running our own resizer pass as well applies
 	// the layout twice, so anchored and stretched controls end up displaced.
 	if (IsRescaling())
+	{
+		// The children were just rescaled proportionally, so the resizer's
+		// delta baseline has to move with them, or the next user resize
+		// re-applies the dpi change on top -- see CDialogResizer::MoveControls.
+		m_resize.SetDlgSize(CSize(cx, cy));
 		return;
+	}
 
 	CFluentDialog::OnSize(nType, cx, cy);
 

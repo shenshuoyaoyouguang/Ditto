@@ -37,6 +37,14 @@ protected:
 public:
 	void MoveControls(CSize csNewSize);
 
+	// Re-baseline without moving anything. MoveControls is delta-based against
+	// m_DlgSize, so a pass that repositions the controls out of band (the
+	// proportional DPI rescale in CFluentDialog::RescaleChildren) has to move
+	// the baseline too -- otherwise the next ordinary WM_SIZE recomputes the
+	// delta from the pre-DPI size and re-applies the whole dpi change a second
+	// time, displacing or double-growing anchored and stretched controls.
+	void SetDlgSize(CSize csNewSize) { m_DlgSize = csNewSize; }
+
 	void AddControl(int nControlID, int nFlags);
 	void AddControl(HWND hWnd, int nFlags);
 

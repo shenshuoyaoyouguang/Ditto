@@ -224,7 +224,13 @@ void CDeleteClipData::OnSize(UINT nType, int cx, int cy)
 	// Skip our own resizer pass while CFluentDialog::OnDpiChanged is rescaling;
 	// see CScriptEditor::OnSize.
 	if (IsRescaling())
+	{
+		// The children were just rescaled proportionally, so the resizer's
+		// delta baseline has to move with them, or the next user resize
+		// re-applies the dpi change on top -- see CDialogResizer::MoveControls.
+		m_Resize.SetDlgSize(CSize(cx, cy));
 		return;
+	}
 
 	CFluentDialog::OnSize(nType, cx, cy);
 

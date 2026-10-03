@@ -95,7 +95,13 @@ HBRUSH CFluentDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		// These actually send WM_CTLCOLOR (unlike the common controls such as
 		// SysTreeView32 / SysDateTimePick32, which never do and therefore kept
 		// their system colours on a themed dialog).
-		pDC->SetTextColor(theme.TextPrimary());
+		// WM_CTLCOLOR does not carry the enabled state, so a disabled edit or
+		// combo (IDC_EDIT_CLIP_TITLE / IDC_COMBO_DATA_FORMAT in the delete clip
+		// data dialog are WS_DISABLED) would keep the full strength text colour
+		// and lose the greyed-out affordance.
+		pDC->SetTextColor(pWnd != NULL && pWnd->IsWindowEnabled()
+			? theme.TextPrimary()
+			: theme.TextDisabled());
 		pDC->SetBkColor(theme.SurfaceElevated());
 		if (m_brControl.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brControl.GetSafeHandle();
@@ -249,7 +255,13 @@ HBRUSH CFluentPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 	case CTLCOLOR_LISTBOX:
 	case CTLCOLOR_EDIT:
-		pDC->SetTextColor(theme.TextPrimary());
+		// WM_CTLCOLOR does not carry the enabled state, so a disabled edit or
+		// combo (IDC_EDIT_CLIP_TITLE / IDC_COMBO_DATA_FORMAT in the delete clip
+		// data dialog are WS_DISABLED) would keep the full strength text colour
+		// and lose the greyed-out affordance.
+		pDC->SetTextColor(pWnd != NULL && pWnd->IsWindowEnabled()
+			? theme.TextPrimary()
+			: theme.TextDisabled());
 		pDC->SetBkColor(theme.SurfaceElevated());
 		if (m_brControl.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brControl.GetSafeHandle();

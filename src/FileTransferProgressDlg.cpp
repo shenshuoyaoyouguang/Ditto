@@ -119,17 +119,8 @@ void CFileTransferProgressDlg::SetNumFiles(int nFiles)
 	m_progressBar.SetStep(1);
 	m_progressBar.SetPos(0);
 
-	// No file count yet means we are still opening the connection: show moving
-	// feedback instead of a bar stuck at zero.
-	m_progressBar.SetMarquee(nFiles <= 0);
 }
 
-void CFileTransferProgressDlg::ResetSingleFileProgress()
-{
-	m_ProgressSingleFile.SetPos(0);
-	m_progressBar.SetMarquee(true);
-	m_progressBar.SetPos(0);
-}
 
 void CFileTransferProgressDlg::StepAllFiles()
 {
@@ -138,10 +129,6 @@ void CFileTransferProgressDlg::StepAllFiles()
 
 void CFileTransferProgressDlg::SetSingleFilePos(int nPos)
 {
-	// first real progress report ends the connection phase
-	if (m_progressBar.IsMarquee())
-		m_progressBar.SetMarquee(false);
-
 	m_ProgressSingleFile.SetPos(nPos);
 	m_progressBar.SetPos(nPos);
 }
