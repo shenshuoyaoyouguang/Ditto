@@ -19,10 +19,25 @@ BOOL CFluentProgressBar::Create(DWORD dwStyle, const RECT& rect, CWnd* pParentWn
 	return CProgressCtrl::Create(dwStyle | PBS_SMOOTH | WS_CHILD | WS_VISIBLE, rect, pParentWnd, nID);
 }
 
-BOOL CFluentProgressBar::OnEraseBkgnd(CDC* /*pDC*/)
+
+
+
+BOOL CFluentProgressBar::OnEraseBkgnd(CDC* pDC)
 {
+	// Claiming "erased" without painting anything leaves the pixels outside the
+	// rounded path holding whatever was there before (stale or undefined), which
+	// shows up as dark corners against the dialog.
+	if (pDC != NULL)
+	{
+		CRect rc;
+		GetClientRect(rc);
+		pDC->FillSolidRect(rc, CGetSetOptions::m_Theme.SurfaceBase());
+		return TRUE;
+	}
+
 	return TRUE;
 }
+
 
 void CFluentProgressBar::OnPaint()
 {
@@ -34,6 +49,14 @@ void CFluentProgressBar::OnPaint()
 
 	Graphics graphics(dc.GetSafeHdc());
 	graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+
+	// paint the whole client area first: the corners outside the rounded path
+	// belong to the dialog surface, not to the bar
+	SolidBrush surface(Color(255,
+		GetRValue(theme.SurfaceBase()),
+		GetGValue(theme.SurfaceBase()),
+		GetBValue(theme.SurfaceBase())));
+	graphics.FillRectangle(&surface, 0.0f, 0.0f, (REAL)rc.Width(), (REAL)rc.Height());
 
 	int radius = max(2, (int)(rc.Height() / 2));
 	RectF rect((REAL)rc.left, (REAL)rc.top, (REAL)rc.Width() - 1, (REAL)rc.Height() - 1);
@@ -50,10 +73,6 @@ void CFluentProgressBar::OnPaint()
 	SolidBrush trough(Color(255, GetRValue(theme.ControlFill()), GetGValue(theme.ControlFill()), GetBValue(theme.ControlFill())));
 	graphics.FillPath(&trough, &path);
 
-	COLORREF strokeColor = theme.StrokeCard();
-	Pen stroke(Color(255, GetRValue(strokeColor), GetGValue(strokeColor), GetBValue(strokeColor)));
-	graphics.DrawPath(&stroke, &path);
-
 	int nLower = 0;
 	int nUpper = 100;
 	GetRange(nLower, nUpper);
@@ -68,15 +87,25 @@ void CFluentProgressBar::OnPaint()
 		{
 			RectF fill(rect.X, rect.Y, (REAL)(rect.Width * fraction), rect.Height);
 
+			// The corner diameter cannot exceed the fill box, otherwise the right
+			// side's arc bounding boxes start left of fill.X and the filled area
+			// bulges backwards past the actual progress position.
+			float fillD = (float)min(d, min(fill.Width, fill.Height));
+
 			GraphicsPath fillPath;
-			fillPath.AddArc(fill.X, fill.Y, d, d, 180, 90);
-			fillPath.AddArc(fill.X + fill.Width - d, fill.Y, d, d, 270, 90);
-			fillPath.AddArc(fill.X + fill.Width - d, fill.Y + fill.Height - d, d, d, 0, 90);
-			fillPath.AddArc(fill.X, fill.Y + fill.Height - d, d, d, 90, 90);
+			fillPath.AddArc(fill.X, fill.Y, fillD, fillD, 180, 90);
+			fillPath.AddArc(fill.X + fill.Width - fillD, fill.Y, fillD, fillD, 270, 90);
+			fillPath.AddArc(fill.X + fill.Width - fillD, fill.Y + fill.Height - fillD, fillD, fillD, 0, 90);
+			fillPath.AddArc(fill.X, fill.Y + fill.Height - fillD, fillD, fillD, 90, 90);
 			fillPath.CloseFigure();
 
 			SolidBrush fillBrush(Color(255, GetRValue(theme.AccentDefault()), GetGValue(theme.AccentDefault()), GetBValue(theme.AccentDefault())));
 			graphics.FillPath(&fillBrush, &fillPath);
 		}
 	}
+
+	// stroke last, otherwise a full progress value paints over the outline
+	COLORREF strokeColor = theme.StrokeCard();
+	Pen stroke(Color(255, GetRValue(strokeColor), GetGValue(strokeColor), GetBValue(strokeColor)));
+	graphics.DrawPath(&stroke, &path);
 }

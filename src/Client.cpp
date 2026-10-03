@@ -309,12 +309,20 @@ HGLOBAL CClient::RequestCopiedFiles(CClipFormat &HDropFormat, CString csIP, CStr
 	CString csErrorString;
 
 	CFileTransferProgressDlg *pProgress = new CFileTransferProgressDlg;
-	if(pProgress == NULL)
-		return NULL;
 
 	LogSendRecieveInfo(StrF(_T("************** START of requesting files from cpu %s, ip: %s **************"), csComputerName, csIP));
 
-	pProgress->Create(IDD_DIALOG_REMOTE_FILE);
+	// A failed Create leaves m_hWnd == NULL, so every later call is a silent
+	// no-op and PostNcDestroy never runs -- which leaks this object and shows
+	// the user nothing at all when they ask for files. The old "new == NULL"
+	// check could not fire (new throws rather than returning NULL).
+	if (pProgress->Create(IDD_DIALOG_REMOTE_FILE) == FALSE)
+	{
+		LogSendRecieveInfo(StrF(_T("Failed to create the file transfer progress dialog, aborting request to %s"), csComputerName));
+		delete pProgress;
+		return NULL;
+	}
+
 	pProgress->ShowWindow(SW_SHOW);
 	pProgress->SetMessage(StrF(_T("Opening Connection to %s (%s)"), csComputerName, csIP));
 	pProgress->PumpMessages();
