@@ -84,3 +84,12 @@ bool DwmTheme::ApplyBackdrop(HWND hwnd, Backdrop backdrop)
 
 	return SUCCEEDED(SetDwordAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, (DWORD)backdrop));
 }
+
+bool DwmTheme::ExtendFrame(HWND hwnd)
+{
+	if (hwnd == NULL)
+		return false;
+
+	MARGINS margins = { -1, -1, -1, -1 };
+	return SUCCEEDED(DwmExtendFrameIntoClientArea(hwnd, &margins));
+}

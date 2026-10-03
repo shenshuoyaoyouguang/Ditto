@@ -385,6 +385,10 @@ public:
 	static void SetAllowFriends(BOOL val);
 	static bool GetAllowFriends();
 
+	// experimental mica backdrop on the fluent chrome windows, off by default
+	static bool GetMicaBackdrop();
+	static void SetMicaBackdrop(bool val);
+
 	static bool		GetIsPortableDitto();
 	static bool		GetIsWindowsApp();
 	static bool		GetIsChocolateyApp();
