@@ -375,6 +375,11 @@ BOOL CQListCtrl::SetListPos(int index)
 	if (index < 0 || index >= GetItemCount())
 		return FALSE;
 
+	// EnsureVisible scrolls the list, which slides rows under a stationary
+	// cursor. No WM_VSCROLL reaches us for that, so drop the hover index
+	// rather than leave the highlight on the wrong row.
+	ClearHover();
+
 	RemoveAllSelection();
 	SetCaret(index);
 	SetSelection(index);
@@ -522,14 +527,12 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxSelectedNoFocusText());
 			}
 		}
-		else if (nItem == m_hoverItem)
-		{
-			crBkgnd = CGetSetOptions::m_Theme.StateHover();
-			OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
-		}
 		else
 		{
-			//Shade alternating Rows
+			//Shade alternating Rows. The hover state only replaces the row
+			// background: using TextPrimary() for the text made hovering an even
+			// row in a theme whose odd/even text colours differ (Selenized Dark /
+			// Black) switch the text to the *darker* of the two.
 			if ((nItem % 2) == 0)
 			{
 				crBkgnd = CGetSetOptions::m_Theme.ListBoxOddRowsBG();
@@ -540,11 +543,21 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 				crBkgnd = CGetSetOptions::m_Theme.ListBoxEvenRowsBG();
 				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
 			}
+
+			if (nItem == m_hoverItem)
+				crBkgnd = CGetSetOptions::m_Theme.StateHover();
 		}
 
 		if (bSelected)
 		{
-			// selection draws as an inset rounded pill instead of a full row
+			// selection draws as an inset rounded pill instead of a full row, but
+			// the row still needs its own background first: the pill is inset by
+			// 2px on each side and the rest of the row was left showing
+			// MainWindowBG (OnEraseBkgnd) instead of the alternating row colour.
+			pDC->FillSolidRect(rcItem, (nItem % 2) == 0
+				? CGetSetOptions::m_Theme.ListBoxOddRowsBG()
+				: CGetSetOptions::m_Theme.ListBoxEvenRowsBG());
+
 			CRect rcPill(rcItem);
 			rcPill.DeflateRect(m_windowDpi->Scale(2), 0, m_windowDpi->Scale(2), 0);
 			FillRoundedRect(pDC, rcPill, m_windowDpi->Scale(4), crBkgnd);
@@ -679,7 +692,11 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			HFONT hOldFont = (HFONT)pDC->SelectObject(m_SmallFont);
 			COLORREF localOldTextColor = pDC->SetTextColor(CGetSetOptions::m_Theme.IndicatorBadge());
 
-			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.StrokeDivider());
+			// StrokeDivider is a hairline by design and measured 1.05-1.29:1 against
+			// the row background on every shipped theme, so the separator between the
+			// hotkey and the text was invisible. IndicatorBadge is the same element's
+			// colour and carries the token layer's 4.5:1 guarantee.
+			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.IndicatorBadge());
 			CPen* pOldPen = pDC->SelectObject(&pen);
 
 			pDC->DrawText(cs, crHotKey, DT_BOTTOM);
@@ -1461,6 +1478,11 @@ BOOL CQListCtrl::PreTranslateMessage(MSG* pMsg)
 	case WM_MOUSEWHEEL:
 		// Will be handled by default, but ensure scrollbar updates after
 		{
+			// The list scrolls inside comctl32 without a WM_VSCROLL reaching us
+			// (see the ASSERT below), so m_hoverItem has to be cleared here too or
+			// the hover highlight stays on whichever row slid under the cursor.
+			ClearHover();
+
 			BOOL result = CListCtrl::PreTranslateMessage(pMsg);
 			CWnd* pParent = GetParent();
 			if (pParent && pParent->GetSafeHwnd())
@@ -1526,6 +1548,7 @@ BOOL CQListCtrl::HandleKeyDown(WPARAM wParam, LPARAM lParam)
 
 				ListView_SetSelectionMark(m_hWnd, nAnchor);
 				
+				ClearHover();
 				SetCaret(0);
 				EnsureVisible(0, FALSE);
 			}

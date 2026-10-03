@@ -73,6 +73,7 @@ BEGIN_MESSAGE_MAP(CSymbolEdit, CEdit)
 	ON_WM_NCCALCSIZE()
 	ON_WM_NCPAINT()
 	ON_WM_TIMER()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 BOOL CSymbolEdit::PreTranslateMessage(MSG* pMsg)
@@ -443,7 +444,9 @@ void CSymbolEdit::SetPromptFont(const LOGFONT* lpLogFont, BOOL redraw)
 
 void CSymbolEdit::RecalcLayout()
 {
-	int width = GetSystemMetrics(SM_CXSMICON);
+	// GetSystemMetrics answers for the system dpi, not this window's, so on a
+	// secondary monitor with a different scaling the margin was wrong.
+	int width = m_windowDpi != NULL ? m_windowDpi->Scale(16) : GetSystemMetrics(SM_CXSMICON);
 
 	if (m_hSymbolIcon)
 	{
@@ -462,6 +465,15 @@ void CSymbolEdit::RecalcLayout()
 void CSymbolEdit::OnPaint()
 {
 	CPaintDC dc(this);
+
+	// m_windowDpi stays NULL until SetDpiInfo runs. QPasteWnd::OnCreate sets it
+	// before the first paint, so this is defensive rather than reachable, but
+	// OnPaint must not depend on that ordering.
+	if (m_windowDpi == NULL)
+	{
+		CEdit::OnPaint();
+		return;
+	}
 
 	CRect rect;
 	GetClientRect(&rect);
@@ -544,12 +556,30 @@ void CSymbolEdit::OnPaint()
 		dc.SelectObject(oldFont);
 	}
 
+	// CGdiImageDrawer::Draw uses the bitmap's real pixel size, and
+	// LoadStdImageDPI only has five bands (16/20/24/28/32, capped at 32 above
+	// 192 dpi), so Scale(16) is not a valid proxy: at 144 dpi the close asset
+	// is really 20x20 while Scale(16) is 24, and at 256 dpi the bitmap stays
+	// 32 while Scale(16) is 42. Centre each glyph on the bitmap it actually
+	// loaded. The hit rects are fixed Scale(18)/Scale(16) boxes, so a narrower
+	// bitmap has to be centred inside it rather than left aligned.
+	// ImageWidth/ImageHeight return 0 when nothing is loaded.
+	int nSearchIconW = (int)m_searchesButton.ImageWidth();
+	int nSearchIconH = (int)m_searchesButton.ImageHeight();
+	int nCloseIconW = (int)m_closeButton.ImageWidth();
+	int nCloseIconH = (int)m_closeButton.ImageHeight();
+	int nSearchIconY = nSearchIconH > 0 ? (rect.Height() - nSearchIconH) / 2 : 4;
+	int nCloseIconY = nCloseIconH > 0 ? (rect.Height() - nCloseIconH) / 2 : 4;
+
 	int right = rect.right;
 	if ((text.GetLength() > 0 || this == GetFocus()))
 	{
 		m_searchesButtonRect.SetRect(rect.right - m_windowDpi->Scale(18), 0, rect.right, rect.bottom);
 		right = rect.right - m_windowDpi->Scale(18);
-		m_searchesButton.Draw(&dc, *m_windowDpi, this, m_searchesButtonRect.left, 4, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
+		int nSearchX = nSearchIconW > 0
+			? m_searchesButtonRect.left + (m_searchesButtonRect.Width() - nSearchIconW) / 2
+			: m_searchesButtonRect.left;
+		m_searchesButton.Draw(&dc, *m_windowDpi, this, nSearchX, nSearchIconY, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
 	}
 	else
 	{
@@ -562,7 +592,10 @@ void CSymbolEdit::OnPaint()
 		//OutputDebugString(_T("showing close button\n"));
 
 		m_closeButtonRect.SetRect(right - m_windowDpi->Scale(16), 0, right, rect.bottom);
-		m_closeButton.Draw(&dc, *m_windowDpi, this, m_closeButtonRect.left, 4, m_mouseHoveringOverClose, m_mouseDownOnClose);
+		int nCloseX = nCloseIconW > 0
+			? m_closeButtonRect.left + (m_closeButtonRect.Width() - nCloseIconW) / 2
+			: m_closeButtonRect.left;
+		m_closeButton.Draw(&dc, *m_windowDpi, this, nCloseX, nCloseIconY, m_mouseHoveringOverClose, m_mouseDownOnClose);
 	}
 	else
 	{

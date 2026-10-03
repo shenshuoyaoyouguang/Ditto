@@ -499,7 +499,12 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_ShowGroupsFolderBottom.SetWindowPos(&m_search, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 
 	//LVS_EX_FLATSB
-	m_lstHeader.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP);
+	// Read-modify-write: the single argument CListCtrl::SetExtendedStyle sends
+	// LVM_SETEXTENDEDLISTVIEWSTYLE with wParam (the mask) = 0, which replaces
+	// every bit -- it silently dropped the LVS_EX_DOUBLEBUFFER that
+	// CQListCtrl::OnCreate had just set, making it a no-op.
+	DWORD dwListStyle = m_lstHeader.GetExtendedStyle();
+	m_lstHeader.SetExtendedStyle(dwListStyle | LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP);
 
 	// Create the columns
 	if (m_lstHeader.InsertColumn(0, _T(""), LVCFMT_LEFT, 2500, 0) != 0)
@@ -2320,7 +2325,7 @@ void CQPasteWnd::UpdateFont()
 	m_lstHeader.SetLogFont(lf);
 
 	// search box and statics use the app font ramp (plan section 4.2)
-	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI());
+	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI(), CGetSetOptions::m_Theme.FontFamily());
 
 	m_SearchFont.DeleteObject();
 	m_SearchFont.CreateFontIndirect(&AppFonts::Inst().BodyLogFont());
