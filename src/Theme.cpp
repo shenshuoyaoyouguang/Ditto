@@ -95,7 +95,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 			LoadWindowsAccentColor();
 		}
 
-		FinalizeTokens();
+		FinalizeTokens(csTheme);
 
 		m_LastWriteTime = 0;
 		m_lastTheme = _T("");
@@ -149,7 +149,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		if (followWindows10Theme)
 		{
 			LoadWindowsAccentColor();
-			FinalizeTokens();
+			FinalizeTokens(csTheme);
 		}
 
 		return false;
@@ -233,7 +233,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		LoadWindowsAccentColor();
 	}
 
-	FinalizeTokens();
+	FinalizeTokens(csTheme);
 
 	return true;
 }
@@ -589,7 +589,7 @@ void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
 	}
 }
 
-void CTheme::FinalizeTokens()
+void CTheme::FinalizeTokens(const CString& csThemeName)
 {
 	if (m_bParsedThemeXml)
 		DeriveTokensFromLegacy();
@@ -599,6 +599,11 @@ void CTheme::FinalizeTokens()
 	m_bDarkTheme = RelLuminance(m_surfaceBase) < 0.5;
 
 	RefreshAccentDerived();
+
+	// The name comes in as a parameter rather than read from m_lastTheme: that
+	// cache field is only committed on the full-load path, so the built-in
+	// palette branch and the parse-failure fallback would both report empty.
+	AuditContrast(csThemeName);
 }
 
 void CTheme::DeriveTokensFromLegacy()
@@ -743,6 +748,72 @@ void CTheme::RefreshAccentDerived()
 
 	if (!m_hasAccentText)
 		m_accentText = EnsureContrastOnBase(m_accentDefault);
+}
+
+// Contrast self-check.
+//
+// The design plan (docs/design/ui-fluent-redesign-plan.md section 7.2) quotes
+// WCAG ratios for the default Light/Dark token values, but the 12 third-party
+// theme files carry only v3 nodes and have every v4 token derived from their
+// own colours -- and that derivation only validates the accent chain
+// (EnsureContrastOnBase), never Text.Secondary / Text.Disabled / Stroke.Card.
+// So a theme can load, look plausible, and still ship unreadable text.
+//
+// Emitted on every full load rather than behind a setting: it is a few dozen
+// characters to a debugger and there is no other way to catch a bad theme
+// before it reaches a user. OutputDebugString rather than log() because theme
+// loading happens before the log file path is resolved, and because this is a
+// developer diagnostic, not something a support ticket needs to find.
+void CTheme::AuditContrast(const CString& csThemeName)
+{
+	struct Pair
+	{
+		const TCHAR* label;
+		COLORREF fg;
+		COLORREF bg;
+		double minRatio;	// WCAG AA for the size this pair is actually used at
+	};
+
+	const Pair pairs[] =
+	{
+		{ _T("Text.Primary on Surface.Base"),         m_textPrimary,       m_surfaceBase,       4.5 },
+		{ _T("Text.Secondary on Surface.Base"),       m_textSecondary,     m_surfaceBase,       4.5 },
+		{ _T("Text.Disabled on Surface.Base"),        m_textDisabled,      m_surfaceBase,       3.0 },
+		{ _T("Text.OnAccent on Accent.Default"),      m_textOnAccent,      m_accentDefault,     4.5 },
+		{ _T("Accent.Text on Surface.Base"),          m_accentText,        m_surfaceBase,       4.5 },
+		{ _T("Accent.Default on Surface.Base"),       m_accentDefault,     m_surfaceBase,       3.0 },
+		{ _T("Stroke.Card on Surface.Base"),          m_strokeCard,        m_surfaceBase,       3.0 },
+		{ _T("State.SelectedText on SelectedBG"),     m_stateSelectedText, m_stateSelectedBG,   4.5 },
+	};
+
+	const int nCount = (int)(sizeof(pairs) / sizeof(pairs[0]));
+
+	CString csMsg;
+	csMsg.Format(_T("[theme] '%s' (%s)\r\n"),
+		csThemeName.IsEmpty() ? _T("<builtin>") : (LPCTSTR)csThemeName,
+		m_bDarkTheme ? _T("dark") : _T("light"));
+
+	int nFail = 0;
+	for (int i = 0; i < nCount; i++)
+	{
+		double ratio = ContrastRatio(pairs[i].fg, pairs[i].bg);
+		if (ratio >= pairs[i].minRatio)
+			continue;
+
+		nFail++;
+		csMsg.Format(_T("[theme]   FAIL %-36s %5.2f:1 (needs %.1f:1)  fg=#%02X%02X%02X bg=#%02X%02X%02X\r\n"),
+			pairs[i].label, ratio, pairs[i].minRatio,
+			GetRValue(pairs[i].fg), GetGValue(pairs[i].fg), GetBValue(pairs[i].fg),
+			GetRValue(pairs[i].bg), GetGValue(pairs[i].bg), GetBValue(pairs[i].bg));
+		OutputDebugString(csMsg);
+	}
+
+	if (nFail == 0)
+		csMsg.Format(_T("[theme]   all %d pairs pass WCAG AA\r\n"), nCount);
+	else
+		csMsg.Format(_T("[theme]   %d of %d pairs below the threshold\r\n"), nFail, nCount);
+
+	OutputDebugString(csMsg);
 }
 
 COLORREF CTheme::BlendOver(COLORREF under, COLORREF over, int alpha)
