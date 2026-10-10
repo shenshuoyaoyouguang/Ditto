@@ -405,6 +405,10 @@ BOOL CQPasteWnd::Create(CRect rect, CWnd* pParentWnd)
 	return CWndEx::Create(rect, pParentWnd);
 }
 
+// Forward declarations: defined near the bottom of this file, used by OnCreate.
+static void LoadPastSearchesInto(CSymbolEdit& edit, const CString& values);
+static CString SavePastSearchesFrom(const CSymbolEdit& edit);
+
 int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CWndEx::OnCreate(lpCreateStruct) == -1)
