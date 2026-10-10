@@ -161,9 +161,12 @@ static void test_spans_case_insensitive()
 	// "hello" lowered matches at 0, 6 and 12, each length 5.
 	auto spans = ComputeHighlightSpans(std::wstring(L"Hello HELLO hello"), std::wstring(L"hello"));
 	CHECK_TRUE(spans.size() == 3);
-	CHECK_TRUE(spans[0].start == 0 && spans[0].length == 5);
-	CHECK_TRUE(spans[1].start == 6 && spans[1].length == 5);
-	CHECK_TRUE(spans[2].start == 12 && spans[2].length == 5);
+	if (spans.size() == 3)
+	{
+		CHECK_TRUE(spans[0].start == 0 && spans[0].length == 5);
+		CHECK_TRUE(spans[1].start == 6 && spans[1].length == 5);
+		CHECK_TRUE(spans[2].start == 12 && spans[2].length == 5);
+	}
 }
 
 static void test_spans_no_match()
@@ -185,7 +188,10 @@ static void test_spans_non_overlapping()
 	// "aa" is not found at 2 -> exactly one span {0, 2}.
 	auto spans = ComputeHighlightSpans(std::wstring(L"aaa"), std::wstring(L"aa"));
 	CHECK_TRUE(spans.size() == 1);
-	CHECK_TRUE(spans[0].start == 0 && spans[0].length == 2);
+	if (spans.size() == 1)
+	{
+		CHECK_TRUE(spans[0].start == 0 && spans[0].length == 2);
+	}
 }
 
 static void test_spans_adjacent()
@@ -193,8 +199,11 @@ static void test_spans_adjacent()
 	// "abab" vs "ab": hits at 0 and 2.
 	auto spans = ComputeHighlightSpans(std::wstring(L"abab"), std::wstring(L"ab"));
 	CHECK_TRUE(spans.size() == 2);
-	CHECK_TRUE(spans[0].start == 0 && spans[0].length == 2);
-	CHECK_TRUE(spans[1].start == 2 && spans[1].length == 2);
+	if (spans.size() == 2)
+	{
+		CHECK_TRUE(spans[0].start == 0 && spans[0].length == 2);
+		CHECK_TRUE(spans[1].start == 2 && spans[1].length == 2);
+	}
 }
 
 static void test_insert_two_hits()
@@ -300,8 +309,11 @@ static void test_spans_cap_matches_production_101()
 	std::wstring text(200, L'a'); // 200 x 'a', search "a" -> 200 candidates
 	auto spans = ComputeHighlightSpans(text, std::wstring(L"a"));
 	CHECK_TRUE(spans.size() == 101);
-	CHECK_TRUE(spans[0].start == 0);
-	CHECK_TRUE(spans[100].start == 100);
+	if (spans.size() == 101)
+	{
+		CHECK_TRUE(spans[0].start == 0);
+		CHECK_TRUE(spans[100].start == 100);
+	}
 	// Explicit cap still honored when the caller passes one.
 	auto capped = ComputeHighlightSpans(text, std::wstring(L"a"), 100);
 	CHECK_TRUE(capped.size() == 100);
@@ -321,7 +333,10 @@ static void test_lower_ascii_case_insensitive()
 	// Defined seam behavior: ASCII case-insensitivity.
 	auto spans = ComputeHighlightSpans(std::wstring(L"AbC"), std::wstring(L"aBc"));
 	CHECK_TRUE(spans.size() == 1);
-	CHECK_TRUE(spans[0].start == 0 && spans[0].length == 3);
+	if (spans.size() == 1)
+	{
+		CHECK_TRUE(spans[0].start == 0 && spans[0].length == 3);
+	}
 }
 
 static void test_lower_non_ascii_passthrough()

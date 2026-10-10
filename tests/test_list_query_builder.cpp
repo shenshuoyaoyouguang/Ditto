@@ -149,19 +149,28 @@ static void test_like_term_helpers()
 	CHECK_WSTR_EQ(LikePredicate(L"Main.mText", L"a'b%"),
 		L"Main.mText LIKE '%a''b\\%%' ESCAPE '\\'");
 
-	// Parameterized template: no quotes around the term; the ESCAPED term
-	// travels in params (EscapeLikeTerm rules: % -> \%, _ -> \_, ' -> '',
-	// \ -> \\) so metacharacters stay literal under the template's
-	// ESCAPE '\'. Hand-derived: "a'b%" -> "a''b\%" (quote doubled, % escaped).
+	// Parameterized template: no quotes around the term; the
+	// EscapeLikeTermForBind term travels in params (ONLY LIKE metachars:
+	// \ -> \\, % -> \%, _ -> \_; quotes pass through untouched because bound
+	// values go to the driver literally) so metacharacters stay literal under
+	// the template's ESCAPE '\'. Hand-derived: "a'b%" -> "a'b\%" (quote kept,
+	// % escaped).
 	ParamQuery q = LikeParamPredicate(L"Main.mText", L"a'b%");
 	CHECK_WSTR_EQ(q.sql, L"Main.mText LIKE ('%' || ? || '%') ESCAPE '\\'");
 	CHECK_TRUE(q.params.size() == 1);
-	CHECK_WSTR_EQ(q.params[0], L"a''b\\%");
+	CHECK_WSTR_EQ(q.params[0], L"a'b\\%");
 	// Literal-percent term: "100%" binds as "100\%" so it matches a real
 	// percent sign instead of acting as a wildcard suffix.
 	ParamQuery pct = LikeParamPredicate(L"Main.mText", L"100%");
 	CHECK_TRUE(pct.params.size() == 1);
 	CHECK_WSTR_EQ(pct.params[0], L"100\\%");
+	// Apostrophe passes through for bind: "O'Brien" is unchanged (the old
+	// literal-path doubling to "O''Brien" would miss via a bound parameter).
+	ParamQuery ob = LikeParamPredicate(L"Main.mText", L"O'Brien");
+	CHECK_TRUE(ob.params.size() == 1);
+	CHECK_WSTR_EQ(ob.params[0], L"O'Brien");
+	// Bind twin still escapes backslash/underscore, leaves quotes alone.
+	CHECK_WSTR_EQ(EscapeLikeTermForBind(L"a\\b_c'd%e"), L"a\\\\b\\_c'd\\%e");
 }
 
 static void test_description_convergence()

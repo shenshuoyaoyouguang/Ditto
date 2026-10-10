@@ -201,7 +201,7 @@ inline std::wstring StripSearchPrefix3(const std::wstring& search)
 //   when the term has no metachars, so no branch like AddToSQL:156-165).
 // - ParamQuery/LikeParamPredicate: '?' template
 //   (column LIKE ('%' || ? || '%') ESCAPE '\') with NO quotes around the
-//   term; the escaped term travels in params, never concatenated.
+//   term; the EscapeLikeTermForBind term travels in params, never concatenated.
 // DEFERRED (measured, not assumed): executing the '?' shape needs a bind
 // API, but the FillList worker path (CQPasteWndThread::OnLoadItems /
 // OnSetListCount) only takes raw SQL via CppSQLite3::execQuery/execScalar,
@@ -228,6 +228,29 @@ inline std::wstring EscapeLikeTerm(const std::wstring& term)
 	return out;
 }
 
+inline std::wstring EscapeLikeTermForBind(const std::wstring& term)
+{
+	// Bound-parameter twin of EscapeLikeTerm: escapes ONLY LIKE metacharacters
+	// (\ -> \\, % -> \%, _ -> \_), mirroring the same order (backslash first).
+	// NO quote doubling: bound values go to the driver literally, never
+	// through a SQL literal, so O'Brien must bind unchanged. The template
+	// already declares ESCAPE '\', which gives the backslash its meaning.
+	std::wstring out;
+	out.reserve(term.size() + 4);
+	for (wchar_t c : term)
+	{
+		if (c == L'\\')
+			out += L"\\\\";
+		else if (c == L'%')
+			out += L"\\%";
+		else if (c == L'_')
+			out += L"\\_";
+		else
+			out += c;
+	}
+	return out;
+}
+
 inline std::wstring LikePredicate(const std::wstring& column, const std::wstring& term)
 {
 	return column + L" LIKE '%" + EscapeLikeTerm(term) + L"%' ESCAPE '\\'";
@@ -243,7 +266,7 @@ inline ParamQuery LikeParamPredicate(const std::wstring& column, const std::wstr
 {
 	ParamQuery query;
 	query.sql = column + L" LIKE ('%' || ? || '%') ESCAPE '\\'";
-	query.params.push_back(EscapeLikeTerm(term));
+	query.params.push_back(EscapeLikeTermForBind(term));
 	return query;
 }
 

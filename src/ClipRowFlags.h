@@ -139,26 +139,35 @@ struct ClipRowFlags
 };
 
 // currentGroupId mirrors theApp.m_GroupID at :603.
+// NOTE: token constants are function-local static const per CharT
+// instantiation (C++11 magic statics: constructed once, thread-safe), so the
+// 7 find calls below allocate nothing per row. The single wsSymbols copy at
+// the QListCtrl.cpp call site stays as-is: one small copy/row is negligible
+// next to the GDI icon/text costs of the paint path (no view re-architecture).
 template <typename CharT>
 inline ClipRowFlags ParseClipRowFlags(const std::basic_string<CharT>& symbols, long currentGroupId)
 {
 	typedef std::basic_string<CharT> Str;
-	auto contains = [&symbols](const char* token) -> bool
+	static const Str kPasted = Str{ static_cast<CharT>('<'), static_cast<CharT>('p'), static_cast<CharT>('a'), static_cast<CharT>('s'), static_cast<CharT>('t'), static_cast<CharT>('e'), static_cast<CharT>('d'), static_cast<CharT>('>') };
+	static const Str kGroup = Str{ static_cast<CharT>('<'), static_cast<CharT>('g'), static_cast<CharT>('r'), static_cast<CharT>('o'), static_cast<CharT>('u'), static_cast<CharT>('p'), static_cast<CharT>('>') };
+	static const Str kNoAutoDelete = Str{ static_cast<CharT>('<'), static_cast<CharT>('n'), static_cast<CharT>('o'), static_cast<CharT>('a'), static_cast<CharT>('u'), static_cast<CharT>('t'), static_cast<CharT>('o'), static_cast<CharT>('d'), static_cast<CharT>('e'), static_cast<CharT>('l'), static_cast<CharT>('e'), static_cast<CharT>('t'), static_cast<CharT>('e'), static_cast<CharT>('>') };
+	static const Str kShortcut = Str{ static_cast<CharT>('<'), static_cast<CharT>('s'), static_cast<CharT>('h'), static_cast<CharT>('o'), static_cast<CharT>('r'), static_cast<CharT>('t'), static_cast<CharT>('c'), static_cast<CharT>('u'), static_cast<CharT>('t'), static_cast<CharT>('>') };
+	static const Str kInGroup = Str{ static_cast<CharT>('<'), static_cast<CharT>('i'), static_cast<CharT>('n'), static_cast<CharT>('g'), static_cast<CharT>('r'), static_cast<CharT>('o'), static_cast<CharT>('u'), static_cast<CharT>('p'), static_cast<CharT>('>') };
+	static const Str kQuickPasteText = Str{ static_cast<CharT>('<'), static_cast<CharT>('q'), static_cast<CharT>('p'), static_cast<CharT>('a'), static_cast<CharT>('s'), static_cast<CharT>('t'), static_cast<CharT>('e'), static_cast<CharT>('t'), static_cast<CharT>('e'), static_cast<CharT>('x'), static_cast<CharT>('t'), static_cast<CharT>('>') };
+	static const Str kSticky = Str{ static_cast<CharT>('<'), static_cast<CharT>('s'), static_cast<CharT>('t'), static_cast<CharT>('i'), static_cast<CharT>('c'), static_cast<CharT>('k'), static_cast<CharT>('y'), static_cast<CharT>('>') };
+	auto contains = [&symbols](const Str& token) -> bool
 	{
-		Str narrow;
-		for (const char* p = token; *p != '\0'; ++p)
-			narrow.push_back(static_cast<CharT>(*p));
-		return symbols.find(narrow) != Str::npos;
+		return symbols.find(token) != Str::npos;
 	};
 
 	ClipRowFlags flags;
-	flags.wasPasted = contains("<pasted>");
-	flags.isGroup = contains("<group>");
-	flags.neverAutoDelete = contains("<noautodelete>");
-	flags.hasShortcut = contains("<shortcut>");
-	flags.inGroup = contains("<ingroup>");
-	flags.hasQuickPasteText = contains("<qpastetext>");
-	flags.isSticky = contains("<sticky>");
+	flags.wasPasted = contains(kPasted);
+	flags.isGroup = contains(kGroup);
+	flags.neverAutoDelete = contains(kNoAutoDelete);
+	flags.hasShortcut = contains(kShortcut);
+	flags.inGroup = contains(kInGroup);
+	flags.hasQuickPasteText = contains(kQuickPasteText);
+	flags.isSticky = contains(kSticky);
 
 	// :603-608 -- inside a group the "in group" flag icon is suppressed.
 	flags.drawInGroupIcon = !(currentGroupId > 0 && flags.inGroup);
