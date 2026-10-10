@@ -96,6 +96,11 @@ void CQPasteWndThread::OnSetListCount(void *param)
 
     long lRecordCount = 0;
 
+    // Set false only on the stale-drop path that has a newer LOAD queued
+    // behind this COUNT (see below). Declared before try so the exception
+    // path still signals -- a failed COUNT must not leave waiters stranded.
+    bool signalCompletion = true;
+
     try
     {
         lRecordCount = theApp.m_db.execScalar(countSQL);
@@ -107,14 +112,41 @@ void CQPasteWndThread::OnSetListCount(void *param)
         // COUNT behind its page load. If the newer LOAD already reset the
         // flag, we may still post a stale count, but single-sender PostMessage
         // FIFO guarantees the newer COUNT lands after it -- the UI converges.
+        //
+        // Completion signaling is tied to the current generation: when stale
+        // AND a newer LOAD is still queued (m_loadItems non-empty), skip the
+        // trailing SetEvent so a waiter (GoToEntry's pump-wait) is not
+        // released on this stale generation with zero/provisional rows --
+        // the queued LOAD -> COUNT handoff keeps the event reset across and
+        // signals on the generation the waiter actually waits for. When stale
+        // with an empty queue, the stop came from HideQPasteWindow (1016) /
+        // OnRefreshView (1443), which wait on this event WITHOUT queueing a
+        // newer generation, so still SetEvent to release them promptly
+        // instead of forcing their 5s timeout. Single worker thread means a
+        // queued LOAD cannot run concurrently with this COUNT, so an empty
+        // queue provably means no newer generation is owed a signal, and
+        // every skip is covered by the later generation's Set.
         bool stale = false;
+        bool newerLoadPending = false;
         {
             ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
             stale = pasteWnd->m_bStopQuery;
+            if (stale)
+            {
+                newerLoadPending = !pasteWnd->m_loadItems.empty();
+            }
         }
         if (stale)
         {
-            Log(_T("Dropping stale list count, newer search in flight"));
+            if (newerLoadPending)
+            {
+                Log(_T("Dropping stale list count without signaling, newer load pending"));
+                signalCompletion = false;
+            }
+            else
+            {
+                Log(_T("Dropping stale list count, no newer load (hide/cancel) - signaling"));
+            }
         }
         else
         {
@@ -123,7 +155,10 @@ void CQPasteWndThread::OnSetListCount(void *param)
     }
     CATCH_SQLITE_EXCEPTION 
 
-    SetEvent(m_SearchingEvent);
+    if (signalCompletion)
+    {
+        SetEvent(m_SearchingEvent);
+    }
 
     Log(StrF(_T("Set list count = %d, time = %d"), lRecordCount, GetTickCount() - lTick));
 }
