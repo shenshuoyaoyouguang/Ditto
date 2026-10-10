@@ -59,10 +59,11 @@ BEGIN_MESSAGE_MAP(CSymbolEdit, CEdit)
 	//ON_MESSAGE(WM_EXITMENULOOP, OnMenuExit)
 	ON_WM_CTLCOLOR_REFLECT()
 	// Bare names: the macro applies & itself (see RulerRichEdit.cpp:76).
-	// EN_UPDATE does the work in QPasteWnd (the parent handles EN_CHANGE at
-	// QPasteWnd.cpp:173, so EN_CHANGE is never reflected there); EN_CHANGE
-	// covers hosts that do not handle it. Both land in one idempotent handler.
-	ON_CONTROL_REFLECT(EN_CHANGE, OnEnChange)
+	// EN_CHANGE must reach the parent (QPasteWnd.cpp:173 filters the list
+	// on it), so reflect with _EX and return FALSE to not swallow it.
+	// EN_UPDATE has no parent handler anywhere in src/, so plain reflect
+	// is its only delivery. Both land in one idempotent handler.
+	ON_CONTROL_REFLECT_EX(EN_CHANGE, OnEnChange)
 	ON_CONTROL_REFLECT(EN_UPDATE, OnEnChange)
 	ON_WM_SETFOCUS()
 	ON_WM_KILLFOCUS()
@@ -397,6 +398,15 @@ void CSymbolEdit::SetPromptFont(const LOGFONT* lpLogFont, BOOL redraw)
 		Invalidate(TRUE);
 }
 
+static void ApplySymbolIconAdjustment(HICON hIcon, DWORD dwMargins, CRect& rect)
+{
+	if (hIcon == NULL)
+		return;
+	int width = GetSystemMetrics(SM_CXSMICON);
+	rect.left += LOWORD(dwMargins) + 1;
+	rect.right -= (width + 7);
+}
+
 static void CalcSearchButtonRects(const CRect& clientRect, int searchWidth, int closeWidth, bool showSearch, bool showClose, CRect& searchRect, CRect& closeRect, int& rightEdge)
 {
 	rightEdge = clientRect.right;
@@ -420,7 +430,7 @@ static void CalcSearchButtonRects(const CRect& clientRect, int searchWidth, int 
 	}
 }
 
-static void SyncButtonRects(CWnd* wnd, CDPI* dpi, CRect& searchRect, CRect& closeRect)
+static void SyncButtonRects(CWnd* wnd, CDPI* dpi, HICON hIcon, DWORD dwMargins, CRect& searchRect, CRect& closeRect)
 {
 	if (dpi == NULL || wnd == NULL || wnd->GetSafeHwnd() == NULL)
 	{
@@ -431,6 +441,7 @@ static void SyncButtonRects(CWnd* wnd, CDPI* dpi, CRect& searchRect, CRect& clos
 
 	CRect clientRect;
 	wnd->GetClientRect(&clientRect);
+	ApplySymbolIconAdjustment(hIcon, dwMargins, clientRect);
 
 	CString text;
 	wnd->GetWindowText(text);
@@ -472,6 +483,7 @@ void CSymbolEdit::RecalcLayout()
 		int rightEdge = 0;
 		CRect clientRect;
 		GetClientRect(&clientRect);
+		ApplySymbolIconAdjustment(m_hSymbolIcon, GetMargins(), clientRect);
 		CalcSearchButtonRects(clientRect, m_windowDpi->Scale(18), m_windowDpi->Scale(16),
 			(text.GetLength() > 0 || this == GetFocus()), text.GetLength() > 0,
 			m_searchesButtonRect, m_closeButtonRect, rightEdge);
@@ -486,13 +498,18 @@ void CSymbolEdit::RecalcLayout()
 	}
 }
 
-void CSymbolEdit::OnEnChange()
+BOOL CSymbolEdit::OnEnChange()
 {
 	// Text changed (typing, paste, undo, programmatic SetWindowText): keep the
 	// button rects and m_lastTextOnPaint in sync so OnPaint never has to.
 	// RecalcLayout reads text/geometry only, never alters text, so this cannot
 	// recurse into another EN_CHANGE/EN_UPDATE.
 	RecalcLayout();
+
+	// FALSE lets the notification continue to the parent, whose
+	// ON_EN_CHANGE(ID_EDIT_SEARCH, OnSearchEditChange) does the Find As You
+	// Type filtering. (EN_UPDATE reflection ignores the return value.)
+	return FALSE;
 }
 
 void CSymbolEdit::OnPaint()
@@ -537,15 +554,9 @@ void CSymbolEdit::OnPaint()
 			0,
 			NULL,
 			DI_NORMAL);
+	}
 
-		rect.left += LOWORD(margins) + 1;
-		rect.right -= (width + 7);
-	}
-	else
-	{
-		//rect.left += (LOWORD(dwMargins) + 1);
-		//rect.right -= (HIWORD(dwMargins) + 1);
-	}
+	ApplySymbolIconAdjustment(m_hSymbolIcon, margins, rect);
 
 	CString text;
 	GetWindowText(text);
@@ -730,7 +741,7 @@ BOOL CSymbolEdit::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 	GetCursorPos(&pntCursor);
 	ScreenToClient(&pntCursor);
 
-	SyncButtonRects(this, m_windowDpi, m_searchesButtonRect, m_closeButtonRect);
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
 
 	if(m_closeButtonRect.PtInRect(pntCursor))
 	{
@@ -751,7 +762,7 @@ BOOL CSymbolEdit::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 
 void CSymbolEdit::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	SyncButtonRects(this, m_windowDpi, m_searchesButtonRect, m_closeButtonRect);
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
 
 	if (m_mouseDownOnClose)
 	{
@@ -790,7 +801,7 @@ void CSymbolEdit::OnLButtonUp(UINT nFlags, CPoint point)
 
 void CSymbolEdit::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	SyncButtonRects(this, m_windowDpi, m_searchesButtonRect, m_closeButtonRect);
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
 
 	if (m_closeButtonRect.PtInRect(point))
 	{
@@ -821,7 +832,7 @@ void CSymbolEdit::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CSymbolEdit::OnMouseMove(UINT nFlags, CPoint point)
 {
-	SyncButtonRects(this, m_windowDpi, m_searchesButtonRect, m_closeButtonRect);
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
 
 	if (m_closeButtonRect.PtInRect(point))
 	{
