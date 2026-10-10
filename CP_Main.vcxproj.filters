@@ -586,6 +586,9 @@
     <ClInclude Include="src\ClipIds.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\ClipRowFlags.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="src\ConvertRTFToText.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -749,6 +752,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\ImageViewer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ListQueryBuilder.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\MagneticWnd.h">
@@ -938,6 +944,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\ThemeColorMath.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ListLayoutMath.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\ToolTipEx.h">

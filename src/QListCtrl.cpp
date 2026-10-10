@@ -18,6 +18,8 @@
 #include <cwchar>   // For swscanf
 #include <algorithm> // For std::round
 #include <gdiplus.h>
+#include "ClipRowFlags.h"   // T3: token set mirrored by the per-row flag parse in OnCustomdrawList
+#include "ListLayoutMath.h" // T4: pill constants used for the selection geometry in OnCustomdrawList
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -511,6 +513,26 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			csText = csText.Mid(nSymEnd + 1);
 		}
 
+		// Per-row hoists: each local is exactly the value the old code read
+		// inline at the use sites below. CTheme::*() are trivial const member
+		// reads (Theme.h), CDPI::Scale(x) is pure for fixed (x, dpi) (DPI.h:22)
+		// and the dpi cannot change mid-row, and the symbol flags come from
+		// the shared ParseClipRowFlags (ClipRowFlags.h: case-sensitive
+		// substring search, one search per token).
+		// values stay independent per ListLayoutMath.h: Scale(8+extra) must not
+		// be split into Scale(8)+Scale(extra).
+		const COLORREF oddRowBG = CGetSetOptions::m_Theme.ListBoxOddRowsBG();
+		const COLORREF evenRowBG = CGetSetOptions::m_Theme.ListBoxEvenRowsBG();
+		const COLORREF parityRowBG = ((nItem % 2) == 0) ? oddRowBG : evenRowBG;
+
+		const int s1px = m_windowDpi->Scale(1);
+		const int s2px = m_windowDpi->Scale(ListLayoutMath::kPillInsetX); // == 2
+		const int sLeftPad = m_windowDpi->Scale(ROW_LEFT_BORDER);         // == 3
+		const int s12px = m_windowDpi->Scale(12);
+
+		std::wstring wsSymbols((LPCTSTR)strSymbols);
+		ClipRowFlags flags = ParseClipRowFlags(wsSymbols, theApp.m_GroupID);
+
 		// Draw the background of the list item.  Colors are selected
 		// according to the item's state.
 		bool bSelected = (rItem.state & LVIS_SELECTED) != 0;
@@ -535,12 +557,12 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			// Black) switch the text to the *darker* of the two.
 			if ((nItem % 2) == 0)
 			{
-				crBkgnd = CGetSetOptions::m_Theme.ListBoxOddRowsBG();
+				crBkgnd = oddRowBG;
 				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxOddRowsText());
 			}
 			else
 			{
-				crBkgnd = CGetSetOptions::m_Theme.ListBoxEvenRowsBG();
+				crBkgnd = evenRowBG;
 				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
 			}
 
@@ -554,13 +576,16 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			// the row still needs its own background first: the pill is inset by
 			// 2px on each side and the rest of the row was left showing
 			// MainWindowBG (OnEraseBkgnd) instead of the alternating row colour.
-			pDC->FillSolidRect(rcItem, (nItem % 2) == 0
-				? CGetSetOptions::m_Theme.ListBoxOddRowsBG()
-				: CGetSetOptions::m_Theme.ListBoxEvenRowsBG());
+			pDC->FillSolidRect(rcItem, parityRowBG);
 
 			CRect rcPill(rcItem);
-			rcPill.DeflateRect(m_windowDpi->Scale(2), 0, m_windowDpi->Scale(2), 0);
-			FillRoundedRect(pDC, rcPill, m_windowDpi->Scale(4), crBkgnd);
+			{
+				int pillDpi = m_windowDpi->GetDPI();
+				ListLayoutMath::IntRect pill = ListLayoutMath::SelectedPillRect(
+					ListLayoutMath::IntRect{ rcItem.left, rcItem.top, rcItem.right, rcItem.bottom }, pillDpi);
+				rcPill.SetRect(pill.left, pill.top, pill.right, pill.bottom);
+				FillRoundedRect(pDC, rcPill, ListLayoutMath::PillCornerRadius(pillDpi), crBkgnd);
+			}
 		}
 		else
 		{
@@ -569,17 +594,17 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		nOldBKMode = pDC->SetBkMode(TRANSPARENT);
 
 		CRect rcText = rcItem;
-		rcText.left += m_windowDpi->Scale(ROW_LEFT_BORDER);
-		rcText.top += m_windowDpi->Scale(1);
-		rcText.bottom -= m_windowDpi->Scale(1);
+		rcText.left += sLeftPad;
+		rcText.top += s1px;
+		rcText.bottom -= s1px;
 
 		if (m_showIfClipWasPasted &&
 			strSymbols.GetLength() > 0 &&
-			strSymbols.Find(_T("<pasted>")) >= 0) //clip was pasted from ditto
+			flags.wasPasted) //clip was pasted from ditto
 		{
 			CRect pastedRect(rcItem);
 			pastedRect.left++;
-			pastedRect.right = pastedRect.left + m_windowDpi->Scale(2);
+			pastedRect.right = pastedRect.left + s2px;
 
 			pDC->FillSolidRect(pastedRect, CGetSetOptions::m_Theme.ClipPastedColor());
 		}
@@ -591,20 +616,11 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		if (m_bShowTextForFirstTenHotKeys && firstTenNum >= 0)
 		{
-			rcText.left += m_windowDpi->Scale(12);
+			rcText.left += s12px;
 		}
 		else
 		{
-			rcText.left += m_windowDpi->Scale(3);
-		}
-
-		bool drawInGroupIcon = true;
-		// if we are inside a group, don't display the "in group" flag
-		if (theApp.m_GroupID > 0)
-		{
-			int nFlag = strSymbols.Find(_T("<ingroup>"));
-			if (nFlag >= 0)
-				drawInGroupIcon = false;
+			rcText.left += sLeftPad;
 		}
 
 		DrawCopiedColorCode(csText, rcText, pDC);
@@ -616,34 +632,30 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		COLORREF iconTint = CGetSetOptions::m_Theme.TextPrimary();
 		if (strSymbols.GetLength() > 0)
 		{
-			if (strSymbols.Find(_T("<group>")) >= 0) //group
+			if (flags.isGroup) //group
 			{
 				m_groupFolder.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
-				rcText.left += m_groupFolder.ImageWidth() + m_windowDpi->Scale(2);
+				rcText.left += m_groupFolder.ImageWidth() + s2px;
 			}
-			if (strSymbols.Find(_T("<noautodelete>")) >= 0) //don't auto delete
+			if (flags.neverAutoDelete) //don't auto delete
 			{
 				m_dontDeleteImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
-				rcText.left += m_dontDeleteImage.ImageWidth() + m_windowDpi->Scale(2);
+				rcText.left += m_dontDeleteImage.ImageWidth() + s2px;
 			}
-			if (strSymbols.Find(_T("<shortcut>")) >= 0) // has shortcut
+			if (flags.hasShortcut) // has shortcut
 			{
 				m_shortCutImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
-				rcText.left += m_shortCutImage.ImageWidth() + m_windowDpi->Scale(2);
+				rcText.left += m_shortCutImage.ImageWidth() + s2px;
 			}
-			if (drawInGroupIcon &&
-				strSymbols.Find(_T("<ingroup>")) >= 0) // in group
+			if (flags.inGroupIconVisible) // in group
 			{
 				m_inFolderImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
-				rcText.left += m_inFolderImage.ImageWidth() + m_windowDpi->Scale(2);
+				rcText.left += m_inFolderImage.ImageWidth() + s2px;
 			}
-			if (strSymbols.Find(_T("<qpastetext>")) >= 0) // has quick paste text
-			{
-			}
-			if (strSymbols.Find(_T("<sticky>")) >= 0) //sticky clip
+			if (flags.isSticky) //sticky clip
 			{
 				m_stickyImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
-				rcText.left += m_stickyImage.ImageWidth() + m_windowDpi->Scale(2);
+				rcText.left += m_stickyImage.ImageWidth() + s2px;
 			}
 		}
 
@@ -689,20 +701,23 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			crHotKey.left += m_windowDpi->Scale(1 + extraFromClipWasPaste);
 			crHotKey.top += m_windowDpi->Scale(1 + extraFromClipWasPaste);
 
+			// IndicatorBadge read once: text color and rule pen use the same token.
+			const COLORREF badgeColor = CGetSetOptions::m_Theme.IndicatorBadge();
 			HFONT hOldFont = (HFONT)pDC->SelectObject(m_SmallFont);
-			COLORREF localOldTextColor = pDC->SetTextColor(CGetSetOptions::m_Theme.IndicatorBadge());
+			COLORREF localOldTextColor = pDC->SetTextColor(badgeColor);
 
 			// StrokeDivider is a hairline by design and measured 1.05-1.29:1 against
 			// the row background on every shipped theme, so the separator between the
 			// hotkey and the text was invisible. IndicatorBadge is the same element's
 			// colour and carries the token layer's 4.5:1 guarantee.
-			CPen pen(PS_SOLID, 0, CGetSetOptions::m_Theme.IndicatorBadge());
+			CPen pen(PS_SOLID, 0, badgeColor);
 			CPen* pOldPen = pDC->SelectObject(&pen);
 
 			pDC->DrawText(cs, crHotKey, DT_BOTTOM);
 
-			pDC->MoveTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.top + m_windowDpi->Scale(2)));
-			pDC->LineTo(CPoint(rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste), rcItem.bottom - m_windowDpi->Scale(2)));
+			const int ruleX = rcItem.left + m_windowDpi->Scale(8 + extraFromClipWasPaste);
+			pDC->MoveTo(CPoint(ruleX, rcItem.top + s2px));
+			pDC->LineTo(CPoint(ruleX, rcItem.bottom - s2px));
 
 			pDC->SelectObject(hOldFont);
 			pDC->SetTextColor(localOldTextColor);
@@ -1226,9 +1241,11 @@ BOOL CQListCtrl::DrawRtfText(int nItem, CRect& crRect, CDC* pDC)
 	return bRet;
 }
 
-// DrawBitMap loads a DIB from the DB, draws a crRect thumbnail of the image
-//  to pDC and caches that thumbnail as a DIB in m_ThumbNails[ ItemID ].
-// ALL items are cached in m_ThumbNails (those without images are cached with NULL m_hgData)
+// DrawBitMap draws the cached small-DIB thumbnail for nItem into crRect.
+// The DIB is scaled once on the background loader thread
+// (CQPasteWndThread::OnLoadExtraData via GetDibFittingToHeight, cached in
+// CQPasteWnd::m_cf_dibCache with m_convertedToSmallImage set) which then posts
+// NM_REFRESH_ROW; the paint path here never decodes or scales, NO LRU/eviction.
 BOOL CQListCtrl::DrawBitMap(int nItem, CRect& crRect, CDC* pDC, const CString& csDescription)
 {
 	if (CGetSetOptions::m_bDrawThumbnail == FALSE)
@@ -1237,6 +1254,15 @@ BOOL CQListCtrl::DrawBitMap(int nItem, CRect& crRect, CDC* pDC, const CString& c
 	CClipFormatQListCtrl* format = GetItem_CF_DIB_ClipFormat(nItem);
 	if (format != NULL)
 	{
+		if (format->m_convertedToSmallImage == false)
+		{
+			// Not converted yet (loader still working): reserve the same
+			// placeholder space as the not-yet-loaded branch below instead of
+			// decoding on the paint path. The loader repaint covers the row.
+			crRect.left += crRect.Height();
+			return TRUE;
+		}
+
 		HGLOBAL smallImage = format->GetDibFittingToHeight(pDC, crRect.Height());
 		if (smallImage != NULL)
 		{
@@ -1684,6 +1710,8 @@ bool CQListCtrl::ShowFullDescription(bool bFromAuto, bool fromNextPrev)
 
 		try
 		{
+			// Direct PK lookup: the row cache carries shortcut/parent only as
+			// flags, so the exact metadata values are refetched here.
 			CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT lID, lDate, lastPasteDate, lDontAutoDelete, QuickPasteText, lShortCut, globalShortCut, stickyClipOrder, stickyClipGroupOrder, lParentID FROM Main WHERE lID = %d"), clipId);
 			if (q.eof() == false)
 			{
@@ -2402,6 +2430,8 @@ void CQListCtrl::OnDpiChanged()
 
 void CQListCtrl::SetDpiInfo(CDPI* dpi)
 {
+	// Non-owning alias of the host's CDPI; valid for the host's lifetime,
+	// which exceeds this widget's by member declaration order.
 	m_windowDpi = dpi;
 
 	m_groupFolder.Reset();

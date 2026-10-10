@@ -823,6 +823,7 @@
     <ClInclude Include="src\ClipEditThread.h" />
     <ClInclude Include="src\ClipFormatQListCtrl.h" />
     <ClInclude Include="src\ClipIds.h" />
+    <ClInclude Include="src\ClipRowFlags.h" />
     <ClInclude Include="src\Clip_ImportExport.h" />
     <ClInclude Include="src\ConvertRTFToText.h" />
     <ClInclude Include="src\CopyProperties.h" />
@@ -883,6 +884,7 @@
     <ClInclude Include="src\ImageFormatAggregator.h" />
     <ClInclude Include="src\ImageHelper.h" />
     <ClInclude Include="src\ImageViewer.h" />
+    <ClInclude Include="src\ListQueryBuilder.h" />
     <ClInclude Include="src\MagneticWnd.h" />
     <ClInclude Include="src\MainFrm.h" />
     <ClInclude Include="src\MainFrmThread.h" />
@@ -973,6 +975,7 @@
     <ClInclude Include="src\TabCtrl.h" />
     <ClInclude Include="src\Theme.h" />
     <ClInclude Include="src\ThemeColorMath.h" />
+    <ClInclude Include="src\ListLayoutMath.h" />
     <ClInclude Include="src\TinyXml\tinystr.h" />
     <ClInclude Include="src\TinyXml\tinyxml.h" />
     <ClInclude Include="src\ToolTipEx.h" />

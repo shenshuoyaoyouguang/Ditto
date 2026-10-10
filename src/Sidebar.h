@@ -44,6 +44,7 @@ public:
 
 	BOOL Create(CWnd* pParent, UINT nID);
 	void SetDpiInfo(CDPI* dpi) { m_dpi = dpi; }
+	void DetachDpi() { m_dpi = NULL; m_bViewsLaidOut = false; }
 
 	// See CChipBar::InvalidateLayout -- the row cache is not invalidated by a
 	// MoveWindow that turns out to be a no-op.
@@ -65,6 +66,9 @@ protected:
 
 	void LayoutViews();
 
+	// Non-owning alias of the host's CDPI (QPasteWnd::m_DittoWindow.m_dpi).
+	// Valid from SetDpiInfo until DetachDpi; the host outlives this widget
+	// by member declaration order, so the pointer never dangles.
 	CDPI* m_dpi;
 	CString m_labels[VIEW_COUNT];
 	CRect m_views[VIEW_COUNT];

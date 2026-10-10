@@ -6,14 +6,11 @@
 #include "cp_main.h"
 #include "Fonts.h"
 #include "QListCtrl.h"
-#include "..\Shared\TextConvert.h"
 
 // CSymbolEdit
 
 #define RANGE_START 3000
 #define CLEAR_LIST 3010
-#define LIST_MAX_COUNT 10
-#define MAX_SAVED_SEARCH_LENGTH 50
 
 IMPLEMENT_DYNAMIC(CSymbolEdit, CEdit)
 
@@ -61,13 +58,21 @@ BEGIN_MESSAGE_MAP(CSymbolEdit, CEdit)
 	ON_MESSAGE(WM_SETFONT, OnSetFont)
 	//ON_MESSAGE(WM_EXITMENULOOP, OnMenuExit)
 	ON_WM_CTLCOLOR_REFLECT()
+	// Bare names: the macro applies & itself (see RulerRichEdit.cpp:76).
+	// Only EN_UPDATE is reflected: the parent handles EN_CHANGE
+	// (QPasteWnd.cpp:173 filters the list on it), so a plain reflected
+	// EN_CHANGE would swallow that filtering; and _EX does not compile
+	// here (MSVC C2440 on the handler signature). The child therefore
+	// reflects no EN_CHANGE at all. The parent has no EN_UPDATE handler
+	// anywhere in src/, making reflection its only delivery.
+	ON_CONTROL_REFLECT(EN_UPDATE, OnEnChange)
 	ON_WM_SETFOCUS()
 	ON_WM_KILLFOCUS()
 	ON_WM_SETCURSOR()
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
-	ON_COMMAND_RANGE(RANGE_START, (RANGE_START + LIST_MAX_COUNT), OnSelectSearchString)
+	ON_COMMAND_RANGE(RANGE_START, (RANGE_START + kMaxSavedSearches), OnSelectSearchString)
 	ON_WM_EXITSIZEMOVE()
 	//ON_WM_ERASEBKGND()
 	ON_WM_NCCALCSIZE()
@@ -190,68 +195,20 @@ BOOL CSymbolEdit::PreTranslateMessage(MSG* pMsg)
 	return CEdit::PreTranslateMessage(pMsg);
 }
 
-CString CSymbolEdit::SavePastSearches()
-{
-	TiXmlDocument doc;
-
-	TiXmlElement* outer = new TiXmlElement("PastSearches");
-	doc.LinkEndChild(outer);
-
-	int count = (int)m_searches.GetCount();
-	for (int i = 0; i < count; i++)
-	{		
-		TiXmlElement* searchElement = new TiXmlElement("Search");
-
-		CStringA t = CTextConvert::UnicodeToUTF8(m_searches[i]);
-		searchElement->SetAttribute("text", t);
-
-		outer->LinkEndChild(searchElement);
-	}
-
-	TiXmlPrinter printer;
-	printer.SetLineBreak("");
-	doc.Accept(&printer);
-	CString cs = printer.CStr();
-
-	return cs;
-}
-
-void CSymbolEdit::LoadPastSearches(CString values)
+void CSymbolEdit::SetSearches(const CStringArray& searches)
 {
 	m_searches.RemoveAll();
 
-	TiXmlDocument doc;
-	CStringA xmlA = CTextConvert::UnicodeToUTF8(values);
-	doc.Parse(xmlA);
+	INT_PTR n = searches.GetSize();
+	if (n > kMaxSavedSearches)
+		n = kMaxSavedSearches;
 
-	TiXmlElement *ItemHeader = doc.FirstChildElement("PastSearches");
-
-	if (ItemHeader != NULL)
+	for (INT_PTR i = 0; i < n; i++)
 	{
-		TiXmlElement *ItemElement = ItemHeader->FirstChildElement();
-
-		int count = 0;
-
-		while (ItemElement)
+		CString toAdd = searches[i].Left(kMaxSavedSearchLength);
+		if (toAdd.IsEmpty() == FALSE)
 		{
-			if (count < LIST_MAX_COUNT)
-			{
-				CString item = ItemElement->Attribute("text");
-
-				CString toAdd = item.Left(MAX_SAVED_SEARCH_LENGTH);
-				if (toAdd != _T(""))
-				{
-					m_searches.Add(toAdd);
-				}
-
-				ItemElement = ItemElement->NextSiblingElement();
-			}
-			else
-			{
-				break;
-			}
-
-			count++;
+			m_searches.Add(toAdd);
 		}
 	}
 }
@@ -264,9 +221,9 @@ void CSymbolEdit::AddToSearchHistory()
 	{
 		//only save up to 50, had reports of somehow getting extremely large amounts of junk text
 		//save and causing memory issues.
-		cs = cs.Left(MAX_SAVED_SEARCH_LENGTH);
+		cs = cs.Left(kMaxSavedSearchLength);
 
-		if (m_searches.GetCount() >= LIST_MAX_COUNT)
+		if (m_searches.GetCount() >= kMaxSavedSearches)
 		{
 			m_searches.RemoveAt(0);
 		}
@@ -301,7 +258,7 @@ bool CSymbolEdit::ShowSearchHistoryMenu()
 	CMenu cmPopUp;
 	cmPopUp.CreatePopupMenu();
 
-	int count = min((int)m_searches.GetCount(), LIST_MAX_COUNT);
+	int count = min((int)m_searches.GetCount(), kMaxSavedSearches);
 	for (int i = count-1; i >= 0; i--)
 	{
 		CString text = m_searches[i];
@@ -442,6 +399,61 @@ void CSymbolEdit::SetPromptFont(const LOGFONT* lpLogFont, BOOL redraw)
 		Invalidate(TRUE);
 }
 
+static void ApplySymbolIconAdjustment(HICON hIcon, DWORD dwMargins, CRect& rect)
+{
+	if (hIcon == NULL)
+		return;
+	int width = GetSystemMetrics(SM_CXSMICON);
+	rect.left += LOWORD(dwMargins) + 1;
+	rect.right -= (width + 7);
+}
+
+static void CalcSearchButtonRects(const CRect& clientRect, int searchWidth, int closeWidth, bool showSearch, bool showClose, CRect& searchRect, CRect& closeRect, int& rightEdge)
+{
+	rightEdge = clientRect.right;
+	if (showSearch)
+	{
+		searchRect.SetRect(clientRect.right - searchWidth, 0, clientRect.right, clientRect.bottom);
+		rightEdge = clientRect.right - searchWidth;
+	}
+	else
+	{
+		searchRect.SetRect(0, 0, 0, 0);
+	}
+
+	if (showClose)
+	{
+		closeRect.SetRect(rightEdge - closeWidth, 0, rightEdge, clientRect.bottom);
+	}
+	else
+	{
+		closeRect.SetRect(0, 0, 0, 0);
+	}
+}
+
+static void SyncButtonRects(CWnd* wnd, CDPI* dpi, HICON hIcon, DWORD dwMargins, CRect& searchRect, CRect& closeRect)
+{
+	if (dpi == NULL || wnd == NULL || wnd->GetSafeHwnd() == NULL)
+	{
+		searchRect.SetRect(0, 0, 0, 0);
+		closeRect.SetRect(0, 0, 0, 0);
+		return;
+	}
+
+	CRect clientRect;
+	wnd->GetClientRect(&clientRect);
+	ApplySymbolIconAdjustment(hIcon, dwMargins, clientRect);
+
+	CString text;
+	wnd->GetWindowText(text);
+	bool hasFocus = (wnd == CWnd::GetFocus());
+
+	int rightEdge = clientRect.right;
+	CalcSearchButtonRects(clientRect, dpi->Scale(18), dpi->Scale(16),
+		(text.GetLength() > 0 || hasFocus), text.GetLength() > 0,
+		searchRect, closeRect, rightEdge);
+}
+
 void CSymbolEdit::RecalcLayout()
 {
 	// GetSystemMetrics answers for the system dpi, not this window's, so on a
@@ -460,6 +472,40 @@ void CSymbolEdit::RecalcLayout()
 			SetMargins(m_windowDpi->Scale(4), m_windowDpi->Scale(34));
 		}
 	}
+
+	// Button hit rects used to be recomputed inside OnPaint with the Scale(18)
+	// / Scale(16) geometry below; OnPaint is now a pure draw (locals only) and
+	// this owns the members so hit testing never depends on a paint having run.
+	if (m_windowDpi != NULL && GetSafeHwnd() != NULL)
+	{
+		CString text;
+		GetWindowText(text);
+
+		int rightEdge = 0;
+		CRect clientRect;
+		GetClientRect(&clientRect);
+		ApplySymbolIconAdjustment(m_hSymbolIcon, GetMargins(), clientRect);
+		CalcSearchButtonRects(clientRect, m_windowDpi->Scale(18), m_windowDpi->Scale(16),
+			(text.GetLength() > 0 || this == GetFocus()), text.GetLength() > 0,
+			m_searchesButtonRect, m_closeButtonRect, rightEdge);
+
+		if (text != m_lastTextOnPaint &&
+			text == _T(""))
+		{
+			::SetWindowPos(m_hWnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+		}
+
+		m_lastTextOnPaint = text;
+	}
+}
+
+void CSymbolEdit::OnEnChange()
+{
+	// Text changed (typing, paste, undo, programmatic SetWindowText): keep the
+	// button rects and m_lastTextOnPaint in sync so OnPaint never has to.
+	// RecalcLayout reads text/geometry only, never alters text, so this cannot
+	// recurse into another EN_CHANGE/EN_UPDATE.
+	RecalcLayout();
 }
 
 void CSymbolEdit::OnPaint()
@@ -504,15 +550,9 @@ void CSymbolEdit::OnPaint()
 			0,
 			NULL,
 			DI_NORMAL);
+	}
 
-		rect.left += LOWORD(margins) + 1;
-		rect.right -= (width + 7);
-	}
-	else
-	{
-		//rect.left += (LOWORD(dwMargins) + 1);
-		//rect.right -= (HIWORD(dwMargins) + 1);
-	}
+	ApplySymbolIconAdjustment(m_hSymbolIcon, margins, rect);
 
 	CString text;
 	GetWindowText(text);
@@ -571,48 +611,45 @@ void CSymbolEdit::OnPaint()
 	int nSearchIconY = nSearchIconH > 0 ? (rect.Height() - nSearchIconH) / 2 : 4;
 	int nCloseIconY = nCloseIconH > 0 ? (rect.Height() - nCloseIconH) / 2 : 4;
 
+	// Pure draw: button geometry comes from locals with the exact geometry
+	// RecalcLayout maintains (Scale(18)/Scale(16)); no member writes and no
+	// SetWindowPos happen inside paint anymore.
+	CRect searchesButtonRect;
+	CRect closeButtonRect;
 	int right = rect.right;
+	CalcSearchButtonRects(rect, m_windowDpi->Scale(18), m_windowDpi->Scale(16),
+		(text.GetLength() > 0 || this == GetFocus()), text.GetLength() > 0,
+		searchesButtonRect, closeButtonRect, right);
 	if ((text.GetLength() > 0 || this == GetFocus()))
 	{
-		m_searchesButtonRect.SetRect(rect.right - m_windowDpi->Scale(18), 0, rect.right, rect.bottom);
-		right = rect.right - m_windowDpi->Scale(18);
 		int nSearchX = nSearchIconW > 0
-			? m_searchesButtonRect.left + (m_searchesButtonRect.Width() - nSearchIconW) / 2
-			: m_searchesButtonRect.left;
+			? searchesButtonRect.left + (searchesButtonRect.Width() - nSearchIconW) / 2
+			: searchesButtonRect.left;
 		m_searchesButton.Draw(&dc, *m_windowDpi, this, nSearchX, nSearchIconY, m_mouseHoveringOverSearches, m_mouseDownOnSearches);
-	}
-	else
-	{
-		m_searchesButtonRect.SetRect(0, 0, 0, 0);
-		//m_searchButton.Draw(&dc, this, rect.right - 22, 4, false, false);
 	}
 
 	if (text.GetLength() > 0)
 	{
 		//OutputDebugString(_T("showing close button\n"));
 
-		m_closeButtonRect.SetRect(right - m_windowDpi->Scale(16), 0, right, rect.bottom);
 		int nCloseX = nCloseIconW > 0
-			? m_closeButtonRect.left + (m_closeButtonRect.Width() - nCloseIconW) / 2
-			: m_closeButtonRect.left;
+			? closeButtonRect.left + (closeButtonRect.Width() - nCloseIconW) / 2
+			: closeButtonRect.left;
 		m_closeButton.Draw(&dc, *m_windowDpi, this, nCloseX, nCloseIconY, m_mouseHoveringOverClose, m_mouseDownOnClose);
-	}
-	else
-	{
-		//OutputDebugString(_T("not showing close button\n"));
-		m_closeButtonRect.SetRect(0, 0, 0, 0);
-		//m_searchButton.Draw(&dc, this, rect.right - 22, 4, false, false);
 	}
 
 	//OutputDebugString(_T("OnPaint"));
 
+	// The synchronous DRAWFRAME on clear used to live here; RecalcLayout owns
+	// it now. A clear that bypasses RecalcLayout (programmatic SetWindowText
+	// while unfocused) only arms the existing delayed frame timer, so paint
+	// never triggers a synchronous non-client redraw. The timer handler syncs
+	// m_lastTextOnPaint, which self-quenches the re-arm.
 	if (text != m_lastTextOnPaint &&
 		text == _T(""))
 	{
-		::SetWindowPos(m_hWnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+		SetTimer(1, 100, NULL);
 	}
-
-	m_lastTextOnPaint = text;
 
 	//OutputDebugString(_T("OnPaint \r\n"));
 
@@ -677,6 +714,8 @@ void CSymbolEdit::OnSetFocus(CWnd* pOldWnd)
 	}
 
 	CEdit::OnSetFocus(pOldWnd);
+
+	RecalcLayout();
 }
 
 void CSymbolEdit::OnKillFocus(CWnd* pNewWnd)
@@ -688,6 +727,8 @@ void CSymbolEdit::OnKillFocus(CWnd* pNewWnd)
 	SetTimer(1, 500, NULL);
 	
 	CEdit::OnKillFocus(pNewWnd);
+
+	RecalcLayout();
 }
 
 BOOL CSymbolEdit::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
@@ -695,6 +736,8 @@ BOOL CSymbolEdit::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 	CPoint pntCursor;
 	GetCursorPos(&pntCursor);
 	ScreenToClient(&pntCursor);
+
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
 
 	if(m_closeButtonRect.PtInRect(pntCursor))
 	{
@@ -715,6 +758,8 @@ BOOL CSymbolEdit::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 
 void CSymbolEdit::OnLButtonUp(UINT nFlags, CPoint point)
 {
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
+
 	if (m_mouseDownOnClose)
 	{
 		ReleaseCapture();
@@ -752,6 +797,8 @@ void CSymbolEdit::OnLButtonUp(UINT nFlags, CPoint point)
 
 void CSymbolEdit::OnLButtonDown(UINT nFlags, CPoint point)
 {
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
+
 	if (m_closeButtonRect.PtInRect(point))
 	{
 		m_mouseDownOnClose = true;
@@ -781,6 +828,8 @@ void CSymbolEdit::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CSymbolEdit::OnMouseMove(UINT nFlags, CPoint point)
 {
+	SyncButtonRects(this, m_windowDpi, m_hSymbolIcon, GetMargins(), m_searchesButtonRect, m_closeButtonRect);
+
 	if (m_closeButtonRect.PtInRect(point))
 	{
 		if (m_mouseHoveringOverClose == false)
@@ -970,6 +1019,10 @@ void CSymbolEdit::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS* lpncsp)
 
 void CSymbolEdit::OnNcPaint()
 {
+	if (m_windowDpi == NULL)
+	{
+		return;
+	}
 
 	CString text;
 	GetWindowText(text);
@@ -1030,6 +1083,9 @@ void CSymbolEdit::OnTimer(UINT_PTR nIDEvent)
 			KillTimer(1);
 			//Invalidate();
 			::SetWindowPos(m_hWnd, NULL, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+			// Quench the paint-path re-arm above: the frame is refreshed, so the
+			// cleared text is now the baseline.
+			GetWindowText(m_lastTextOnPaint);
 			break;
 	}
 
