@@ -13,14 +13,6 @@
 
 static int g_failures = 0;
 
-#define CHECK_EQ(actual, expected) do { \
-	auto a_ = (actual); auto e_ = (expected); \
-	if (a_ != e_) { \
-		g_failures++; \
-		std::printf("FAIL %s:%ld  %s = %ld, expected %ld\n", __FILE__, (long)__LINE__, #actual, (long)a_, (long)e_); \
-	} \
-} while (0)
-
 #define CHECK_TRUE(cond) do { \
 	if (!(cond)) { \
 		g_failures++; \
