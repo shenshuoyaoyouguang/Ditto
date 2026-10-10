@@ -7,8 +7,9 @@
 // from the shipped query shapes and must be fixed in the header, not here.
 //
 // Build & run (local, no MFC needed):
-//   g++ -std=c++17 -Wall -Wextra -I src tests/test_list_query_builder.cpp -o dist/test_list_query_builder.exe
-//   dist/test_list_query_builder.exe
+//   g++ -std=c++17 -Wall -Wextra -I src tests/test_list_query_builder.cpp -o test_list_query_builder.exe
+//   .\test_list_query_builder.exe
+// Delete the exe afterwards to keep the repo root clean.
 // or with MSVC:
 //   cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_query_builder.cpp /Fe:test_list_query_builder.exe
 //   .\test_list_query_builder.exe
@@ -148,11 +149,19 @@ static void test_like_term_helpers()
 	CHECK_WSTR_EQ(LikePredicate(L"Main.mText", L"a'b%"),
 		L"Main.mText LIKE '%a''b\\%%' ESCAPE '\\'");
 
-	// Parameterized template: no quotes around the term; raw term in params.
+	// Parameterized template: no quotes around the term; the ESCAPED term
+	// travels in params (EscapeLikeTerm rules: % -> \%, _ -> \_, ' -> '',
+	// \ -> \\) so metacharacters stay literal under the template's
+	// ESCAPE '\'. Hand-derived: "a'b%" -> "a''b\%" (quote doubled, % escaped).
 	ParamQuery q = LikeParamPredicate(L"Main.mText", L"a'b%");
 	CHECK_WSTR_EQ(q.sql, L"Main.mText LIKE ('%' || ? || '%') ESCAPE '\\'");
 	CHECK_TRUE(q.params.size() == 1);
-	CHECK_WSTR_EQ(q.params[0], L"a'b%");
+	CHECK_WSTR_EQ(q.params[0], L"a''b\\%");
+	// Literal-percent term: "100%" binds as "100\%" so it matches a real
+	// percent sign instead of acting as a wildcard suffix.
+	ParamQuery pct = LikeParamPredicate(L"Main.mText", L"100%");
+	CHECK_TRUE(pct.params.size() == 1);
+	CHECK_WSTR_EQ(pct.params[0], L"100\\%");
 }
 
 static void test_description_convergence()
@@ -427,20 +436,22 @@ static void test_send_to_friend_batch_sql()
 
 static void test_goto_rank_sql()
 {
-	// Hand-derived: ROW_NUMBER over the main-list sort (MainSortSql) on the
+	// Hand-derived: RANK over the main-list sort (MainSortSql) on the
 	// same top-level filter the COUNT shape used, minus 1 for the 0-based
 	// list position; target addressed by lID so no float key formatting.
+	// RANK (not ROW_NUMBER) so tied sort keys share one index, matching
+	// the old COUNT(*)-of-strictly-before fallback for every row.
 	const std::wstring filter =
 		L"((Main.bIsGroup = 1 AND Main.lParentID = -1) OR (Main.bIsGroup = 0 AND Main.lParentID = -1))";
 	CHECK_WSTR_EQ(BuildGoToRankSql(filter, 1),
-		L"SELECT rank FROM (SELECT Main.lID, ROW_NUMBER() OVER (ORDER BY "
+		L"SELECT rank FROM (SELECT Main.lID, RANK() OVER (ORDER BY "
 		L"Main.stickyClipOrder DESC, Main.bIsGroup ASC, Main.clipOrder DESC) - 1 AS rank "
 		L"FROM Main where ((Main.bIsGroup = 1 AND Main.lParentID = -1) OR (Main.bIsGroup = 0 AND Main.lParentID = -1))) "
 		L"WHERE lID = 1");
 	// Window key is exactly the list sort: rebuilding the expectation from
 	// MainSortSql() must equal the pinned literal above.
 	CHECK_WSTR_EQ(BuildGoToRankSql(L"(Main.bIsGroup = 0)", 5),
-		L"SELECT rank FROM (SELECT Main.lID, ROW_NUMBER() OVER (ORDER BY " +
+		L"SELECT rank FROM (SELECT Main.lID, RANK() OVER (ORDER BY " +
 		MainSortSql() + L") - 1 AS rank FROM Main where (Main.bIsGroup = 0)) WHERE lID = 5");
 }
 

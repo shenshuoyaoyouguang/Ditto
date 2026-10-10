@@ -201,7 +201,7 @@ inline std::wstring StripSearchPrefix3(const std::wstring& search)
 //   when the term has no metachars, so no branch like AddToSQL:156-165).
 // - ParamQuery/LikeParamPredicate: '?' template
 //   (column LIKE ('%' || ? || '%') ESCAPE '\') with NO quotes around the
-//   term; the raw term travels in params, never concatenated.
+//   term; the escaped term travels in params, never concatenated.
 // DEFERRED (measured, not assumed): executing the '?' shape needs a bind
 // API, but the FillList worker path (CQPasteWndThread::OnLoadItems /
 // OnSetListCount) only takes raw SQL via CppSQLite3::execQuery/execScalar,
@@ -243,7 +243,7 @@ inline ParamQuery LikeParamPredicate(const std::wstring& column, const std::wstr
 {
 	ParamQuery query;
 	query.sql = column + L" LIKE ('%' || ? || '%') ESCAPE '\\'";
-	query.params.push_back(term);
+	query.params.push_back(EscapeLikeTerm(term));
 	return query;
 }
 
@@ -455,17 +455,20 @@ inline std::wstring BuildDataBatchSql(const std::vector<int>& ids)
 }
 
 // GoToEntry rank (CQPasteWnd::OnMenuGoToEntry, src/QPasteWnd.cpp:7160).
-// Returns the same 0-based position as the old COUNT(*)-of-strictly-before
-// query whenever the sort key (stickyClipOrder, bIsGroup, clipOrder) is
-// unique for the target -- verified tie-free on the 248-row baseline copy
-// (clipOrder is a time-derived double), with a 248/248 old-vs-new sweep.
+// RANK() (not ROW_NUMBER()) so tied sort keys share one index, exactly
+// like the old COUNT(*)-of-strictly-before fallback query: RANK - 1 equals
+// that COUNT for every row, ties included. Ties are real -- the sort key
+// (stickyClipOrder, bIsGroup, clipOrder) can repeat (e.g. migrated clips
+// sharing clipOrder) -- so ROW_NUMBER()'s distinct positions would scroll
+// to the wrong row after a tie. Verified by a full old-vs-new sweep on
+// the baseline DB copy, including a synthetic full-key tie pair.
 // The ORDER BY reuses MainSortSql() so the window key can never drift from
 // the list sort. Returns no row when the target is excluded by the filter;
 // the caller then falls back to the COUNT shape, preserving the old scroll
 // position in that case too.
 inline std::wstring BuildGoToRankSql(const std::wstring& filter, int targetId)
 {
-	return L"SELECT rank FROM (SELECT Main.lID, ROW_NUMBER() OVER (ORDER BY " +
+	return L"SELECT rank FROM (SELECT Main.lID, RANK() OVER (ORDER BY " +
 		MainSortSql() + L") - 1 AS rank FROM Main where " + filter +
 		L") WHERE lID = " + std::to_wstring(targetId);
 }
