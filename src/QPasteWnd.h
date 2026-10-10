@@ -139,7 +139,6 @@ public:
     // touching m_lstHeader (a UI CWnd) or theApp.m_db directly.
     void RefreshListAccelerators(BOOL bCreate);
     // Same-class PreTranslateMessage type-to-search path (QPasteWnd.cpp:3191).
-    HWND SearchHwnd();
     bool IsSearchFocused();
 
 private:

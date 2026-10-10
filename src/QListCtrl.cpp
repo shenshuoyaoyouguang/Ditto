@@ -516,9 +516,9 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		// Per-row hoists: each local is exactly the value the old code read
 		// inline at the use sites below. CTheme::*() are trivial const member
 		// reads (Theme.h), CDPI::Scale(x) is pure for fixed (x, dpi) (DPI.h:22)
-		// and the dpi cannot change mid-row, and the symbol tokens mirror
-		// ParseClipRowFlags (ClipRowFlags.h: case-sensitive CString::Find, one
-		// search per token; the old code searched "<ingroup>" twice). Scaled
+		// and the dpi cannot change mid-row, and the symbol flags come from
+		// the shared ParseClipRowFlags (ClipRowFlags.h: case-sensitive
+		// substring search, one search per token).
 		// values stay independent per ListLayoutMath.h: Scale(8+extra) must not
 		// be split into Scale(8)+Scale(extra).
 		const COLORREF oddRowBG = CGetSetOptions::m_Theme.ListBoxOddRowsBG();
@@ -528,15 +528,10 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		const int s1px = m_windowDpi->Scale(1);
 		const int s2px = m_windowDpi->Scale(ListLayoutMath::kPillInsetX); // == 2
 		const int sLeftPad = m_windowDpi->Scale(ROW_LEFT_BORDER);         // == 3
-		const int sPillRadius = m_windowDpi->Scale(ListLayoutMath::kPillRadius); // == 4
 		const int s12px = m_windowDpi->Scale(12);
 
-		const bool symPasted = strSymbols.Find(_T("<pasted>")) >= 0;
-		const bool symGroup = strSymbols.Find(_T("<group>")) >= 0;
-		const bool symNoAutoDelete = strSymbols.Find(_T("<noautodelete>")) >= 0;
-		const bool symShortcut = strSymbols.Find(_T("<shortcut>")) >= 0;
-		const bool symInGroup = strSymbols.Find(_T("<ingroup>")) >= 0;
-		const bool symSticky = strSymbols.Find(_T("<sticky>")) >= 0;
+		std::wstring wsSymbols((LPCTSTR)strSymbols);
+		ClipRowFlags flags = ParseClipRowFlags(wsSymbols, theApp.m_GroupID);
 
 		// Draw the background of the list item.  Colors are selected
 		// according to the item's state.
@@ -584,8 +579,13 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			pDC->FillSolidRect(rcItem, parityRowBG);
 
 			CRect rcPill(rcItem);
-			rcPill.DeflateRect(s2px, 0, s2px, 0);
-			FillRoundedRect(pDC, rcPill, sPillRadius, crBkgnd);
+			{
+				int pillDpi = m_windowDpi->GetDPI();
+				ListLayoutMath::IntRect pill = ListLayoutMath::SelectedPillRect(
+					ListLayoutMath::IntRect{ rcItem.left, rcItem.top, rcItem.right, rcItem.bottom }, pillDpi);
+				rcPill.SetRect(pill.left, pill.top, pill.right, pill.bottom);
+				FillRoundedRect(pDC, rcPill, ListLayoutMath::PillCornerRadius(pillDpi), crBkgnd);
+			}
 		}
 		else
 		{
@@ -600,7 +600,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		if (m_showIfClipWasPasted &&
 			strSymbols.GetLength() > 0 &&
-			symPasted) //clip was pasted from ditto
+			flags.wasPasted) //clip was pasted from ditto
 		{
 			CRect pastedRect(rcItem);
 			pastedRect.left++;
@@ -623,9 +623,6 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			rcText.left += sLeftPad;
 		}
 
-		// if we are inside a group, don't display the "in group" flag
-		bool drawInGroupIcon = !(theApp.m_GroupID > 0 && symInGroup);
-
 		DrawCopiedColorCode(csText, rcText, pDC);
 
 		DrawBitMap(nItem, rcText, pDC, csText);
@@ -635,28 +632,27 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		COLORREF iconTint = CGetSetOptions::m_Theme.TextPrimary();
 		if (strSymbols.GetLength() > 0)
 		{
-			if (symGroup) //group
+			if (flags.isGroup) //group
 			{
 				m_groupFolder.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_groupFolder.ImageWidth() + s2px;
 			}
-			if (symNoAutoDelete) //don't auto delete
+			if (flags.neverAutoDelete) //don't auto delete
 			{
 				m_dontDeleteImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_dontDeleteImage.ImageWidth() + s2px;
 			}
-			if (symShortcut) // has shortcut
+			if (flags.hasShortcut) // has shortcut
 			{
 				m_shortCutImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_shortCutImage.ImageWidth() + s2px;
 			}
-			if (drawInGroupIcon &&
-				symInGroup) // in group
+			if (flags.inGroupIconVisible) // in group
 			{
 				m_inFolderImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_inFolderImage.ImageWidth() + s2px;
 			}
-			if (symSticky) //sticky clip
+			if (flags.isSticky) //sticky clip
 			{
 				m_stickyImage.DrawTinted(pDC, *m_windowDpi, this, rcText.left, rcText.top, false, false, iconTint);
 				rcText.left += m_stickyImage.ImageWidth() + s2px;
