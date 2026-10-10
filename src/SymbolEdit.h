@@ -126,7 +126,7 @@ protected:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnSelectSearchString(UINT idIn);
-	afx_msg BOOL OnEnChange();
+	afx_msg void OnEnChange();
 
 	DECLARE_MESSAGE_MAP()
 

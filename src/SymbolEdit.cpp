@@ -59,11 +59,12 @@ BEGIN_MESSAGE_MAP(CSymbolEdit, CEdit)
 	//ON_MESSAGE(WM_EXITMENULOOP, OnMenuExit)
 	ON_WM_CTLCOLOR_REFLECT()
 	// Bare names: the macro applies & itself (see RulerRichEdit.cpp:76).
-	// EN_CHANGE must reach the parent (QPasteWnd.cpp:173 filters the list
-	// on it), so reflect with _EX and return FALSE to not swallow it.
-	// EN_UPDATE has no parent handler anywhere in src/, so plain reflect
-	// is its only delivery. Both land in one idempotent handler.
-	ON_CONTROL_REFLECT_EX(EN_CHANGE, OnEnChange)
+	// Only EN_UPDATE is reflected: the parent handles EN_CHANGE
+	// (QPasteWnd.cpp:173 filters the list on it), so a plain reflected
+	// EN_CHANGE would swallow that filtering; and _EX does not compile
+	// here (MSVC C2440 on the handler signature). The child therefore
+	// reflects no EN_CHANGE at all. The parent has no EN_UPDATE handler
+	// anywhere in src/, making reflection its only delivery.
 	ON_CONTROL_REFLECT(EN_UPDATE, OnEnChange)
 	ON_WM_SETFOCUS()
 	ON_WM_KILLFOCUS()
@@ -498,18 +499,13 @@ void CSymbolEdit::RecalcLayout()
 	}
 }
 
-BOOL CSymbolEdit::OnEnChange()
+void CSymbolEdit::OnEnChange()
 {
 	// Text changed (typing, paste, undo, programmatic SetWindowText): keep the
 	// button rects and m_lastTextOnPaint in sync so OnPaint never has to.
 	// RecalcLayout reads text/geometry only, never alters text, so this cannot
 	// recurse into another EN_CHANGE/EN_UPDATE.
 	RecalcLayout();
-
-	// FALSE lets the notification continue to the parent, whose
-	// ON_EN_CHANGE(ID_EDIT_SEARCH, OnSearchEditChange) does the Find As You
-	// Type filtering. (EN_UPDATE reflection ignores the return value.)
-	return FALSE;
 }
 
 void CSymbolEdit::OnPaint()
