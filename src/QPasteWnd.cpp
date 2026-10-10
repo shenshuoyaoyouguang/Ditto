@@ -30,6 +30,7 @@
 #include <map>
 #include <signal.h>
 #include "CreateQRCodeImage.h"
+#include "ListLayoutMath.h"
 #include "QRCodeViewer.h"
 
 #ifdef _DEBUG
@@ -589,11 +590,6 @@ void CQPasteWnd::RefreshListAccelerators(BOOL bCreate)
 	m_lstHeader.DestroyAndCreateAccelerator(bCreate, theApp.m_db);
 }
 
-HWND CQPasteWnd::SearchHwnd()
-{
-	return m_search.GetSafeHwnd();
-}
-
 bool CQPasteWnd::IsSearchFocused()
 {
 	return ::GetFocus() == m_search.m_hWnd;
@@ -716,7 +712,10 @@ void CQPasteWnd::MoveControls()
 	//Hide the two pixels of space at the top, not sure where this is coming from
 	int topOfListBox = 0;
 
-	if (theApp.m_GroupID > 0 && m_bShowStarredClips == false)
+	int dpi = m_DittoWindow.m_dpi.GetDPI();
+	bool inGroupMode = (theApp.m_GroupID > 0 && m_bShowStarredClips == false);
+
+	if (inGroupMode)
 	{
 		m_stGroup.ShowWindow(SW_SHOW);
 		m_BackButton.ShowWindow(SW_SHOW);
@@ -725,12 +724,14 @@ void CQPasteWnd::MoveControls()
 		// sidebar open they were positioned underneath it: the back button and
 		// the group title became invisible and unclickable. Offset them by the
 		// same content origin the list uses.
-		int groupLeft = m_showSidebar ? m_DittoWindow.m_dpi.Scale(210) : 0;
+		ListLayoutMath::GroupHeaderRects groupHeader = ListLayoutMath::ComputeGroupHeader(cx, m_showSidebar, dpi);
 
-		m_BackButton.MoveWindow(groupLeft + m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(16), m_DittoWindow.m_dpi.Scale(16));
-		m_stGroup.MoveWindow(groupLeft + m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(2), cx - groupLeft - m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(16));
+		m_BackButton.MoveWindow(groupHeader.backBtn.left, groupHeader.backBtn.top,
+			groupHeader.backBtn.right - groupHeader.backBtn.left, groupHeader.backBtn.bottom - groupHeader.backBtn.top);
+		m_stGroup.MoveWindow(groupHeader.title.left, groupHeader.title.top,
+			groupHeader.title.right - groupHeader.title.left, groupHeader.title.bottom - groupHeader.title.top);
 
-		topOfListBox = m_DittoWindow.m_dpi.Scale(20);
+		topOfListBox = ListLayoutMath::ScaleValue(ListLayoutMath::kGroupBarHeight, dpi);
 	}
 	else
 	{
@@ -738,26 +739,22 @@ void CQPasteWnd::MoveControls()
 		m_stGroup.ShowWindow(SW_HIDE);
 	}
 
-	int searchRowStart = 33;
-
 	/*if(CGetSetOptions::m_bShowPersistent)
 	{
 		searchRowStart = 41;
 	}*/
 
 	int nWidth = cx;
-	int listBoxBottomOffset = m_DittoWindow.m_dpi.Scale(searchRowStart);
+	ListLayoutMath::ContentLayout content = ListLayoutMath::ComputeContentLayout(cx, m_showSidebar, inGroupMode, dpi);
+	int listBoxBottomOffset = content.bottomOffset;
 
 	// sidebar docks on the left; without it the chip filter row sits above the list
-	int contentX = 0;
-	int contentWidth = cx;
-	int chipsHeight = 0;
+	int contentX = content.contentX;
+	int contentWidth = content.contentWidth;
+	int chipsHeight = content.chipsHeight;
 
 	if (m_showSidebar)
 	{
-		contentX = m_DittoWindow.m_dpi.Scale(210);
-		contentWidth = cx - contentX;
-
 		m_sidebar.ShowWindow(SW_SHOW);
 		m_chipBar.ShowWindow(SW_HIDE);
 		m_sidebar.MoveWindow(0, 0, contentX, cy - listBoxBottomOffset);
@@ -770,11 +767,10 @@ void CQPasteWnd::MoveControls()
 	{
 		m_sidebar.ShowWindow(SW_HIDE);
 		m_chipBar.ShowWindow(SW_SHOW);
-		chipsHeight = m_DittoWindow.m_dpi.Scale(34);
 		m_chipBar.MoveWindow(0, topOfListBox, cx, chipsHeight);
 	}
 
-	int listTop = topOfListBox + chipsHeight;
+	int listTop = content.listTop;
 
 	int extraSize = 0;
 
@@ -808,15 +804,18 @@ void CQPasteWnd::MoveControls()
 		m_modernScrollBar.ShowWindow(SW_HIDE);
 		m_modernScrollBarHorz.ShowWindow(SW_HIDE);
 
-		auto border = m_DittoWindow.m_dpi.Scale(10);
-		m_noSearchResultsStatic.MoveWindow(contentX + border, listTop + border, contentWidth - border, cy - listBoxBottomOffset - listTop + 1 - border);
+		ListLayoutMath::IntRect noResults = ListLayoutMath::ComputeNoResultsRect(contentX, contentWidth, listTop, cy, listBoxBottomOffset, dpi);
+		m_noSearchResultsStatic.MoveWindow(noResults.left, noResults.top,
+			noResults.right - noResults.left, noResults.bottom - noResults.top);
 	}
 	else
 	{
 		m_lstHeader.ShowWindow(SW_SHOW);
 		m_noSearchResultsStatic.ShowWindow(SW_HIDE);
 
-		m_lstHeader.MoveWindow(contentX, listTop, contentWidth + extraSize, cy - listBoxBottomOffset - listTop + extraSize + 1);
+		ListLayoutMath::IntRect listRect = ListLayoutMath::ComputeListRect(contentX, listTop, contentWidth, cy, listBoxBottomOffset, extraSize);
+		m_lstHeader.MoveWindow(listRect.left, listRect.top,
+			listRect.right - listRect.left, listRect.bottom - listRect.top);
 		
 		// Update modern scrollbar position and visibility (only if enabled)
 		if (CGetSetOptions::m_useModernScrollBar)
@@ -842,11 +841,15 @@ void CQPasteWnd::MoveControls()
 			m_modernScrollBarHorz.Hide(false);
 		}
 	}
-	m_search.MoveWindow(m_DittoWindow.m_dpi.Scale(34), cy - m_DittoWindow.m_dpi.Scale(searchRowStart - 5), cx - m_DittoWindow.m_dpi.Scale(70), m_DittoWindow.m_dpi.Scale(25));
+	ListLayoutMath::SearchRowRects searchRow = ListLayoutMath::ComputeSearchRow(cx, cy, dpi);
+	m_search.MoveWindow(searchRow.search.left, searchRow.search.top,
+		searchRow.search.right - searchRow.search.left, searchRow.search.bottom - searchRow.search.top);
 
-	m_systemMenu.MoveWindow(cx - m_DittoWindow.m_dpi.Scale(30), cy - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(24));
+	m_systemMenu.MoveWindow(searchRow.sysMenu.left, searchRow.sysMenu.top,
+		searchRow.sysMenu.right - searchRow.sysMenu.left, searchRow.sysMenu.bottom - searchRow.sysMenu.top);
 
-	m_ShowGroupsFolderBottom.MoveWindow(m_DittoWindow.m_dpi.Scale(4), cy - m_DittoWindow.m_dpi.Scale(28), m_DittoWindow.m_dpi.Scale(24), m_DittoWindow.m_dpi.Scale(24));
+	m_ShowGroupsFolderBottom.MoveWindow(searchRow.groupsBtn.left, searchRow.groupsBtn.top,
+		searchRow.groupsBtn.right - searchRow.groupsBtn.left, searchRow.groupsBtn.bottom - searchRow.groupsBtn.top);
 
 	/*if (CGetSetOptions::m_bShowPersistent &&
 		CGetSetOptions::m_bShowAlwaysOnTopWarning)
@@ -5503,7 +5506,11 @@ bool CQPasteWnd::DoActionSaveCF_HDROP_FileData()
 						// already in hand; all other Main columns are untouched
 						// on this path, so copying the description is the same
 						// cache state a SELECT * + FillMainTable would produce.
+						// ModifyDescription SQL-escaped m_Desc in place ("'" ->
+						// "''"), so un-double it for display; doubling is
+						// injective so this restores the exact original.
 						m_listItems[row].m_Desc = clip.m_Desc;
+						m_listItems[row].m_Desc.Replace(_T("''"), _T("'"));
 					}
 				}
 
