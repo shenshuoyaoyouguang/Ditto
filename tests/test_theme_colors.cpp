@@ -4,8 +4,9 @@
 // figures and hand-worked literals), never from the implementation.
 //
 // Build & run (local, no MFC needed):
-//   g++ -std=c++17 -Wall -I src tests/test_theme_colors.cpp -o dist/test_theme_colors.exe
-//   dist/test_theme_colors.exe
+//   g++ -std=c++17 -Wall -I src tests/test_theme_colors.cpp -o test_theme_colors.exe
+//   .\test_theme_colors.exe
+// Delete the exe afterwards to keep the repo root clean.
 
 #include "../src/ThemeColorMath.h"
 

@@ -7,8 +7,9 @@
 // hand; see the comments for the character-by-character lays.
 //
 // Build & run (local, no MFC needed):
-//   g++ -std=c++17 -Wall -Wextra -I src tests/test_clip_row_flags.cpp -o dist/test_clip_row_flags.exe
-//   dist/test_clip_row_flags.exe
+//   g++ -std=c++17 -Wall -Wextra -I src tests/test_clip_row_flags.cpp -o test_clip_row_flags.exe
+//   .\test_clip_row_flags.exe
+// Delete the exe afterwards to keep the repo root clean.
 
 #include "../src/ClipRowFlags.h"
 
@@ -240,7 +241,7 @@ static void test_insert_empty_search()
 static void test_insert_rewrites_newline()
 {
 	// "a\nb" vs "a": hit at 0 -> "<a>\nb". firstFindPos = 0+1 = 1;
-	// newline scan: \n at 4, 1 < 4 but line(0) > 10-1=9 is false -> break.
+	// newline scan: \n at 3, 1 < 3 but line(0) > 10-1=9 is false -> break.
 	// replaceCount > 0 so \n -> \x01\x05\x02: "<a>\x01\x05\x02b".
 	std::wstring s(L"a\nb");
 	int n = ClipRowFindNoCaseAndInsert(s, std::wstring(L"a"),
@@ -268,7 +269,7 @@ static void test_insert_truncates_to_match_line()
 	// lowered offsets a(0)a(1)\n(2)b(3)b(4)\n(5)c(6)c(7) (8)a(9)b(10)\n(11):
 	// hit at 9, firstFindPos = 9+1 = 10. Insert => "aa\nbb\ncc <ab>\ndd".
 	// Newline scan of the MODIFIED string: \n at 2 (10<2? no, line=1),
-	// \n at 5 (10<5? no, line=2), \n at 14 (10<14? yes, line 2 > 1-1=0
+	// \n at 5 (10<5? no, line=2), \n at 13 (10<13? yes, line 2 > 1-1=0
 	// => truncate, linesPerRow==1 so lineStart=prevLinePos=5):
 	//   "... " + Mid(6) = "... cc <ab>\ndd".
 	// Then \n rewrite => "... cc <ab>\x01\x05\x02dd".
@@ -281,7 +282,7 @@ static void test_insert_truncates_to_match_line()
 
 static void test_insert_no_truncate_with_tall_window()
 {
-	// Same input with linesPerRow=3: at the \n at 14, line(2) > 3-1=2 is
+	// Same input with linesPerRow=3: at the \n at 13, line(2) > 3-1=2 is
 	// false -> break, no truncation; only the \n rewrite applies:
 	// "aa\x01\x05\x02bb\x01\x05\x02cc <ab>\x01\x05\x02dd".
 	std::wstring s(L"aa\nbb\ncc ab\ndd");
@@ -289,6 +290,51 @@ static void test_insert_no_truncate_with_tall_window()
 		std::wstring(L"<"), std::wstring(L">"), 3);
 	CHECK_TRUE(n == 1);
 	CHECK_TRUE(s == std::wstring(L"aa\x01\x05\x02" L"bb\x01\x05\x02" L"cc <ab>\x01\x05\x02" L"dd"));
+}
+
+static void test_spans_cap_matches_production_101()
+{
+	// Parity with Misc.cpp:1233-1257: replaceCount is incremented THEN the
+	// loop breaks on > 100, so production performs 101 insertions. Default
+	// maxHits must therefore be 101, not 100.
+	std::wstring text(200, L'a'); // 200 x 'a', search "a" -> 200 candidates
+	auto spans = ComputeHighlightSpans(text, std::wstring(L"a"));
+	CHECK_TRUE(spans.size() == 101);
+	CHECK_TRUE(spans[0].start == 0);
+	CHECK_TRUE(spans[100].start == 100);
+	// Explicit cap still honored when the caller passes one.
+	auto capped = ComputeHighlightSpans(text, std::wstring(L"a"), 100);
+	CHECK_TRUE(capped.size() == 100);
+}
+
+static void test_insert_cap_matches_production_101()
+{
+	// Same 101 bound through the insert path: 200 hits -> 101 insertions.
+	std::wstring s(200, L'a');
+	int n = ClipRowFindNoCaseAndInsert(s, std::wstring(L"a"),
+		std::wstring(L"<"), std::wstring(L">"), 1000);
+	CHECK_TRUE(n == 101);
+}
+
+static void test_lower_ascii_case_insensitive()
+{
+	// Defined seam behavior: ASCII case-insensitivity.
+	auto spans = ComputeHighlightSpans(std::wstring(L"AbC"), std::wstring(L"aBc"));
+	CHECK_TRUE(spans.size() == 1);
+	CHECK_TRUE(spans[0].start == 0 && spans[0].length == 3);
+}
+
+static void test_lower_non_ascii_passthrough()
+{
+	// Defined seam behavior: non-ASCII code units pass through the C-locale
+	// mapping unchanged (no ICU). Latin-1 E-acute upper vs lower must NOT
+	// match in the seam even though ICU production lowering could equate
+	// such non-ASCII case pairs.
+	CHECK_TRUE(ClipRowToLower(std::wstring(L"\x00C9")) == std::wstring(L"\x00C9"));
+	auto spans = ComputeHighlightSpans(std::wstring(L"\x00C9"), std::wstring(L"\x00E9"));
+	CHECK_TRUE(spans.empty());
+	// Greek final sigma passes through unchanged as well.
+	CHECK_TRUE(ClipRowToLower(std::wstring(L"\x03C2")) == std::wstring(L"\x03C2"));
 }
 
 static void test_insert_narrow()
@@ -327,6 +373,10 @@ int main()
 	test_insert_rewrites_crlf();
 	test_insert_truncates_to_match_line();
 	test_insert_no_truncate_with_tall_window();
+	test_spans_cap_matches_production_101();
+	test_insert_cap_matches_production_101();
+	test_lower_ascii_case_insensitive();
+	test_lower_non_ascii_passthrough();
 	test_insert_narrow();
 
 	if (g_failures > 0)

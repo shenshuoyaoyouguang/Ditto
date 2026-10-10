@@ -24,9 +24,22 @@
 //                        ICU ToLowerStringEx + MakeLower; here mirrored with
 //                        per-character towlower/tolower, a 1:1 mapping, so
 //                        lowered offsets equal original offsets), non-
-//                        overlapping matches, 100-replacement cap, the
+//                        overlapping matches, 101-replacement cap (Misc
+//                        increments replaceCount then breaks on > 100, so it
+//                        performs 101 insertions), the
 //                        first-hit line-window truncation, and the trailing
 //                        \r\n/\r/\n -> \x01\x05\x02 rewrite.
+// NOTE (ICU divergence boundary): production lowering is ICU string-level
+// (Misc.cpp:1225-1227 ToLowerStringEx + MakeLower); this seam lowers per
+// code unit with towlower/tolower (C locale: ASCII-only in practice). Inputs
+// that can differ: non-ASCII case mappings (e.g. Greek final sigma U+03C2,
+// Turkish dotted/dotless I U+0130/U+0131 and locale-sensitive mappings),
+// 1-to-N case mappings (e.g. German sharp-s U+00DF -> "ss" style expansions),
+// and any mapping where ICU changes string length so lowered offsets no
+// longer equal original offsets. Full ICU parity would need an ICU
+// dependency in the test seam -- out of scope. Defined seam behavior:
+// ASCII case-insensitivity only; non-ASCII code units pass through the
+// C-locale mapping unchanged.
 
 #include <cctype>
 #include <cwctype>
@@ -167,12 +180,14 @@ struct ClipRowHighlightSpan
 
 // Case-insensitive, non-overlapping match offsets in original-text
 // coordinates -- the search half of FindNoCaseAndInsert's first loop
-// (mainLow.Find(findLow, startFindPos), startFindPos += oldLen, cap 100).
+// (mainLow.Find(findLow, startFindPos), startFindPos += oldLen, 101-hit
+// parity: Misc increments replaceCount then breaks on > 100, so production
+// performs 101 insertions; default maxHits is 101 to match).
 template <typename CharT>
 inline std::vector<ClipRowHighlightSpan<CharT>> ComputeHighlightSpans(
 	const std::basic_string<CharT>& text,
 	const std::basic_string<CharT>& search,
-	int maxHits = 100)
+	int maxHits = 101)
 {
 	typedef std::basic_string<CharT> Str;
 	std::vector<ClipRowHighlightSpan<CharT>> spans;
@@ -198,7 +213,8 @@ inline std::vector<ClipRowHighlightSpan<CharT>> ComputeHighlightSpans(
 
 // Exact port of Misc.cpp FindNoCaseAndInsert operating on std::string/
 // std::wstring instead of CString: inserts pre/post markers around every
-// case-insensitive non-overlapping hit (>100 hits stops inserting), then
+// case-insensitive non-overlapping hit (101-hit parity: breaks once
+// replaceCount > 100, i.e. 101 insertions), then
 // applies the first-hit line-window truncation (linesPerRow) and finally
 // rewrites \r\n/\r/\n to \x01\x05\x02 when at least one hit occurred.
 // Returns the hit count; empty search leaves the string untouched and

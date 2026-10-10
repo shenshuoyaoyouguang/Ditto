@@ -22,7 +22,8 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
   cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe
   .\test_theme_colors.exe
   ```
-  MinGW alternative: `g++ -std=c++17 -Wall -I src tests/test_theme_colors.cpp -o dist/test_theme_colors.exe`
+  MinGW alternative: `g++ -std=c++17 -Wall -I src tests/test_theme_colors.cpp -o test_theme_colors.exe`
+  Run it (`.\test_theme_colors.exe`), then delete the exe to keep the repo root clean (`*.exe` is gitignored).
 - Keep new unit-testable logic in a header that avoids MFC/CString (see `src/ThemeColorMath.h`) and add a matching `tests\test_*.cpp`. Expected values must come from an independent source of truth (e.g. WCAG reference figures), never from the implementation.
 - No other automated coverage: verify app behavior by building and running `Release64\Ditto.exe`.
 
@@ -48,8 +49,8 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 
 ## Settings
 
-- All persistent settings go through `CGetSetOptions` (`src/Options.h/.cpp`): static `Get*`/`Set*` pairs layered on `GetProfileLong/GetProfileString/SetProfile*`, which pick an ini file or the registry at startup (`m_bFromIni`).
-- Portable, Windows Store and Chocolatey builds always use the ini file (`Ditto.ini`), see `CGetSetOptions::GetIniFileName`.
+- All application options persist through `CGetSetOptions` (`src/Options.h/.cpp`): static `Get*`/`Set*` pairs layered on `GetProfileLong/GetProfileString/SetProfile*`, which pick an ini file or the registry at startup (`m_bFromIni`). Exception: `CProgressWnd::SaveCurrentSettings` persists its window position directly via `AfxGetApp()->WriteProfileInt` (`src/ProgressWnd.cpp:443-444`).
+- Portable, Windows Store and Chocolatey builds always use the ini file (`Ditto.Settings`, not `Ditto.ini`), see `CGetSetOptions::GetIniFileName` (`src/Options.cpp:379-395`): Store/Chocolatey always resolve to the AppData directory (`GetIniFileName(false)`), portable resolves next to the exe (`GetIniFileName(true)`); see `LoadSettings` (`src/Options.cpp:108-154`) for the full fallback chain.
 - Gotcha: `GetProfileData`/`SetProfileData` assert in ini mode — do not add new binary settings.
 - Adding a setting = new Get/Set pair + static cache member in `Options.h/.cpp` + a control in the matching `Option*.cpp`/`Adv*.cpp` dialog.
 
@@ -57,7 +58,7 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 
 - `src/Theme.h/.cpp` (`CTheme`) loads themes from `Debug/Themes/`; colour-token derivation and the owner-drawn controls live in `src/ThemeColorMath.h` and the `src/Fluent*` files.
 - `ThemeColorMath.h` is deliberately MFC/CString-free so `tests/` can compile it — it is the seam to use when changing colour or contrast logic.
-- Accent, odd/even row backgrounds and selection highlights are derived from the accent colour via WCAG 4.5:1 contrast helpers; do not hard-code colours.
+- Odd/even row backgrounds are plain theme values (`ListBoxOddRowsBG`/`ListBoxEvenRowsBG`), not accent-derived. The selection background starts from the accent-subtle mix and is walked toward the accent until it reaches 1.25:1 separation (`kMinSeparation`, `src/Theme.cpp:692`) from the base surface and both row colours; text-on-accent colours use WCAG contrast picks. Do not hard-code colours.
 
 ## Gotchas
 

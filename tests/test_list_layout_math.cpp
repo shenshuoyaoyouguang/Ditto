@@ -8,8 +8,9 @@
 // output.
 //
 // Build & run (local, no MFC needed):
-//   g++ -std=c++17 -Wall -Wextra -I src tests/test_list_layout_math.cpp -o dist/test_list_layout_math.exe
-//   dist/test_list_layout_math.exe
+//   g++ -std=c++17 -Wall -Wextra -I src tests/test_list_layout_math.cpp -o test_list_layout_math.exe
+//   .\test_list_layout_math.exe
+// Delete the exe afterwards to keep the repo root clean.
 
 #include "../src/ListLayoutMath.h"
 
