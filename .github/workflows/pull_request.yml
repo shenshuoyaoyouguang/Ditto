@@ -25,6 +25,24 @@ jobs:
       - name: Run tests
         run: .\test_theme_colors.exe
 
+      - name: Build list query builder tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_query_builder.cpp /Fe:test_list_query_builder.exe
+
+      - name: Run list query builder tests
+        run: .\test_list_query_builder.exe
+
+      - name: Build clip row flag tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_clip_row_flags.cpp /Fe:test_clip_row_flags.exe
+
+      - name: Run clip row flag tests
+        run: .\test_clip_row_flags.exe
+
+      - name: Build list layout math tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_layout_math.cpp /Fe:test_list_layout_math.exe
+
+      - name: Run list layout math tests
+        run: .\test_list_layout_math.exe
+
   build:
     runs-on: windows-latest
 
