@@ -58,6 +58,29 @@ void CQPasteWndThread::OnEvent(int eventId, void *param)
 	Log(StrF(_T("End of OnEvent, eventId: %s, Time: %d(ms)"), EnumName((eCQPasteWndThreadEvents)eventId), length));
 }
 
+// THREAD-BOUNDARY FOLLOW-UPS (deliberately NOT fixed in this change).
+// Ad-hoc UI-thread DB hits found by inspection; each blocks the message
+// pump while SQLite runs. Left for later tasks -- see the report.
+//   - CQPasteWnd::OnMenuGoToEntry (QPasteWnd.cpp ~7209/7252/7270): key fetch
+//     + ordered rank query + COUNT-fallback COUNT all run on the UI thread,
+//     then FillList + a 5s message-pumping wait on m_SearchingEvent.
+//   - Tooltip/status single-row SELECT (~1321) and clip-property SELECTs
+//     (~4320, ~6057): PK lookups, cheap but synchronous on the UI thread.
+//   - ~15 CClip::LoadMainTable/LoadFormats call sites on paste/property
+//     paths: synchronous by necessity (need the bytes to paste); batching
+//     opportunities exist but change paste semantics -- separate task.
+//   - OnLoadAccelerators/OnUnloadAccelerators refresh the list accelerators
+//     (UI CWnd state: m_Accels + registry reads) from the worker thread.
+//     Pre-existing; needs a UI-thread marshal, not done here.
+//     Pre-existing; needs a UI-thread marshal, not done here.
+//   - SetSearchSql writes m_sql/m_countSql with no lock while the worker
+//     copies them (same as before this change); do not add string-compare
+//     staleness guards without first putting the writer under m_CritSection.
+//   - HideQPasteWindow/OnRefreshView clear m_listItems + SetItemCountEx(0)
+//     after waiting on m_SearchingEvent WITHOUT pumping messages, so an
+//     already-queued NM_SET_LIST_COUNT is still dispatched afterwards and
+//     sets a stale count on an empty list. Pre-existing window, unchanged
+//     by making COUNT async (same single-sender FIFO as before).
 void CQPasteWndThread::OnSetListCount(void *param)
 {
     CQPasteWnd *pasteWnd = (CQPasteWnd*)param;
@@ -76,7 +99,27 @@ void CQPasteWndThread::OnSetListCount(void *param)
     try
     {
         lRecordCount = theApp.m_db.execScalar(countSQL);
-        ::PostMessage(pasteWnd->m_hWnd, NM_SET_LIST_COUNT, lRecordCount, 0);
+        // Stale-result guard (existing protocol only, no new state): if a
+        // newer FillList/Hide set m_bStopQuery after this COUNT was queued,
+        // this count belongs to an older search -- drop the post. Both sides
+        // use pasteWnd->m_CritSection, so this read is synchronized with the
+        // writers. Dropped is always safe: the newer search queues its own
+        // COUNT behind its page load. If the newer LOAD already reset the
+        // flag, we may still post a stale count, but single-sender PostMessage
+        // FIFO guarantees the newer COUNT lands after it -- the UI converges.
+        bool stale = false;
+        {
+            ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
+            stale = pasteWnd->m_bStopQuery;
+        }
+        if (stale)
+        {
+            Log(_T("Dropping stale list count, newer search in flight"));
+        }
+        else
+        {
+            ::PostMessage(pasteWnd->m_hWnd, NM_SET_LIST_COUNT, lRecordCount, 0);
+        }
     }
     CATCH_SQLITE_EXCEPTION 
 
@@ -91,6 +134,11 @@ void CQPasteWndThread::OnLoadItems(void *param)
 
     ResetEvent(m_SearchingEvent);
 
+    // Set when this invocation queues COUNT async (first load below); the
+    // queued COUNT handler then owns the trailing SetEvent so the event
+    // stays reset across the LOAD -> COUNT handoff.
+    bool firedAsyncCount = false;
+
 	while(true)
 	{
 		long startTick = GetTickCount();
@@ -101,7 +149,6 @@ void CQPasteWndThread::OnLoadItems(void *param)
 	    bool clearFirstLoadItem = false;
 		bool firstLoad = false;
 		int listSize = 0;
-
 		{
 			ATL::CCritSecLock csLock(pasteWnd->m_CritSection.m_sect);
 
@@ -195,25 +242,35 @@ void CQPasteWndThread::OnLoadItems(void *param)
 					pos++;
 				}
 
-				DWORD loadCount = GetTickCount() - startTick;
-				DWORD countCountStart = GetTickCount();
-				DWORD countCount = 0;
-				DWORD acceleratorCount = 0;
+			DWORD loadCount = GetTickCount() - startTick;
+			DWORD countCount = 0;
+			DWORD acceleratorCount = 0;
 
-				if(firstLoad)
-				{
-					::PostMessage(pasteWnd->m_hWnd, NM_REFRESH_ROW, -2, 0);
-					//allow the next thread message to process, this should be the message to set the list count
+			if(firstLoad)
+			{
+				// First-load COUNT is non-blocking: the page window above is
+				// already committed to m_listItems under m_CritSection, so
+				// post its -2 repaint first and queue COUNT + accelerators as
+				// later events on this same thread (existing auto-reset
+				// signals via FireEvent -- no new threads, locks, or message
+				// types). The UI exposes the provisional page in
+				// OnRefeshRow(-2) and reconciles to the full count when
+				// NM_SET_LIST_COUNT lands. Ordering guarantee: both posts
+				// originate on this thread in -2-then-COUNT order and
+				// PostMessage preserves per-sender FIFO, so for one search
+				// the visible count only grows 0 -> page -> full; a newer
+				// search resets to 0 in FillList before its own -2/COUNT pair.
+				::PostMessage(pasteWnd->m_hWnd, NM_REFRESH_ROW, -2, 0);
 
-					OnSetListCount(param);
-					
-					countCount = GetTickCount() - countCountStart;
-					DWORD acceleratorCountStart = GetTickCount();
-					 
-					OnLoadAccelerators(param);
+				FireSetListCount();
+				FireLoadAccelerators();
+				firedAsyncCount = true;
 
-					acceleratorCount = GetTickCount() - acceleratorCountStart;
-				}
+				// COUNT/accel durations are logged in their own handlers now;
+				// here we keep only the page-fill time in the End line below.
+				countCount = 0;
+				acceleratorCount = 0;
+			}
 				else
 				{
 					::PostMessage(pasteWnd->m_hWnd, NM_REFRESH_ROW, -1, 0);
@@ -241,7 +298,16 @@ void CQPasteWndThread::OnLoadItems(void *param)
 		}
 	}
 
-    SetEvent(m_SearchingEvent);
+    // If first-load queued COUNT async, its handler Reset/Sets the event
+    // around itself, so skip the Set here: the event stays reset across the
+    // LOAD -> COUNT handoff and waiters (GoToEntry, HideQPasteWindow) cannot
+    // wake on the provisional page and mistake it for a complete search.
+    // No deadlock: every waiter uses a timeout, and the queued COUNT always
+    // runs next unless the thread is stopped (whose waiters time out too).
+    if (firedAsyncCount == false)
+    {
+        SetEvent(m_SearchingEvent);
+    }
 }
 
 void ReduceMapItems(CF_DibTypeMap &mapItem, CCriticalSection &critSection, CString mapName)
@@ -281,6 +347,16 @@ void ReduceMapItems(CF_DibTypeMap &mapItem, CCriticalSection &critSection, CStri
 	}
 }
 
+// NOTE (b, SKIPPED): coalescing the per-row theApp.GetClipData loop below
+// into one windowed IN-query fetch was judged NOT obviously safe, so the loop
+// shape is unchanged. Reasons: per-row failures are contained today (GetClipData
+// catches internally per call, plus a CF_DIB->PNG fallback second query), while
+// a batched cursor would need a new outer try/catch -- a new crash vector
+// through CEventThread::RunThread, which has no handler. The loop also relies
+// on per-item m_clipRow freshness, per-type NO-caches, and interleaved GDI
+// scaling (GetDibFittingToHeight) whose redistribution is not behavior-neutral.
+// Follow-up: batch only the Data fetch for visible rows behind the same
+// per-row fallback/cache insertion, measured against a large DB first.
 void CQPasteWndThread::OnLoadExtraData(void *param)
 {
     ResetEvent(m_SearchingEvent);
@@ -434,16 +510,25 @@ void CQPasteWndThread::OnLoadExtraData(void *param)
     Log(_T("End of load extra data, Bitmaps/rtf"));
 }
 
+// NOTE (c, SKIPPED): merging the two accelerator SELECTs
+// (LoadAcceleratorKeys: lShortCut > 0, MoveToGroupShortCut > 0) into the main
+// paged pass was judged NOT obviously safe, so this stays a separate queued
+// event. Reasons: the counts/rows use different filters (accels are global,
+// not search-scoped -- reloading them per search is wasteful but harmless),
+// folding them into the page SQL would change SQL shapes (out of scope), and
+// running them synchronously inside the page fill would re-serialize global
+// hotkey loading onto first paint -- the opposite of (a). Follow-up: skip
+// the reload when no shortcut-bearing row changed, or move it off first load.
 void CQPasteWndThread::OnLoadAccelerators(void *param)
 {
     CQPasteWnd *pasteWnd = (CQPasteWnd*)param;
-    pasteWnd->m_lstHeader.DestroyAndCreateAccelerator(TRUE, theApp.m_db);
+    pasteWnd->RefreshListAccelerators(TRUE);
 }
 
 void CQPasteWndThread::OnUnloadAccelerators(void *param)
 {
     CQPasteWnd *pasteWnd = (CQPasteWnd*)param;
-    pasteWnd->m_lstHeader.DestroyAndCreateAccelerator(FALSE, theApp.m_db);
+    pasteWnd->RefreshListAccelerators(FALSE);
 }
 
 CString CQPasteWndThread::EnumName(eCQPasteWndThreadEvents e)

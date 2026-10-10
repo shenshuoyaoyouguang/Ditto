@@ -34,10 +34,15 @@ CDittoWindow::CDittoWindow(void)
 	m_crChevronBT.SetRectEmpty();
 	m_crMaximizeBT.SetRectEmpty();
 	m_crMinimizeBT.SetRectEmpty();
-	m_CaptionColorLeft = RGB(255, 255, 255);
-	m_CaptionColorRight = RGB(204, 204, 204);
-	m_CaptionTextColor = RGB(191, 191, 191);
-	m_border = RGB(204, 204, 204);
+	// Fallbacks only: every host overwrites these via SetCaptionColorActive
+	// before any paint is possible (CWndEx ctor runs before the HWND exists;
+	// ShowQPasteWindow re-applies on every show), and the values equal
+	// CTheme::LoadDefaults, so seeding from the live theme never renders
+	// anything the old literals did not.
+	m_CaptionColorLeft = CGetSetOptions::m_Theme.CaptionLeft();
+	m_CaptionColorRight = CGetSetOptions::m_Theme.CaptionRight();
+	m_CaptionTextColor = CGetSetOptions::m_Theme.CaptionTextColor();
+	m_border = CGetSetOptions::m_Theme.Border();
 	m_sendWMClose = true;
 	m_customWindowTitle = _T("");
 	m_useCustomWindowTitle = false;

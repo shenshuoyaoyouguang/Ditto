@@ -128,7 +128,21 @@ public:
 
     void UpdateFont();
 
-    //protected:
+    // Minimal host accessors: the only sanctioned external touches of the
+    // paste-window's owned widgets. Everything else in the private block
+    // below is host-internal (verified by grep: no other file references
+    // these members).
+    // QuickPaste.cpp needs scaled sizes but must not reach into
+    // m_DittoWindow.m_dpi directly (T11 owns DittoWindow/DPI files).
+    int DpiScale(int x);
+    // QPasteWndThread loader events need accelerator refresh without
+    // touching m_lstHeader (a UI CWnd) or theApp.m_db directly.
+    void RefreshListAccelerators(BOOL bCreate);
+    // Same-class PreTranslateMessage type-to-search path (QPasteWnd.cpp:3191).
+    HWND SearchHwnd();
+    bool IsSearchFocused();
+
+private:
     CQListCtrl m_lstHeader;
 
     CAlphaBlend m_Alpha;
@@ -157,6 +171,10 @@ public:
 	int m_typeFilter;		// ChipFilter value
 	bool m_showSidebar;
 
+public:
+    // Thread-protocol state below stays public: CQPasteWndThread touches it
+    // under m_CritSection. Privatizing needs a lock-protocol redesign,
+    // so it is deferred, not done here.
     long m_lRecordCount;
     bool m_bStopQuery;
     bool m_bHandleSearchTextChange;

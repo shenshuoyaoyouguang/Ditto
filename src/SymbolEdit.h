@@ -73,10 +73,15 @@ public:
 
 	void SetLastSearchAccel(CAccel a) { m_lastSearchShortCut = a; }
 
-	CString SavePastSearches();
-	void LoadPastSearches(CString values);
+	enum { kMaxSavedSearches = 10, kMaxSavedSearchLength = 50 };
+
+	// In-memory history only. XML persistence lives in the host
+	// (CQPasteWnd OnCreate/OnDestroy); the widget never touches options.
+	const CStringArray& GetSearches() const { return m_searches; }
+	void SetSearches(const CStringArray& searches);
 
 	void SetDpiInfo(CDPI *dpi);
+	void DetachDpi() { m_windowDpi = NULL; }
 
 	void OnDpiChanged();
 
@@ -102,6 +107,9 @@ protected:
 	void RecalcLayout();
 	virtual void PreSubclassWindow();
 
+	// Non-owning alias of the host's CDPI (QPasteWnd::m_DittoWindow.m_dpi).
+	// Valid from SetDpiInfo until DetachDpi; the host outlives this widget
+	// by member declaration order, so the pointer never dangles.
 	CDPI *m_windowDpi;
 
 	int m_centerTextDiff;
@@ -118,6 +126,7 @@ protected:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnSelectSearchString(UINT idIn);
+	afx_msg void OnEnChange();
 
 	DECLARE_MESSAGE_MAP()
 

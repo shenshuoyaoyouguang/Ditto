@@ -23,6 +23,7 @@ public:
 
 	BOOL Create(CWnd* pParent, UINT nID);
 	void SetDpiInfo(CDPI* dpi) { m_dpi = dpi; }
+	void DetachDpi() { m_dpi = NULL; m_bChipsLaidOut = false; }
 	void SetLabels(const CString csLabels[CHIP_COUNT]);
 	void SetActive(int index) { m_active = index; Invalidate(FALSE); }
 	void SetHoverEnabled(bool enable) { m_bHoverEnabled = enable; }
@@ -51,6 +52,9 @@ protected:
 	void LayoutChips();
 	void MoveActiveTo(int index);
 
+	// Non-owning alias of the host's CDPI (QPasteWnd::m_DittoWindow.m_dpi).
+	// Valid from SetDpiInfo until DetachDpi; the host outlives this widget
+	// by member declaration order, so the pointer never dangles.
 	CDPI* m_dpi;
 	CString m_labels[CHIP_COUNT];
 	CRect m_chips[CHIP_COUNT];

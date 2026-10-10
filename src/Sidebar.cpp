@@ -97,6 +97,14 @@ void CSidebar::OnPaint()
 
 	CTheme& theme = CGetSetOptions::m_Theme;
 
+	if (m_dpi == NULL)
+	{
+		CRect rcEmpty;
+		GetClientRect(rcEmpty);
+		dc.FillSolidRect(rcEmpty, theme.SurfaceBase());
+		return;
+	}
+
 	if (m_bViewsLaidOut == false)
 		LayoutViews();
 

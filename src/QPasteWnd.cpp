@@ -18,6 +18,7 @@
 #include "GroupName.h"
 #include "htmlformataggregator.h"
 #include "HyperLink.h"
+#include "ListQueryBuilder.h"
 #include "MainTableFunctions.h"
 #include "Misc.h"
 #include "MoveToGroupDlg.h"
@@ -26,6 +27,7 @@
 #include "QPasteWnd.h"
 #include "SendMail.h"
 #include <algorithm>
+#include <map>
 #include <signal.h>
 #include "CreateQRCodeImage.h"
 #include "QRCodeViewer.h"
@@ -394,7 +396,6 @@ BEGIN_MESSAGE_MAP(CQPasteWnd, CWndEx)
 HBRUSH CQPasteWnd::CtlColor(CDC* pDC, UINT nCtlColor)
 {
 	pDC->SetBkMode(TRANSPARENT);
-	pDC->SetBkColor(RGB(255, 0, 0));
 
 	return (HBRUSH)GetStockObject(NULL_BRUSH);
 }
@@ -423,13 +424,7 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_search.SetPromptText(theApp.m_Language.GetString(_T("Search"), _T("Search")));
 	::SHAutoComplete(m_search.m_hWnd, SHACF_AUTOSUGGEST_FORCE_OFF);
 
-	m_search.LoadPastSearches(CGetSetOptions::GetPastSearchXml());
-
-	CRect rcEditArea(m_DittoWindow.m_dpi.Scale(4), m_DittoWindow.m_dpi.Scale(2), m_DittoWindow.m_dpi.Scale(20), m_DittoWindow.m_dpi.Scale(2));
-	//m_search.SetBorder(rcEditArea);
-
-	CRect rcCloseArea(m_DittoWindow.m_dpi.Scale(85), m_DittoWindow.m_dpi.Scale(3), m_DittoWindow.m_dpi.Scale(99), m_DittoWindow.m_dpi.Scale(15));
-	//m_search.SetButtonArea(rcCloseArea);
+	LoadPastSearchesInto(m_search, CGetSetOptions::GetPastSearchXml());
 
 	// Create the header control
 	if (!m_lstHeader.Create(WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_NOCOLUMNHEADER | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_OWNERDRAWFIXED, CRect(0, 0, 0, 0), this, ID_LIST_HEADER))
@@ -578,6 +573,26 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	InvalidateNc();
 
 	return 0;
+}
+
+int CQPasteWnd::DpiScale(int x)
+{
+	return m_DittoWindow.m_dpi.Scale(x);
+}
+
+void CQPasteWnd::RefreshListAccelerators(BOOL bCreate)
+{
+	m_lstHeader.DestroyAndCreateAccelerator(bCreate, theApp.m_db);
+}
+
+HWND CQPasteWnd::SearchHwnd()
+{
+	return m_search.GetSafeHwnd();
+}
+
+bool CQPasteWnd::IsSearchFocused()
+{
+	return ::GetFocus() == m_search.m_hWnd;
 }
 
 void CQPasteWnd::LoadShortcuts()
@@ -1320,6 +1335,9 @@ LRESULT CQPasteWnd::OnReloadClipInUI(WPARAM wParam, LPARAM lParam)
 
 	theApp.m_FocusID = -1;
 
+	// Must refetch: the paste path just rewrote this row's clipOrder,
+	// clipGroupOrder and lastPasteDate in Main (ProcessPaste.cpp), so the
+	// FillMainTable cache is stale by design here, not merely unloaded.
 	CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT clipOrder, clipGroupOrder, lastPasteDate, mText FROM Main WHERE lID = %d"), clipId);
 	if (q.eof() == false)
 	{
@@ -1513,28 +1531,6 @@ void CQPasteWnd::UpdateStatus(bool bRepaintImmediately)
 	SetCustomWindowTitle(windowTitle);
 }
 
-static CString TypeFilterSql(int typeFilter)
-{
-	switch (typeFilter)
-	{
-	case CHIP_TEXT:
-		// CF_TEXT is the ANSI clipboard format; Ditto stores ASCII-only clips
-		// under it, so testing only CF_UNICODETEXT silently dropped them.
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat IN ('CF_UNICODETEXT', 'CF_TEXT')))");
-	case CHIP_IMAGE:
-		// Ditto registers its own 'PNG' clipboard format for image clips that are
-		// stored as png rather than as a DIB, so CF_DIB alone missed those.
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat IN ('CF_DIB', 'PNG')))");
-	case CHIP_FILE:
-		return _T("(Main.bIsGroup = 0 AND EXISTS (SELECT 1 FROM Data D WHERE D.lParentID = Main.lID AND D.strClipBoardFormat = 'CF_HDROP'))");
-	case CHIP_LINK:
-		return _T("(Main.bIsGroup = 0 AND (Main.mText LIKE 'http://%' OR Main.mText LIKE 'https://%' OR Main.mText LIKE 'www.%'))");
-	}
-
-	return _T("");
-}
-
-
 BOOL CQPasteWnd::FillList(CString csSQLSearch)
 {
 	KillTimer(TIMER_DO_SEARCH);
@@ -1552,55 +1548,36 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 
 	CString strFilter;
 	CString strParentFilter;
-	CString strStarredFilter = _T("Main.bIsGroup = 0 AND Main.lDontAutoDelete > 0");
+	CString strStarredFilter = CString(ListQuery::StarredFilterSql().c_str());
 	CString csSort;
 
 	// History Groupiter->m_stickyClipGroupOrder = clip.m_stickyClipGroupOrder;
 	if (m_bShowStarredClips)
 	{
-		csSort = "Main.stickyClipOrder DESC, "
-			"Main.bIsGroup ASC, "
-			"Main.clipOrder DESC";
+		csSort = CString(ListQuery::MainSortSql().c_str());
 
 		strFilter = strStarredFilter;
 	}
 	else if (theApp.m_GroupID < 0)
 	{
 		//do not change this this directly relates to the views in the Main table
-		csSort = "Main.stickyClipOrder DESC, "
-			"Main.bIsGroup ASC, "
-			"Main.clipOrder DESC";
+		csSort = CString(ListQuery::MainSortSql().c_str());
 
-		if (CGetSetOptions::m_bShowAllClipsInMainList)
-		{
-			if (CGetSetOptions::GetShowGroupsInMainList())
-			{
-				//found to be slower on large databases
-				strFilter = "((Main.bIsGroup = 1 AND Main.lParentID = -1) OR Main.bIsGroup = 0)";
-			}
-			else
-			{
-				strFilter = "(Main.bIsGroup = 0)";
-			}
-		}
-		else
-		{
-			strFilter = "((Main.bIsGroup = 1 AND Main.lParentID = -1) OR (Main.bIsGroup = 0 AND Main.lParentID = -1))";
-		}
+		strFilter = CString(ListQuery::TopLevelFilterSql(
+			CGetSetOptions::m_bShowAllClipsInMainList != FALSE,
+			CGetSetOptions::GetShowGroupsInMainList() != FALSE).c_str());
 	}
 	else
 		// it's some other group
 	{
 		//do not change this this directly relates to the views in the Main table
-		csSort = "Main.stickyClipGroupOrder DESC, "
-			"Main.bIsGroup ASC, "
-			"Main.clipGroupOrder DESC";
+		csSort = CString(ListQuery::GroupSortSql().c_str());
 
 		//Main.stickyClipGroupOrder DESC, Main.clipGroupOrder DESC";//
 
 		if (theApp.m_GroupID >= 0)
 		{
-			strFilter.Format(_T("Main.lParentID = %d"), theApp.m_GroupID);
+			strFilter = CString(ListQuery::GroupFilterSql(theApp.m_GroupID).c_str());
 			strParentFilter = strFilter;
 		}
 
@@ -1618,7 +1595,8 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 
 	if (csSQLSearch == "")
 	{
-		m_strSQLSearch = m_bShowStarredClips ? strFilter : _T("");
+		m_strSQLSearch = CString(ListQuery::EmptySearchStoredSql(
+			m_bShowStarredClips, std::wstring((LPCTSTR)strFilter)).c_str());
 		m_strSearch = "";
 	}
 	else
@@ -1631,8 +1609,10 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 		CString fullTextSql;
 
 		//If other are off then always search the description
-		if (CGetSetOptions::GetSearchDescription() ||
-			(CGetSetOptions::GetSearchFullText() == FALSE && CGetSetOptions::GetSearchQuickPaste() == FALSE))
+		if (ListQuery::ShouldSearchDescription(
+			CGetSetOptions::GetSearchDescription() != FALSE,
+			CGetSetOptions::GetSearchFullText() != FALSE,
+			CGetSetOptions::GetSearchQuickPaste() != FALSE))
 		{
 			descriptionFormat.SetVariable("Main.mText");
 
@@ -1640,94 +1620,60 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 			descriptionSql = descriptionFormat.GetSQLString();
 		}
 
-		if (csSQLSearch.Left(3) == _T("/q ") ||
-			csSQLSearch.Left(3) == _T("\\q ") ||
-			CGetSetOptions::GetSearchQuickPaste())
+		if (ListQuery::ShouldSearchQuickPaste(
+			std::wstring((LPCTSTR)csSQLSearch),
+			CGetSetOptions::GetSearchQuickPaste() != FALSE))
 		{
 			quickPasteFormat.SetVariable("Main.QuickPasteText");
 
-			if (csSQLSearch.Left(3) == _T("/q ") ||
-				csSQLSearch.Left(3) == _T("\\q "))
+			if (ListQuery::HasQuickPastePrefix(std::wstring((LPCTSTR)csSQLSearch)))
 			{
-				csSQLSearch = csSQLSearch.Mid(3);
+				csSQLSearch = CString(ListQuery::StripSearchPrefix3(
+					std::wstring((LPCTSTR)csSQLSearch)).c_str());
 			}
 
 			quickPasteFormat.Parse(csSQLSearch);
 			quickPasteSql = quickPasteFormat.GetSQLString();
 		}
 
-		if (csSQLSearch.Left(3) == _T("/f ") ||
-			csSQLSearch.Left(3) == _T("\\f ") ||
-			CGetSetOptions::GetSearchFullText())
+		bool fullTextActive = ListQuery::ShouldSearchFullText(
+			std::wstring((LPCTSTR)csSQLSearch),
+			CGetSetOptions::GetSearchFullText() != FALSE);
+		if (fullTextActive)
 		{
-			dataJoin = _T("INNER JOIN Data on Data.lParentID = Main.lID");
-
-			if (csSQLSearch.Left(3) == _T("/f ") ||
-				csSQLSearch.Left(3) == _T("\\f "))
+			// EXISTS rewrite (src/ListQueryBuilder.h): no INNER JOIN fan-out,
+			// so dataJoin stays empty and DISTINCT is never needed.
+			if (ListQuery::HasFullTextPrefix(std::wstring((LPCTSTR)csSQLSearch)))
 			{
-				csSQLSearch = csSQLSearch.Mid(3);
+				csSQLSearch = CString(ListQuery::StripSearchPrefix3(
+					std::wstring((LPCTSTR)csSQLSearch)).c_str());
 			}
 
 			fullTextFormat.SetVariable("Data.ooData");
 			fullTextFormat.Parse(csSQLSearch);
 			fullTextSql = fullTextFormat.GetSQLString();
 
-			fullTextSql.Insert(1, _T("Data.strClipBoardFormat = 'CF_UNICODETEXT' AND "));
+			fullTextSql = CString(ListQuery::ApplyFullTextFormatPrefix(
+				std::wstring((LPCTSTR)fullTextSql)).c_str());
+			fullTextSql = CString(ListQuery::FullTextExistsPredicate(
+				std::wstring((LPCTSTR)fullTextSql)).c_str());
 
-			//If we are also search for other text make sure we only get one entry, including the data rows will cause multiple rows to be returned
-			if (descriptionSql != _T(""))
-			{
-				IsDistinct = _T("DISTINCT");
-			}
-
-			if (quickPasteSql != _T(""))
-			{
-				IsDistinct = _T("DISTINCT");
-			}
+			// No JOIN fan-out on the EXISTS path: COUNT(Main.lID) and the
+			// paged SELECT need no DISTINCT (TEMP B-TREE eliminated).
+			IsDistinct = CString(ListQuery::DistinctForSearch(
+				true,
+				std::wstring((LPCTSTR)descriptionSql),
+				std::wstring((LPCTSTR)quickPasteSql),
+				false).c_str());
 		}
 
-		strFilter = _T("(");
-
-		if (descriptionSql != _T(""))
-		{
-			strFilter += descriptionSql;
-		}
-
-		if (quickPasteSql != _T(""))
-		{
-			if (descriptionSql != _T(""))
-			{
-				strFilter += _T(" OR ");
-			}
-
-			strFilter += quickPasteSql;
-		}
-
-		if (fullTextSql != _T(""))
-		{
-			if (descriptionSql != _T("") ||
-				quickPasteSql != _T(""))
-			{
-				strFilter += _T(" OR ");
-			}
-
-			strFilter += fullTextSql;
-		}
-
-		strFilter += _T(")");
-
-		if (strParentFilter.IsEmpty() == FALSE)
-		{
-			strFilter += " AND ";
-			strFilter += strParentFilter;
-		}
-
-		if (m_bShowStarredClips)
-		{
-			strFilter += " AND (";
-			strFilter += strStarredFilter;
-			strFilter += ")";
-		}
+		strFilter = CString(ListQuery::ConvergeSearchFilter(
+			std::wstring((LPCTSTR)descriptionSql),
+			std::wstring((LPCTSTR)quickPasteSql),
+			std::wstring((LPCTSTR)fullTextSql),
+			std::wstring((LPCTSTR)strParentFilter),
+			m_bShowStarredClips,
+			fullTextActive).c_str());
 
 		m_strSQLSearch = strFilter;
 		m_strSearch = csSQLSearch;
@@ -1740,23 +1686,21 @@ BOOL CQPasteWnd::FillList(CString csSQLSearch)
 	// group / starred / search filters built above
 	if (m_typeFilter != CHIP_ALL)
 	{
-		CString csTypeFilter = TypeFilterSql(m_typeFilter);
-		if (csTypeFilter.IsEmpty() == FALSE)
-		{
-			if (strFilter.IsEmpty())
-				strFilter = csTypeFilter;
-			else
-				strFilter += _T(" AND ") + csTypeFilter;
-		}
+		strFilter = CString(ListQuery::ApplyTypeFilter(
+			std::wstring((LPCTSTR)strFilter), m_typeFilter).c_str());
 	}
 
 	//Format the count and select sql queries for the thread
-	countSql.Format(_T("SELECT COUNT(%s Main.lID) FROM Main %s where %s"), IsDistinct, dataJoin, strFilter);
+	countSql = CString(ListQuery::BuildCountSql(
+		std::wstring((LPCTSTR)IsDistinct),
+		std::wstring((LPCTSTR)dataJoin),
+		std::wstring((LPCTSTR)strFilter)).c_str());
 
-	sql.Format(_T("SELECT %s Main.lID, Main.mText, Main.lParentID, Main.lDontAutoDelete, ")
-		_T("Main.lShortCut, Main.bIsGroup, Main.QuickPasteText, Main.clipOrder, Main.clipGroupOrder, ")
-		_T("Main.stickyClipOrder, Main.stickyClipGroupOrder, Main.lDate, Main.lastPasteDate FROM Main %s ")
-		_T("where %s order by %s"), IsDistinct, dataJoin, strFilter, csSort);
+	sql = CString(ListQuery::BuildPageSql(
+		std::wstring((LPCTSTR)IsDistinct),
+		std::wstring((LPCTSTR)dataJoin),
+		std::wstring((LPCTSTR)strFilter),
+		std::wstring((LPCTSTR)csSort)).c_str());
 
 
 	{
@@ -2904,21 +2848,98 @@ BOOL CQPasteWnd::SendToFriendbyPos(int nPos, CString override_IP_Host)
 			Info.m_pPopup = &Popup;
 
 			Info.m_pClipList = new CClipList;
+
+			// One Main IN-list query + one Data IN-list range query replace the
+			// old N x (SELECT mText ... + LoadFormats) per-ID loop. The ID list
+			// below is iterated in selection order, IDs missing from Main are
+			// skipped as the old eof check did, and each clip's formats keep
+			// LoadFormats' lID-desc order via (lParentID, Data.lID desc).
+			std::vector<int> batchIds;
 			for (int i = 0; i < count; i++)
 			{
-				CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT mText FROM Main WHERE lID = %d"), IDs[i]);
-				if (q.eof() == false)
+				batchIds.push_back(IDs[i]);
+			}
+
+			// Plain rows, not CClipFormats: ~CClipFormat frees its HGLOBAL,
+			// so owning wrappers must only exist inside the destination
+			// CClips (built with the same single-reused-cf + trailing
+			// m_hgData = 0 pattern CClip::LoadFormats uses).
+			struct BatchClipFormat
+			{
+				int dataId;
+				int parentId;
+				CLIPFORMAT cfType;
+				HGLOBAL hgData;
+			};
+
+			std::map<int, CString> batchDescs;
+			std::map<int, std::vector<BatchClipFormat>> batchFormats;
+
+			CppSQLite3Query batchMainQ = theApp.m_db.execQuery(
+				CString(ListQuery::BuildMainBatchSql(batchIds).c_str()));
+			while (batchMainQ.eof() == false)
+			{
+				batchDescs[batchMainQ.getIntField(_T("lID"))] =
+					batchMainQ.getStringField(_T("mText"));
+				batchMainQ.nextRow();
+			}
+
+			CppSQLite3Query batchDataQ = theApp.m_db.execQuery(
+				CString(ListQuery::BuildDataBatchSql(batchIds).c_str()));
+			while (batchDataQ.eof() == false)
+			{
+				BatchClipFormat f;
+				f.dataId = batchDataQ.getIntField(_T("lID"));
+				f.parentId = batchDataQ.getIntField(_T("lParentID"));
+				f.cfType = GetFormatID(batchDataQ.getStringField(_T("strClipBoardFormat")));
+				f.hgData = 0;
+
+				int nDataLen = 0;
+				const unsigned char* cData = batchDataQ.getBlobField(_T("ooData"), nDataLen);
+				if (cData != NULL)
 				{
-					CClip* pClip = new CClip;
-					if (pClip)
+					f.hgData = NewGlobalP((LPVOID)cData, nDataLen);
+				}
+
+				batchFormats[f.parentId].push_back(f);
+				batchDataQ.nextRow();
+			}
+
+			CClipFormat cf;
+			for (int i = 0; i < count; i++)
+			{
+				std::map<int, CString>::iterator descIt = batchDescs.find(IDs[i]);
+				if (descIt == batchDescs.end())
+				{
+					continue;
+				}
+
+				CClip* pClip = new CClip;
+				if (pClip)
+				{
+					std::map<int, std::vector<BatchClipFormat>>::iterator fmtIt = batchFormats.find(IDs[i]);
+					if (fmtIt != batchFormats.end())
 					{
-						pClip->LoadFormats(IDs[i]);
-						pClip->m_Desc = q.getStringField(0);
-						pClip->m_id = IDs[i];
-						Info.m_pClipList->AddTail(pClip);
+						std::vector<BatchClipFormat>::iterator fmt = fmtIt->second.begin();
+						while (fmt != fmtIt->second.end())
+						{
+							cf.m_dataId = fmt->dataId;
+							cf.m_parentId = fmt->parentId;
+							cf.m_cfType = fmt->cfType;
+							cf.m_hgData = fmt->hgData;
+							pClip->m_Formats.Add(cf);
+							fmt++;
+						}
 					}
+
+					pClip->m_Desc = descIt->second;
+					pClip->m_id = IDs[i];
+					Info.m_pClipList->AddTail(pClip);
 				}
 			}
+			// Destination CClips own every handle now; keep this one from
+			// freeing the last handle it carried (LoadFormats does the same).
+			cf.m_hgData = 0;
 
 			if (SendToFriend(Info) == FALSE)
 			{
@@ -3189,7 +3210,7 @@ BOOL CQPasteWnd::PreTranslateMessage(MSG* pMsg)
 		{
 			if (pMsg->hwnd == m_lstHeader.m_hWnd)
 			{
-				bool bStartNewSearch = (::GetFocus() != m_search.m_hWnd);
+				bool bStartNewSearch = (IsSearchFocused() == false);
 				TCHAR ch = (TCHAR)pMsg->wParam;
 				m_search.SetFocus();
 				CString csSearch;
@@ -4310,24 +4331,27 @@ bool CQPasteWnd::ShowProperties(int id, int row)
 				}
 			}
 
-			if (row >= 0 &&
-				row < (int)m_listItems.size())
+		if (row >= 0 &&
+			row < (int)m_listItems.size())
+		{
+			// Must refetch: the properties dialog wrote Main between load and
+			// this refresh (CopyProperties OnOK UPDATEs Main), so the cached
+			// row is stale even though it is present in m_listItems.
+			CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT * FROM Main WHERE lID = %d"), id);
+			if (!q.eof())
 			{
-				CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT * FROM Main WHERE lID = %d"), id);
-				if (!q.eof())
-				{
-					FillMainTable(m_listItems[row], q);
-				}
-
-				RemoveFromImageRtfCache(row);
+				FillMainTable(m_listItems[row], q);
 			}
+
+			RemoveFromImageRtfCache(row);
 		}
+	}
 
-		m_extraDataThread.FireLoadAccelerators();
+	m_extraDataThread.FireLoadAccelerators();
 
-		m_lstHeader.RefreshVisibleRows();
+	m_lstHeader.RefreshVisibleRows();
 
-		if (props.m_lGroupChangedTo >= 0)
+	if (props.m_lGroupChangedTo >= 0)
 		{
 			CSpecialPasteOptions pasteOptions;
 			OpenID(props.m_lGroupChangedTo, pasteOptions);
@@ -5465,18 +5489,19 @@ bool CQPasteWnd::DoActionSaveCF_HDROP_FileData()
 				if (clip.LoadFormats(id))
 				{
 					CString localErrorMessage;
-					if (clip.AddFileDataToData(localErrorMessage))
+				if (clip.AddFileDataToData(localErrorMessage))
+				{
+					if (row >= 0 &&
+						row < (int)m_listItems.size())
 					{
-						if (row >= 0 &&
-							row < (int)m_listItems.size())
-						{
-							CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT * FROM Main WHERE lID = %d"), id);
-							if (!q.eof())
-							{
-								FillMainTable(m_listItems[row], q);
-							}
-						}
+						// No refetch: AddFileDataToData rewrites only Main.mText
+						// (CClip::ModifyDescription) to clip.m_Desc, which is
+						// already in hand; all other Main columns are untouched
+						// on this path, so copying the description is the same
+						// cache state a SELECT * + FillMainTable would produce.
+						m_listItems[row].m_Desc = clip.m_Desc;
 					}
+				}
 
 					errorMessage += localErrorMessage;
 				}
@@ -6044,6 +6069,11 @@ void CQPasteWnd::OnGetToolTipText(NMHDR* pNMHDR, LRESULT* pResult)
 		CString clipData = _T("");
 
 		int id = m_lstHeader.GetItemData(pInfo->lItem);
+		// Kept as a DB read: the tooltip needs lShortCut/globalShortCut and
+		// the lParentID value for the folder path, which the FillMainTable
+		// cache (CMainTable) does not carry, and the row may not be loaded in
+		// the thread window yet. Serving this from cache needs new cache
+		// fields, so it stays a refetch until that extension lands.
 		CppSQLite3Query q = theApp.m_db.execQueryEx(_T("SELECT lID, mText, lDate, lShortCut, clipOrder, clipGroupOrder, stickyClipOrder, stickyClipGroupOrder, lDontAutoDelete, QuickPasteText, lastPasteDate, globalShortCut, lParentID FROM Main WHERE lID = %d"), id);
 		if (q.eof() == false)
 		{
@@ -6643,6 +6673,24 @@ LRESULT CQPasteWnd::OnRefeshRow(WPARAM wParam, LPARAM lParam)
 
 	if (clipId == -2)
 	{
+		// First-load page is committed; COUNT still lands async. Expose the
+		// loaded window now so rows paint without waiting for COUNT: grow
+		// 0 -> page here, NM_SET_LIST_COUNT reconciles page -> full later.
+		// Grow-only (FillList resets to 0 on a new search) means no flicker;
+		// indices below the provisional count are backed by m_listItems (the
+		// LVN_GETDISPINFO path bounds-checks and queues loads for the rest),
+		// so no row-count tearing. Reads current m_listItems, so a -2 that
+		// arrives after a newer search cleared the list is a no-op, never a
+		// stale count -- unlike COUNT, this post carries no value to go stale.
+		int loaded = 0;
+		{
+			ATL::CCritSecLock csLock(m_CritSection.m_sect);
+			loaded = (int)m_listItems.size();
+		}
+		if (loaded > m_lstHeader.GetItemCount())
+		{
+			m_lstHeader.SetItemCountEx(loaded, 0);
+		}
 		m_lstHeader.Invalidate();
 		m_lstHeader.RedrawWindow();
 
@@ -6678,6 +6726,72 @@ void CQPasteWnd::SelectFocusID()
 	}
 }
 
+static void LoadPastSearchesInto(CSymbolEdit& edit, const CString& values)
+{
+	CStringArray searches;
+
+	TiXmlDocument doc;
+	CStringA xmlA = CTextConvert::UnicodeToUTF8(values);
+	doc.Parse(xmlA);
+
+	TiXmlElement* ItemHeader = doc.FirstChildElement("PastSearches");
+	if (ItemHeader != NULL)
+	{
+		TiXmlElement* ItemElement = ItemHeader->FirstChildElement();
+
+		int count = 0;
+		while (ItemElement)
+		{
+			if (count < CSymbolEdit::kMaxSavedSearches)
+			{
+				CString item = ItemElement->Attribute("text");
+
+				CString toAdd = item.Left(CSymbolEdit::kMaxSavedSearchLength);
+				if (toAdd != _T(""))
+				{
+					searches.Add(toAdd);
+				}
+
+				ItemElement = ItemElement->NextSiblingElement();
+			}
+			else
+			{
+				break;
+			}
+
+			count++;
+		}
+	}
+
+	edit.SetSearches(searches);
+}
+
+static CString SavePastSearchesFrom(const CSymbolEdit& edit)
+{
+	TiXmlDocument doc;
+
+	TiXmlElement* outer = new TiXmlElement("PastSearches");
+	doc.LinkEndChild(outer);
+
+	const CStringArray& searches = edit.GetSearches();
+	INT_PTR count = searches.GetSize();
+	for (INT_PTR i = 0; i < count; i++)
+	{
+		TiXmlElement* searchElement = new TiXmlElement("Search");
+
+		CStringA t = CTextConvert::UnicodeToUTF8(searches[i]);
+		searchElement->SetAttribute("text", t);
+
+		outer->LinkEndChild(searchElement);
+	}
+
+	TiXmlPrinter printer;
+	printer.SetLineBreak("");
+	doc.Accept(&printer);
+
+	return CString(printer.CStr());
+}
+
 void CQPasteWnd::FillMainTable(CMainTable& table, CppSQLite3Query& q)
 {
 	table.m_lID = q.getIntField(_T("lID"));
@@ -6697,7 +6811,11 @@ void CQPasteWnd::FillMainTable(CMainTable& table, CppSQLite3Query& q)
 
 void CQPasteWnd::OnDestroy()
 {
-	CGetSetOptions::SetPastSearchXml(m_search.SavePastSearches());
+	CGetSetOptions::SetPastSearchXml(SavePastSearchesFrom(m_search));
+
+	m_search.DetachDpi();
+	m_sidebar.DetachDpi();
+	m_chipBar.DetachDpi();
 
 	CWndEx::OnDestroy();
 	m_thread.Stop();
@@ -7233,18 +7351,32 @@ void CQPasteWnd::OnMenuGoToEntry()
 	int targetIndex = -1;
 	try
 	{
-		CString rankSql;
-		rankSql.Format(
-			_T("SELECT COUNT(*) FROM Main WHERE %s AND (")
-			_T("(stickyClipOrder > %d) OR ")
-			_T("(stickyClipOrder = %d AND bIsGroup < %d) OR ")
-			_T("(stickyClipOrder = %d AND bIsGroup = %d AND clipOrder > %d))"),
-			(LPCTSTR)filter,
-			targetSticky,
-			targetSticky, targetIsGroup,
-			targetSticky, targetIsGroup, targetClipOrder);
+		// Ordered ROW_NUMBER lookup over the same filter/sort the list uses;
+		// returns the same 0-based position as the COUNT-before-keys shape
+		// when the sort key is unique for the target. No row back means the
+		// target is excluded by the filter -- keep the old COUNT value so the
+		// scroll position is unchanged in that case too.
+		CString rankSql(ListQuery::BuildGoToRankSql(std::wstring(filter), targetID).c_str());
+		CppSQLite3Query rankQ = theApp.m_db.execQuery(rankSql);
+		if (rankQ.eof() == false)
+		{
+			targetIndex = rankQ.getIntField(0);
+		}
+		else
+		{
+			CString countSql;
+			countSql.Format(
+				_T("SELECT COUNT(*) FROM Main WHERE %s AND (")
+				_T("(stickyClipOrder > %d) OR ")
+				_T("(stickyClipOrder = %d AND bIsGroup < %d) OR ")
+				_T("(stickyClipOrder = %d AND bIsGroup = %d AND clipOrder > %d))"),
+				(LPCTSTR)filter,
+				targetSticky,
+				targetSticky, targetIsGroup,
+				targetSticky, targetIsGroup, targetClipOrder);
 
-		targetIndex = theApp.m_db.execScalar(rankSql);
+			targetIndex = theApp.m_db.execScalar(countSql);
+		}
 	}
 	catch (CppSQLite3Exception&)
 	{

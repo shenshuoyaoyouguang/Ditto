@@ -15,9 +15,12 @@ CModernScrollBar::CModernScrollBar()
 	, m_pParentWnd(NULL)
 	, m_pDPI(NULL)
 	, m_orientation(ScrollBarOrientation::Vertical)
-	, m_trackColor(RGB(240, 240, 240))
-	, m_thumbColor(RGB(180, 180, 180))
-	, m_thumbHoverColor(RGB(140, 140, 140))
+	// Fallbacks only: QPasteWnd::OnCreate calls SetColors() with the live theme
+	// immediately after Create(), before any paint, and the values equal
+	// CTheme::LoadDefaults, so this never renders anything the old literals did.
+	, m_trackColor(CGetSetOptions::m_Theme.ScrollBarTrack())
+	, m_thumbColor(CGetSetOptions::m_Theme.ScrollBarThumb())
+	, m_thumbHoverColor(CGetSetOptions::m_Theme.ScrollBarThumbHover())
 	, m_scrollBarWidth(8)
 	, m_scrollBarHoverWidth(12)
 	, m_cornerRadius(4)

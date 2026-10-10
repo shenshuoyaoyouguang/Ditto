@@ -134,23 +134,33 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 	m_bCaptionPersistant = bPersistant ? true : false;
 	m_bConnectedToClipboard = ConnectedToClipboard ? true : false;
 
+	// Single fan-out: every variant resolves to one SetCaptionColors call, so
+	// the palette can only come from the live theme, never a stale copy.
+	COLORREF left;
+	COLORREF right;
+	COLORREF border;
 	if(ConnectedToClipboard == false)
 	{
-		bResult = m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.CaptionLeftNotConnected(), CGetSetOptions::m_Theme.CaptionRightNotConnected(), CGetSetOptions::m_Theme.BorderNotConnected());
+		left = CGetSetOptions::m_Theme.CaptionLeftNotConnected();
+		right = CGetSetOptions::m_Theme.CaptionRightNotConnected();
+		border = CGetSetOptions::m_Theme.BorderNotConnected();
+	}
+	else if(bPersistant)
+	{
+		left = CGetSetOptions::m_Theme.CaptionLeftTopMost();
+		right = CGetSetOptions::m_Theme.CaptionRightTopMost();
+		border = CGetSetOptions::m_Theme.BorderTopMost();
 	}
 	else
 	{
-		if(bPersistant)
-		{
-			bResult = m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.CaptionLeftTopMost(), CGetSetOptions::m_Theme.CaptionRightTopMost(), CGetSetOptions::m_Theme.BorderTopMost());
-		}
-		else
-		{
-			bResult = m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.CaptionLeft(), CGetSetOptions::m_Theme.CaptionRight(), CGetSetOptions::m_Theme.Border());
-		}
+		left = CGetSetOptions::m_Theme.CaptionLeft();
+		right = CGetSetOptions::m_Theme.CaptionRight();
+		border = CGetSetOptions::m_Theme.Border();
 	}
 
 	m_DittoWindow.SetCaptionTextColor(CGetSetOptions::m_Theme.CaptionTextColor());
+
+	bResult = m_DittoWindow.SetCaptionColors(left, right, border);
 
 	return bResult;
 }
