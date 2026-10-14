@@ -2,6 +2,7 @@
 
 #include <tinyxml2.h>
 #include "ThemeColorMath.h"
+#include "ThemeTokens.h"
 
 class CTheme
 {
@@ -80,6 +81,11 @@ public:
 	CString FontFamily() const { return m_csFontFamily; }
 	bool IsDarkTheme() const { return m_bDarkTheme; }
 
+	// Read-only snapshot of the finished token values, rebuilt once per
+	// finalize path (T1). The concrete class and the global instance stay;
+	// no consumer reads this yet (T2/T3 territory).
+	const ditto::theme::ThemeTokenSnapshot& GetTokenSnapshot() const { return m_tokenSnapshot; }
+
 	CString Notes() const { return m_csNotes; }
 	CString Author() const { return m_csAuthor; }
 	long FileVersion() const { return m_lFileVersion; }
@@ -107,6 +113,7 @@ protected:
 	// alias) and re-derives everything that depends on it.
 	void RefreshSystemAccent();
 	void ResetTokenFlags();
+	void PublishTokenSnapshot();
 
 	// Reports the theme's resolved token pairs to the debugger, flagging any
 	// that fall under their WCAG AA threshold. Called at the end of
@@ -182,6 +189,7 @@ protected:
 	int m_rowHeightCompact;
 	int m_rowHeightComfortable;
 	CString m_csFontFamily;
+	ditto::theme::ThemeTokenSnapshot m_tokenSnapshot;
 
 	// true when the value came from the theme xml, false when defaulted/derived
 	bool m_hasSurfaceBase, m_hasSurfaceElevated, m_hasSurfaceRowAlt;

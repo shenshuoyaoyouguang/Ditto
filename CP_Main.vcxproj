@@ -951,6 +951,7 @@
     <ClInclude Include="src\TabCtrl.h" />
     <ClInclude Include="src\Theme.h" />
     <ClInclude Include="src\ThemeColorMath.h" />
+    <ClInclude Include="src\ThemeTokens.h" />
     <ClInclude Include="src\ListLayoutMath.h" />
     <ClInclude Include="src\ToolTipEx.h" />
     <ClInclude Include="src\TrayWnd.h" />

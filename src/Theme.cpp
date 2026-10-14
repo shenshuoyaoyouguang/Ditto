@@ -581,6 +581,8 @@ void CTheme::FinalizeTokens(const CString& csThemeName)
 	// cache field is only committed on the full-load path, so the built-in
 	// palette branch and the parse-failure fallback would both report empty.
 	AuditContrast(csThemeName);
+
+	PublishTokenSnapshot();
 }
 
 void CTheme::DeriveTokensFromLegacy()
@@ -734,6 +736,43 @@ void CTheme::RefreshAccentDerived()
 	// Themes that pin the node keep their value.
 	if (!m_hasLegacySearchTextHighlight)
 		m_searchTextHighlight = EnsureContrastOnRows(m_accentText, m_ListBoxOddRowsBG, m_ListBoxEvenRowsBG, m_bDarkTheme);
+
+	// The live-accent re-resolve path (Load short-circuit) returns without a
+	// full FinalizeTokens, so publish here too; the full-load path republishes
+	// the final values at the end of FinalizeTokens.
+	PublishTokenSnapshot();
+}
+
+// Copies the finished member values into the read-only snapshot. Pure copy:
+// derivation stays where it is, so Load/Derive/Refresh/Audit semantics are
+// unchanged and no consumer behavior changes.
+void CTheme::PublishTokenSnapshot()
+{
+	m_tokenSnapshot.surfaceBase = m_surfaceBase;
+	m_tokenSnapshot.surfaceElevated = m_surfaceElevated;
+	m_tokenSnapshot.surfaceRowAlt = m_surfaceRowAlt;
+	m_tokenSnapshot.textPrimary = m_textPrimary;
+	m_tokenSnapshot.textSecondary = m_textSecondary;
+	m_tokenSnapshot.textDisabled = m_textDisabled;
+	m_tokenSnapshot.textOnAccent = m_textOnAccent;
+	m_tokenSnapshot.accentDefault = m_accentDefault;
+	m_tokenSnapshot.accentSubtle = m_accentSubtle;
+	m_tokenSnapshot.accentText = m_accentText;
+	m_tokenSnapshot.strokeCard = m_strokeCard;
+	m_tokenSnapshot.strokeDivider = m_strokeDivider;
+	m_tokenSnapshot.controlFill = m_controlFill;
+	m_tokenSnapshot.controlHover = m_controlHover;
+	m_tokenSnapshot.controlPressed = m_controlPressed;
+	m_tokenSnapshot.controlDisabledBG = m_controlDisabledBG;
+	m_tokenSnapshot.stateHover = m_stateHover;
+	m_tokenSnapshot.stateSelectedBG = m_stateSelectedBG;
+	m_tokenSnapshot.stateSelectedText = m_stateSelectedText;
+	m_tokenSnapshot.indicatorBadge = m_indicatorBadge;
+	m_tokenSnapshot.radiusControl = m_radiusControl;
+	m_tokenSnapshot.rowHeightCompact = m_rowHeightCompact;
+	m_tokenSnapshot.rowHeightComfortable = m_rowHeightComfortable;
+	m_tokenSnapshot.fontFamily.assign((LPCTSTR)m_csFontFamily);
+	m_tokenSnapshot.isDarkTheme = m_bDarkTheme ? true : false;
 }
 
 // Contrast self-check.
