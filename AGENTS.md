@@ -7,17 +7,17 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 - Solution: `CP_Main_10.sln` (VS 2022, v143 toolset, MFC dynamic, Unicode, C++17).
 - CLI build (what CI does, see `.github/workflows/pull_request.yml`):
   ```
-  nuget restore CP_Main_10.sln
   msbuild CP_Main_10.sln /p:Configuration=Release /p:Platform=x64
   ```
+  (vcpkg manifest mode auto-restores `vcpkg.json` deps on build; no `nuget restore` needed.)
 - Configurations: Debug|Release × Win32|x64|ARM64. x64 output lands in `Release64\` / `Debug64\` at repo root (`Ditto.exe`, `ICU_Loader.dll`, `Addins\DittoUtil.dll`).
 - Debug build: `msbuild CP_Main_10.sln /p:Configuration=Debug /p:Platform=x64` → `Debug64\`.
-- NuGet native packages: zlib + libpng (`packages.config`).
+- Native deps via vcpkg manifest: zlib 1.3.x + libpng 1.6.x + tinyxml2 11.x (`vcpkg.json`, `VcpkgEnableManifest=true`).
 
 ## Tests
 
 - CI (`.github/workflows/pull_request.yml`) has two jobs: `tests` (compiles and runs unit tests) and `build` (Release x64).
-- Unit tests live in `tests/` and are NOT part of any `.vcxproj`; they compile only MFC-free headers (`src/ThemeColorMath.h`, `src/ListQueryBuilder.h`, `src/ClipRowFlags.h`, `src/ListLayoutMath.h`):
+- Unit tests live in `tests/` and are NOT part of any `.vcxproj`; they compile only MFC-free headers (`src/ThemeColorMath.h`, `src/ListQueryBuilder.h`, `src/ClipRowFlags.h`, `src/ListLayoutMath.h`, `src/XmlFileLoad.h`):
   ```
   cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe
   .\test_theme_colors.exe
@@ -27,6 +27,14 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
   .\test_clip_row_flags.exe
   cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_layout_math.cpp /Fe:test_list_layout_math.exe
   .\test_list_layout_math.exe
+  cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_xml_file_load.cpp /Fe:test_xml_file_load.exe
+  .\test_xml_file_load.exe
+  ```
+  `test_xml_parity` additionally needs the vcpkg restore first (`vcpkg install --triplet x64-windows`):
+  ```
+  cl /nologo /std:c++17 /W4 /EHsc /I src /I vcpkg_installed\x64-windows\include tests\test_xml_parity.cpp /Fe:test_xml_parity.exe /link vcpkg_installed\x64-windows\lib\tinyxml2.lib
+  copy vcpkg_installed\x64-windows\bin\tinyxml2.dll .
+  .\test_xml_parity.exe Debug\Language Debug\Themes <outdir>
   ```
   MinGW alternatives: `g++ -std=c++17 -Wall -Wextra -I src tests/test_theme_colors.cpp -o test_theme_colors.exe` (same pattern for the other three `tests/test_*.cpp`).
   Run each (`.\test_*.exe`), then delete the exes to keep the repo root clean (`*.exe` is gitignored).
@@ -72,5 +80,5 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 - `resource.h` + `CP_Main.rc` share one ID space — use the next free IDs, don't reorder existing ones.
 - User-facing strings are translated via `Debug/Language/*.xml`, not only resource-table strings; check how `MultiLanguage.cpp` resolves a string before adding UI text.
 - Keep changes Windows-only-compatible: this is a pure Win32/MFC codebase, no CRT-abstraction layers.
-- `tests/` vs CI drift check: the four `cl` commands above must match the `tests` job in `.github/workflows/pull_request.yml` — update both together.
+- `tests/` vs CI drift check: the six `cl` commands above must match the `tests` job in `.github/workflows/pull_request.yml` — update both together.
 - `CSendInfo` wire compat: keep `CSendInfoV1` byte-identical to the old layout and V2 a pure tail grow; `RecieveSocket.cpp` derives V1/V2 encrypted sizes instead of hard-coding them.
