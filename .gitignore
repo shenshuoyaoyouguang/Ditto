@@ -38,6 +38,7 @@
 *.app
 /.vs
 /packages
+/vcpkg_installed
 /Debug64
 *.log
 *.recipe
@@ -76,3 +77,4 @@ Debug/portable
 .workbuddy/*
 /.zcode/
 /dist/
+.omo/*
