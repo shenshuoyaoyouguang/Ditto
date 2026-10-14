@@ -31,6 +31,7 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 	int nNumFiles = 0;
 	int nFilesRecieved = 0;
 	CString lastMd5;
+	CString lastSha256;
 
 	m_pProgress = pProgress;
 	m_csReceivingFromIP = csIP;
@@ -75,7 +76,7 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 
 			LogSendRecieveInfo(StrF(_T("START of receiving the file %s, size: %d, File %d of %d"), csFileName, lFileSize, nFilesRecieved, nNumFiles));
 
-			long lRecieveRet = RecieveFileData(lFileSize, csFileName, lastMd5);
+			long lRecieveRet = RecieveFileData(lFileSize, csFileName, lastMd5, lastSha256);
 			if(lRecieveRet == USER_CANCELED)
 			{
 				lRet = USER_CANCELED;
@@ -100,11 +101,32 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 				Info.m_lParameter2 != 0 &&
 				m_RecievedFiles.GetCount() > 0)
 			{
-				bool md5Error = false;
-				CString fileName = m_RecievedFiles[m_RecievedFiles.GetCount() - 1];
+			bool hashError = false;
+			CString fileName = m_RecievedFiles[m_RecievedFiles.GetCount() - 1];
+			Info.m_sha256[sizeof(Info.m_sha256) - 1] = 0; // trust boundary: never read past the field
 
-				if (strlen(Info.m_md5) > 0 &&
-					CGetSetOptions::GetCheckMd5OnFileTransfers())
+			if (CGetSetOptions::GetCheckMd5OnFileTransfers())
+			{
+				CStringA remoteSha256 = Info.m_sha256;
+				CStringA localSha256 = lastSha256;
+
+				if (Info.m_nVersion >= SEND_INFO_VERSION_2 && remoteSha256.GetLength() > 0 && localSha256.GetLength() > 0)
+				{
+					if (localSha256 != remoteSha256)
+					{
+						lRet = MD5_MISMATCH;
+						bBreak = true;
+						hashError = true;
+						::DeleteFile(fileName);
+
+						LogSendRecieveInfo(StrF(_T("SHA256 ERROR Receiving data_end for file: %s, local sha256: %s remote sha256: %s"), fileName, CTextConvert::AnsiToUnicode(localSha256), CTextConvert::AnsiToUnicode(remoteSha256)));
+					}
+					else
+					{
+						LogSendRecieveInfo(StrF(_T("Receiving data_end for file: %s, SHA256 MATCH local sha256: %s remote sha256: %s"), fileName, CTextConvert::AnsiToUnicode(localSha256), CTextConvert::AnsiToUnicode(remoteSha256)));
+					}
+				}
+				else if (strlen(Info.m_md5) > 0)
 				{
 					CMd5 md5;
 					CStringA localMd5 = lastMd5;
@@ -114,7 +136,7 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 					{
 						lRet = MD5_MISMATCH;
 						bBreak = true;
-						md5Error = true;
+						hashError = true;
 						::DeleteFile(fileName);
 
 						LogSendRecieveInfo(StrF(_T("MD5 ERROR Receiving data_end for file: %s, local md5: %s remote md5: %s"), fileName, CTextConvert::AnsiToUnicode(localMd5), CTextConvert::AnsiToUnicode(remoteMd5)));
@@ -128,8 +150,13 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 				{
 					LogSendRecieveInfo(StrF(_T("Not checking mdf on file transfer, either setting is off or md5 is not sent, md5 Passed In: %s, setting to check: %d"), CTextConvert::AnsiToUnicode(Info.m_md5), CGetSetOptions::GetCheckMd5OnFileTransfers()));
 				}
+			}
+			else
+			{
+				LogSendRecieveInfo(StrF(_T("Not checking mdf on file transfer, either setting is off or md5 is not sent, md5 Passed In: %s, setting to check: %d"), CTextConvert::AnsiToUnicode(Info.m_md5), CGetSetOptions::GetCheckMd5OnFileTransfers()));
+			}
 
-				if (md5Error == false)
+			if (hashError == false)
 				{
 					FILETIME lastWriteTime;
 					lastWriteTime.dwLowDateTime = Info.m_lParameter1;
@@ -162,7 +189,7 @@ long CFileRecieve::RecieveFiles(SOCKET sock, CString csIP, CFileTransferProgress
 	return lRet;
 }
 
-long CFileRecieve::RecieveFileData(ULONG lFileSize, CString csFileName, CString &md5String)
+long CFileRecieve::RecieveFileData(ULONG lFileSize, CString csFileName, CString &md5String, CString &sha256String)
 {
 	CString csFile = CGetSetOptions::GetPath(PATH_REMOTE_FILES);
 	CreateDirectory(csFile, NULL);
@@ -191,6 +218,11 @@ long CFileRecieve::RecieveFileData(ULONG lFileSize, CString csFileName, CString 
 	int nPrevPercent = 0;
 	CMd5 md5;
 	md5.MD5Init();
+	CSha256Stream sha256;
+
+	BOOL calcHash = CGetSetOptions::GetCheckMd5OnFileTransfers(); // gates MD5 + SHA-256
+	if (calcHash)
+		sha256.Begin();
 
 	char *pBuffer = new char[CHUNK_WRITE_SIZE];
 	if(pBuffer == NULL)
@@ -218,6 +250,11 @@ long CFileRecieve::RecieveFileData(ULONG lFileSize, CString csFileName, CString 
 		if (calcMd5)
 		{
 			md5.MD5Update((unsigned char*)pBuffer, lBytesNeeded);
+		}
+
+		if (calcHash && lBytesNeeded > 0)
+		{
+			sha256.Update(pBuffer, (DWORD)lBytesNeeded);
 		}
 
 		lBytesRead += lBytesNeeded;
@@ -250,6 +287,10 @@ long CFileRecieve::RecieveFileData(ULONG lFileSize, CString csFileName, CString 
 	File.Close();
 
 	md5String = md5.MD5FinalToString();
+
+	char szSha256[SEND_INFO_SHA256_BUF_LEN] = { 0 };
+	sha256.EndHex(szSha256); // empty when hashing is off; callers fall back to MD5
+	sha256String = szSha256;
 
 	if(bRet)
 	{

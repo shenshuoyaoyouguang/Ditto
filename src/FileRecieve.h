@@ -21,7 +21,7 @@ public:
 	void AddFile(CString csFile)	{ m_RecievedFiles.Add(csFile); }
 
 protected:
-	long RecieveFileData(ULONG lFileSize, CString csFileName, CString &md5String);
+	long RecieveFileData(ULONG lFileSize, CString csFileName, CString &md5String, CString &sha256String);
 
 protected:
 	CRecieveSocket m_Sock;
