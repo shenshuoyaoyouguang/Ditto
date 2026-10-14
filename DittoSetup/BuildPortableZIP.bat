@@ -18,7 +18,6 @@ if "%2" == "bit64" goto bit64
 copy ..\Release\Ditto.exe Ditto\Ditto.exe
 copy ..\Release\ICU_Loader.dll Ditto\ICU_Loader.dll
 copy ..\Release\z.dll Ditto\z.dll
-copy ..\Release\libpng16.dll Ditto\libpng16.dll
 copy ..\Release\tinyxml2.dll Ditto\tinyxml2.dll
 copy ..\Release\Addins\*.dll Ditto\Addins\
 
@@ -33,7 +32,6 @@ if "%2"=="bit32" GOTO skipBit64
 copy ..\Release64\Ditto.exe Ditto\Ditto.exe
 copy ..\Release64\ICU_Loader.dll Ditto\ICU_Loader.dll
 copy ..\Release64\z.dll Ditto\z.dll
-copy ..\Release64\libpng16.dll Ditto\libpng16.dll
 copy ..\Release64\tinyxml2.dll Ditto\tinyxml2.dll
 copy ..\Release64\Addins\*.dll Ditto\Addins\
 

@@ -101,9 +101,8 @@ Name: AddFireWallException; Description: {cm:AddFirewallException};  Flags: unch
 [Files]
 Source: ..\Release64\Ditto.exe; DestDir: {app}; DestName: Ditto.exe; Flags: ignoreversion; AfterInstall: AddProgramToFirewall(ExpandConstant('{app}\Ditto.exe'), 'Ditto_FromInstaller_64');
 Source: ..\Release64\ICU_Loader.dll; DestDir: {app}; Flags: ignoreversion
-; vcpkg shared libs (zlib, libpng, tinyxml2 ports), applocal-copied next to Ditto.exe by the build; filenames follow the ports and change if ports/baseline change
+; vcpkg shared libs (zlib, tinyxml2 ports), applocal-copied next to Ditto.exe by the build; filenames follow the ports and change if ports/baseline change
 Source: ..\Release64\z.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\Release64\libpng16.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\Release64\tinyxml2.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\Release64\Addins\DittoUtil.dll; DestDir: {app}\Addins; Flags: ignoreversion
 

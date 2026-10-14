@@ -160,7 +160,6 @@ jobs:
             Release64\Ditto.exe
             Release64\ICU_Loader.dll
             Release64\z.dll
-            Release64\libpng16.dll
             Release64\tinyxml2.dll
             Release64\Addins\DittoUtil.dll
             
@@ -282,7 +281,6 @@ jobs:
             Release64\Ditto.exe
             Release64\ICU_Loader.dll
             Release64\z.dll
-            Release64\libpng16.dll
             Release64\tinyxml2.dll
             Release64\Addins\DittoUtil.dll
             DittoSetup\output\DittoSetup_${{env.VERSION_FILENAME}}.exe

@@ -12,7 +12,7 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
   (vcpkg manifest mode auto-restores `vcpkg.json` deps on build; no `nuget restore` needed.)
 - Configurations: Debug|Release × Win32|x64|ARM64. x64 output lands in `Release64\` / `Debug64\` at repo root (`Ditto.exe`, `ICU_Loader.dll`, `Addins\DittoUtil.dll`).
 - Debug build: `msbuild CP_Main_10.sln /p:Configuration=Debug /p:Platform=x64` → `Debug64\`.
-- Native deps via vcpkg manifest: zlib 1.3.x + libpng 1.6.x + tinyxml2 11.x (`vcpkg.json`, `VcpkgEnableManifest=true`).
+- Native deps via vcpkg manifest: zlib 1.3.x + tinyxml2 11.x (`vcpkg.json`, `VcpkgEnableManifest=true`).
 
 ## Tests
 
