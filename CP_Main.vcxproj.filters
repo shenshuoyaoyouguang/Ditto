@@ -418,18 +418,6 @@
     <ClCompile Include="src\Fonts.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\TinyXml\tinystr.cpp">
-      <Filter>src\TinyXml</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TinyXml\tinyxml.cpp">
-      <Filter>src\TinyXml</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TinyXml\tinyxmlerror.cpp">
-      <Filter>src\TinyXml</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TinyXml\tinyxmlparser.cpp">
-      <Filter>src\TinyXml</Filter>
-    </ClCompile>
     <ClCompile Include="src\sqlite\CppSQLite3.cpp">
       <Filter>src\sqlite</Filter>
     </ClCompile>
@@ -970,11 +958,8 @@
     <ClInclude Include="src\WndEx.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\TinyXml\tinystr.h">
-      <Filter>src\TinyXml</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TinyXml\tinyxml.h">
-      <Filter>src\TinyXml</Filter>
+    <ClInclude Include="src\XmlFileLoad.h">
+      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\sqlite\CppSQLite3.h">
       <Filter>src\sqlite</Filter>
@@ -1539,9 +1524,6 @@
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{90a3341d-7358-4eba-af80-4a0657769b21}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\TinyXml">
-      <UniqueIdentifier>{2e813faa-24d6-45a9-91f4-da64edcb975c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\sqlite">
       <UniqueIdentifier>{848b5476-81f3-45cf-9d47-96fd4e4f0f2e}</UniqueIdentifier>
