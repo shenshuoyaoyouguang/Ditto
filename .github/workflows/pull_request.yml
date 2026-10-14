@@ -15,6 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check vcxproj consistency
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\check-vcxproj-consistency.ps1
+
+      - name: Check resource IDs
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\check-resource-ids.ps1
+
       - name: Setup MSVC
         # v1.13.0, pinned by SHA so a tag rewrite cannot change what CI runs
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756

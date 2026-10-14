@@ -133,10 +133,14 @@ BOOL CFileSend::SendFile(CString csFile)
 			{
 				long lReadBytes = 0;
 				BOOL bError = FALSE;
-				CMd5 md5;
-				md5.MD5Init();
+			CMd5 md5;
+			md5.MD5Init();
+			CSha256Stream sha256;
 
-				BOOL calcMd5 = CGetSetOptions::GetCheckMd5OnFileTransfers();
+			// Integrity flag gates both hashes; SHA-256 rides alongside MD5 for V2 peers.
+			BOOL calcMd5 = CGetSetOptions::GetCheckMd5OnFileTransfers();
+			if (calcMd5)
+				sha256.Begin();
 
 				DWORD d = GetTickCount();
 				
@@ -151,10 +155,11 @@ BOOL CFileSend::SendFile(CString csFile)
 						break;
 					}
 
-					if (calcMd5)
-					{
-						md5.MD5Update((unsigned char *)pBuffer, lReadBytes);
-					}
+				if (calcMd5)
+				{
+					md5.MD5Update((unsigned char *)pBuffer, lReadBytes);
+					sha256.Update(pBuffer, (DWORD)lReadBytes);
+				}
 					
 				}while(lReadBytes >= CHUNK_WRITE_SIZE);
 				
@@ -175,10 +180,15 @@ BOOL CFileSend::SendFile(CString csFile)
 						Info.m_lParameter2 = lastWriteTime.dwHighDateTime;
 					}
 										
-					CStringA csMd5 = md5.MD5FinalToString();
-					strncpy(Info.m_md5, csMd5, sizeof(Info.m_md5));
+				CStringA csMd5 = md5.MD5FinalToString();
+				strncpy(Info.m_md5, csMd5, sizeof(Info.m_md5));
 
-					LogSendRecieveInfo(StrF(_T("Sending data_end for file: %s, md5: %s"), csFile, CTextConvert::AnsiToUnicode(csMd5)));
+				char szSha256[SEND_INFO_SHA256_BUF_LEN] = { 0 };
+				sha256.EndHex(szSha256); // empty when hashing is off or Begin failed; receivers fall back to MD5
+				memcpy(Info.m_sha256, szSha256, sizeof(Info.m_sha256));
+				Info.m_sha256[sizeof(Info.m_sha256) - 1] = 0;
+
+				LogSendRecieveInfo(StrF(_T("Sending data_end for file: %s, md5: %s, sha256: %s"), csFile, CTextConvert::AnsiToUnicode(csMd5), CTextConvert::AnsiToUnicode(szSha256)));
 
 					if(m_Send.SendCSendData(Info, MyEnums::DATA_END))
 						bRet = TRUE;

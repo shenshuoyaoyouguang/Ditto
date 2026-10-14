@@ -17,14 +17,20 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 ## Tests
 
 - CI (`.github/workflows/pull_request.yml`) has two jobs: `tests` (compiles and runs unit tests) and `build` (Release x64).
-- Unit tests live in `tests/` and are NOT part of any `.vcxproj`; they compile only MFC-free headers:
+- Unit tests live in `tests/` and are NOT part of any `.vcxproj`; they compile only MFC-free headers (`src/ThemeColorMath.h`, `src/ListQueryBuilder.h`, `src/ClipRowFlags.h`, `src/ListLayoutMath.h`):
   ```
   cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe
   .\test_theme_colors.exe
+  cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_query_builder.cpp /Fe:test_list_query_builder.exe
+  .\test_list_query_builder.exe
+  cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_clip_row_flags.cpp /Fe:test_clip_row_flags.exe
+  .\test_clip_row_flags.exe
+  cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_list_layout_math.cpp /Fe:test_list_layout_math.exe
+  .\test_list_layout_math.exe
   ```
-  MinGW alternative: `g++ -std=c++17 -Wall -I src tests/test_theme_colors.cpp -o test_theme_colors.exe`
-  Run it (`.\test_theme_colors.exe`), then delete the exe to keep the repo root clean (`*.exe` is gitignored).
-- Keep new unit-testable logic in a header that avoids MFC/CString (see `src/ThemeColorMath.h`) and add a matching `tests\test_*.cpp`. Expected values must come from an independent source of truth (e.g. WCAG reference figures), never from the implementation.
+  MinGW alternatives: `g++ -std=c++17 -Wall -Wextra -I src tests/test_theme_colors.cpp -o test_theme_colors.exe` (same pattern for the other three `tests/test_*.cpp`).
+  Run each (`.\test_*.exe`), then delete the exes to keep the repo root clean (`*.exe` is gitignored).
+- Keep new unit-testable logic in an MFC/CString-free header (see `src/ThemeColorMath.h`) first, then add a matching `tests\test_*.cpp`. Expected values must come from an independent source of truth (e.g. WCAG reference figures), never from the implementation.
 - No other automated coverage: verify app behavior by building and running `Release64\Ditto.exe`.
 
 ## Layout
@@ -43,7 +49,7 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 
 - App entry is `src/CP_Main.cpp`. The clipboard viewer chain lives in `ClipboardViewer.cpp`/`CopyThread.cpp`; clip data model in `Clip.cpp`; clip formats are aggregated by `CF_*Aggregator.cpp`.
 - History DB is `Ditto.db` (SQLite); schema creation/migration in `src/DatabaseUtilities.cpp`.
-- Network paste between peers: `src/Server.cpp`, `src/Client.cpp` (`ServerDefines.h`), friend UI in `Friend*`/`OptionFriends*` files.
+- Network paste between peers: `src/Server.cpp`, `src/Client.cpp` (`ServerDefines.h`), friend UI in `Friend*`/`OptionFriends*` files. Transport is plaintext LAN: use on trusted networks only. File-transfer integrity is dual MD5 (V1 wire, `CSendInfoV1`) + SHA-256 (V2 `CSendInfo.m_sha256`, SHA-256 preferred with MD5 fallback for V1 peers).
 - Scripting hooks: `DittoChaiScript.cpp`, `ChaiScriptOnCopy.cpp`, `ChaiScriptXml.cpp`.
 - Main list UI: `QListCtrl*` files; settings dialogs: `Adv*`, `Option*` files.
 
@@ -66,3 +72,5 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 - `resource.h` + `CP_Main.rc` share one ID space — use the next free IDs, don't reorder existing ones.
 - User-facing strings are translated via `Debug/Language/*.xml`, not only resource-table strings; check how `MultiLanguage.cpp` resolves a string before adding UI text.
 - Keep changes Windows-only-compatible: this is a pure Win32/MFC codebase, no CRT-abstraction layers.
+- `tests/` vs CI drift check: the four `cl` commands above must match the `tests` job in `.github/workflows/pull_request.yml` — update both together.
+- `CSendInfo` wire compat: keep `CSendInfoV1` byte-identical to the old layout and V2 a pure tail grow; `RecieveSocket.cpp` derives V1/V2 encrypted sizes instead of hard-coding them.

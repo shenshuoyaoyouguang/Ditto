@@ -16,6 +16,10 @@ public:
 	BOOL RecieveExactSize(char *pData, long lSize);
 	BOOL RecieveCSendInfo(CSendInfo *pInfo);
 
+protected:
+	// Tries every configured network password; sets m_pDataReturnedFromDecrypt on success.
+	BOOL DecryptWithConfiguredPasswords(const char *pInput, long lInSize, long &lOutSize);
+
 	void FreeDecryptedData();
 
 	SOCKET	GetSocket()				{ return m_Sock;	}
