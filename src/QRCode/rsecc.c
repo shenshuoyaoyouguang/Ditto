@@ -2,10 +2,11 @@
  * qrencode - QR Code encoder
  *
  * Reed solomon error correction code encoder specialized for QR code.
- * This code is based on Phil Karn's libfec and rewriten by Kentaro Fukuchi.
+ * This code is rewritten by Kentaro Fukuchi, referring to the FEC library
+ * developed by Phil Karn (KA9Q).
  *
  * Copyright (C) 2002, 2003, 2004, 2006 Phil Karn, KA9Q
- * Copyright (C) 2014 Kentaro Fukuchi <kentaro@fukuchi.org>
+ * Copyright (C) 2014-2017 Kentaro Fukuchi <kentaro@fukuchi.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,21 +28,21 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
 
 #include "rsecc.h"
 
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 static pthread_mutex_t RSECC_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static int initialized = 0;
 
 #define SYMBOL_SIZE (8)
-#define symbols ((1 << SYMBOL_SIZE) - 1)
-static const int proot = 0x11d; /* stands for x^8+x^4+x^3+x^2+1 (see pp.37 of JIS X0510:2004) */
+#define symbols ((1U << SYMBOL_SIZE) - 1)
+static const unsigned int proot = 0x11d; /* stands for x^8+x^4+x^3+x^2+1 (see pp.37 of JIS X0510:2004) */
 
 /* min/max codeword length of ECC, calculated from the specification. */
 #define min_length (2)
@@ -55,7 +56,7 @@ static unsigned char generatorInitialized[max_length - min_length + 1];
 
 static void RSECC_initLookupTable(void)
 {
-	int i, b;
+	unsigned int i, b;
 
 	alpha[symbols] = 0;
 	aindex[0] = symbols;
@@ -72,16 +73,16 @@ static void RSECC_initLookupTable(void)
 	}
 }
 
-void RSECC_init(void)
+static void RSECC_init(void)
 {
 	RSECC_initLookupTable();
 	memset(generatorInitialized, 0, (max_length - min_length + 1));
 	initialized = 1;
 }
 
-static void generator_init(int length)
+static void generator_init(size_t length)
 {
-	int i, j;
+	size_t i, j;
 	int g[max_generatorSize + 1];
 
 	g[0] = 1;
@@ -101,30 +102,30 @@ static void generator_init(int length)
 	generatorInitialized[length - min_length] = 1;
 }
 
-int RSECC_encode(int data_length, int ecc_length, const unsigned char *data, unsigned char *ecc)
+int RSECC_encode(size_t data_length, size_t ecc_length, const unsigned char *data, unsigned char *ecc)
 {
-	int i, j;
+	size_t i, j;
 	unsigned char feedback;
 	unsigned char *gen;
 
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 	pthread_mutex_lock(&RSECC_mutex);
 #endif
 	if(!initialized) {
 		RSECC_init();
 	}
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 	pthread_mutex_unlock(&RSECC_mutex);
 #endif
 
 	if(ecc_length > max_length) return -1;
 
 	memset(ecc, 0, ecc_length);
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 	pthread_mutex_lock(&RSECC_mutex);
 #endif
 	if(!generatorInitialized[ecc_length - min_length]) generator_init(ecc_length);
-#ifdef HAVE_LIBPTHREAD
+#if HAVE_LIBPTHREAD
 	pthread_mutex_unlock(&RSECC_mutex);
 #endif
 	gen = generator[ecc_length - min_length];
@@ -133,12 +134,12 @@ int RSECC_encode(int data_length, int ecc_length, const unsigned char *data, uns
 		feedback = aindex[data[i] ^ ecc[0]];
 		if(feedback != symbols) {
 			for(j = 1; j < ecc_length; j++) {
-				ecc[j] ^= alpha[(feedback + gen[ecc_length - j]) % symbols];
+				ecc[j] ^= alpha[(unsigned int)(feedback + gen[ecc_length - j]) % symbols];
 			}
 		}
 		memmove(&ecc[0], &ecc[1], ecc_length - 1);
 		if(feedback != symbols) {
-			ecc[ecc_length - 1] = alpha[(feedback + gen[0]) % symbols];
+			ecc[ecc_length - 1] = alpha[(unsigned int)(feedback + gen[0]) % symbols];
 		} else {
 			ecc[ecc_length - 1] = 0;
 		}

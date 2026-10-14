@@ -22,7 +22,6 @@
 #include <stdexcept>
 #include <typeinfo>
 #include <vector>
-#include <algorithm>
 
 #include "bootstrap.hpp"
 #include "boxed_value.hpp"
@@ -702,49 +701,13 @@ namespace chaiscript
 
 
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->find(f, pos); } ), "find");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->find(c, pos); } ), "find");
-		  
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->rfind(f, pos); } ), "rfind");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->rfind(c, pos); } ), "rfind");
-		  
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->find_first_of(f, pos); } ), "find_first_of");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->find_first_of(c, pos); } ), "find_first_of");
-		  
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->find_last_of(f, pos); } ), "find_last_of");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->find_last_of(c, pos); } ), "find_last_of");
-		  
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->find_last_not_of(f, pos); } ), "find_last_not_of");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->find_last_not_of(c, pos); } ), "find_last_not_of");
-		  
           m.add(fun([](const String *s, const String &f, size_t pos) { return s->find_first_not_of(f, pos); } ), "find_first_not_of");
-		  m.add(fun([](const String *s, typename String::value_type c, size_t pos) { return s->find_first_not_of(c, pos); } ), "find_first_not_of");
-
-		  m.add(fun([](String *s, typename String::value_type c) -> decltype(auto) { return (*s += c); } ), "+=");
-		  m.add(fun([](String *s, typename String::value_type c) -> decltype(auto) { return (*s + c); } ), "+");
-		  
-		  m.add(fun([](String *s) { std::reverse(s->begin(), s->end()); } ), "reverse");
-
-		  m.add(fun([](String *s, const String &from, const String &to) 
-		  { 
-			  std::string newString;
-			  newString.reserve(s->length());  // avoids a few memory allocations
-
-			  std::string::size_type lastPos = 0;
-			  std::string::size_type findPos;
-
-			  while (std::string::npos != (findPos = s->find(from, lastPos)))
-			  {
-				  newString.append(*s, lastPos, findPos - lastPos);
-				  newString += to;
-				  lastPos = findPos + from.length();
-			  }
-
-			  // Care for the rest after last occurrence
-			  newString += s->substr(lastPos);
-
-			  return newString;
-		  }), "replace");
-
+        
+          m.add(fun([](String *s, typename String::value_type c) -> decltype(auto) { return (*s += c); } ), "+=");
 
           m.add(fun([](String *s) { s->clear(); } ), "clear");
           m.add(fun([](const String *s) { return s->empty(); } ), "empty");
@@ -772,7 +735,7 @@ namespace chaiscript
           m.add(user_type<FutureType>(), type);
 
           m.add(fun([](const FutureType &t) { return t.valid(); }), "valid");
-          m.add(fun(&FutureType::get), "get");
+          m.add(fun([](FutureType &t) { return t.get(); }), "get");
           m.add(fun(&FutureType::wait), "wait");
         }
       template<typename FutureType>

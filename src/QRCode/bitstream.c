@@ -2,7 +2,7 @@
  * qrencode - QR Code encoder
  *
  * Binary sequence class.
- * Copyright (C) 2006-2014 Kentaro Fukuchi <kentaro@fukuchi.org>
+ * Copyright (C) 2006-2017 Kentaro Fukuchi <kentaro@fukuchi.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,6 +48,30 @@ BitStream *BitStream_new(void)
 	return bstream;
 }
 
+#ifdef WITH_TESTS
+BitStream *BitStream_newWithBits(size_t size, unsigned char *bits)
+{
+	BitStream *bstream;
+
+	if(size == 0) return BitStream_new();
+
+	bstream = (BitStream *)malloc(sizeof(BitStream));
+	if(bstream == NULL) return NULL;
+
+	bstream->data = (unsigned char *)malloc(size);
+	if(bstream->data == NULL) {
+		free(bstream);
+		return NULL;
+	}
+
+	bstream->length = size;
+	bstream->datasize = size;
+	memcpy(bstream->data, bits, size);
+
+	return bstream;
+}
+#endif
+
 static int BitStream_expand(BitStream *bstream)
 {
 	unsigned char *data;
@@ -63,15 +87,15 @@ static int BitStream_expand(BitStream *bstream)
 	return 0;
 }
 
-static void BitStream_writeNum(unsigned char *dest, int bits, unsigned int num)
+static void BitStream_writeNum(unsigned char *dest, size_t bits, unsigned int num)
 {
 	unsigned int mask;
-	int i;
+	size_t i;
 	unsigned char *p;
 
 	p = dest;
-	mask = 1 << (bits - 1);
-	for(i=0; i<bits; i++) {
+	mask = 1U << (bits - 1);
+	for(i = 0; i < bits; i++) {
 		if(num & mask) {
 			*p = 1;
 		} else {
@@ -82,16 +106,16 @@ static void BitStream_writeNum(unsigned char *dest, int bits, unsigned int num)
 	}
 }
 
-static void BitStream_writeBytes(unsigned char *dest, int size, unsigned char *data)
+static void BitStream_writeBytes(unsigned char *dest, size_t size, unsigned char *data)
 {
 	unsigned char mask;
-	int i, j;
+	size_t i, j;
 	unsigned char *p;
 
 	p = dest;
-	for(i=0; i<size; i++) {
+	for(i = 0; i < size; i++) {
 		mask = 0x80;
-		for(j=0; j<8; j++) {
+		for(j = 0; j < 8; j++) {
 			if(data[i] & mask) {
 				*p = 1;
 			} else {
@@ -125,7 +149,7 @@ int BitStream_append(BitStream *bstream, BitStream *arg)
 	return 0;
 }
 
-int BitStream_appendNum(BitStream *bstream, int bits, unsigned int num)
+int BitStream_appendNum(BitStream *bstream, size_t bits, unsigned int num)
 {
 	int ret;
 
@@ -141,7 +165,7 @@ int BitStream_appendNum(BitStream *bstream, int bits, unsigned int num)
 	return 0;
 }
 
-int BitStream_appendBytes(BitStream *bstream, int size, unsigned char *data)
+int BitStream_appendBytes(BitStream *bstream, size_t size, unsigned char *data)
 {
 	int ret;
 
@@ -159,7 +183,7 @@ int BitStream_appendBytes(BitStream *bstream, int size, unsigned char *data)
 
 unsigned char *BitStream_toByte(BitStream *bstream)
 {
-	int i, j, size, bytes;
+	size_t i, j, size, bytes, oddbits;
 	unsigned char *data, v;
 	unsigned char *p;
 
@@ -175,23 +199,24 @@ unsigned char *BitStream_toByte(BitStream *bstream)
 	bytes = size  / 8;
 
 	p = bstream->data;
-	for(i=0; i<bytes; i++) {
+	for(i = 0; i < bytes; i++) {
 		v = 0;
-		for(j=0; j<8; j++) {
-			v = v << 1;
+		for(j = 0; j < 8; j++) {
+			v = (unsigned char)(v << 1);
 			v |= *p;
 			p++;
 		}
 		data[i] = v;
 	}
-	if(size & 7) {
+	oddbits = size & 7;
+	if(oddbits > 0) {
 		v = 0;
-		for(j=0; j<(size & 7); j++) {
-			v = v << 1;
+		for(j = 0; j < oddbits; j++) {
+			v = (unsigned char)(v << 1);
 			v |= *p;
 			p++;
 		}
-		data[bytes] = v;
+		data[bytes] = (unsigned char)(v << (8 - oddbits));
 	}
 
 	return data;

@@ -62,7 +62,7 @@ namespace chaiscript
 
 
   /// Types of AST nodes available to the parser and eval
-  enum class AST_Node_Type { Id, Fun_Call, Unused_Return_Fun_Call, Arg_List, Equation, Var_Decl,
+  enum class AST_Node_Type { Id, Fun_Call, Unused_Return_Fun_Call, Arg_List, Equation, Var_Decl, Assign_Decl,
     Array_Call, Dot_Access,
     Lambda, Block, Scopeless_Block, Def, While, If, For, Ranged_For, Inline_Array, Inline_Map, Return, File, Prefix, Break, Continue, Map_Pair, Value_Range,
     Inline_Range, Try, Catch, Finally, Method, Attr_Decl,  
@@ -77,7 +77,7 @@ namespace chaiscript
   {
     /// Helper lookup to get the name of each node type
     inline const char *ast_node_type_to_string(AST_Node_Type ast_node_type) {
-      static const char * const ast_node_types[] = { "Id", "Fun_Call", "Unused_Return_Fun_Call", "Arg_List", "Equation", "Var_Decl",
+      static const char * const ast_node_types[] = { "Id", "Fun_Call", "Unused_Return_Fun_Call", "Arg_List", "Equation", "Var_Decl", "Assign_Decl",
                                     "Array_Call", "Dot_Access", 
                                     "Lambda", "Block", "Scopeless_Block", "Def", "While", "If", "For", "Ranged_For", "Inline_Array", "Inline_Map", "Return", "File", "Prefix", "Break", "Continue", "Map_Pair", "Value_Range",
                                     "Inline_Range", "Try", "Catch", "Finally", "Method", "Attr_Decl",
@@ -480,11 +480,14 @@ namespace chaiscript
     /// Errors generated when loading a file
     struct file_not_found_error : std::runtime_error {
       explicit file_not_found_error(const std::string &t_filename) noexcept
-        : std::runtime_error("File Not Found: " + t_filename)
+        : std::runtime_error("File Not Found: " + t_filename),
+          filename(t_filename)
       { }
 
       file_not_found_error(const file_not_found_error &) = default;
       ~file_not_found_error() noexcept override = default;
+
+      std::string filename;
     };
 
   }
@@ -647,8 +650,6 @@ namespace chaiscript
       /// Special type for returned values
       struct Return_Value {
         Boxed_Value retval;
-
-        explicit Return_Value(Boxed_Value t_return_value) : retval(std::move(t_return_value)) { }
       };
 
 

@@ -2,10 +2,11 @@
  * qrencode - QR Code encoder
  *
  * Reed solomon error correction code encoder specialized for QR code.
- * This code is based on Phil Karn's libfec and rewriten by Kentaro Fukuchi.
+ * This code is rewritten by Kentaro Fukuchi, referring to the FEC library
+ * developed by Phil Karn (KA9Q).
  *
  * Copyright (C) 2002, 2003, 2004, 2006 Phil Karn, KA9Q
- * Copyright (C) 2014 Kentaro Fukuchi <kentaro@fukuchi.org>
+ * Copyright (C) 2014-2017 Kentaro Fukuchi <kentaro@fukuchi.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,9 +23,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef __RSECC_H__
-#define __RSECC_H__
+#ifndef RSECC_H
+#define RSECC_H
 
-extern int RSECC_encode(int data_length, int ecc_length, const unsigned char *data, unsigned char *ecc);
+extern int RSECC_encode(size_t data_length, size_t ecc_length, const unsigned char *data, unsigned char *ecc);
 
-#endif /* __RSECC_H__ */
+#endif /* RSECC_H */

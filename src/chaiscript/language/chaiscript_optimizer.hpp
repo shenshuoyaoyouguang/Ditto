@@ -97,7 +97,7 @@ namespace chaiscript {
     template<typename T>
     bool contains_var_decl_in_scope(const eval::AST_Node_Impl<T> &node)
     {
-      if (node.identifier == AST_Node_Type::Var_Decl) {
+      if (node.identifier == AST_Node_Type::Var_Decl || node.identifier == AST_Node_Type::Assign_Decl || node.identifier == AST_Node_Type::Reference) {
         return true;
       }
 
@@ -107,6 +107,7 @@ namespace chaiscript {
         const auto &child = child_at(node, i);
         if (child.identifier != AST_Node_Type::Block
             && child.identifier != AST_Node_Type::For
+            && child.identifier != AST_Node_Type::Ranged_For
             && contains_var_decl_in_scope(child)) {
           return true;
         }
@@ -207,6 +208,27 @@ namespace chaiscript {
           return node;
         }
     };
+
+    struct Assign_Decl {
+      template<typename T>
+      auto optimize(eval::AST_Node_Impl_Ptr<T> node) {
+        if ((node->identifier == AST_Node_Type::Equation)
+             && node->text == "="
+             && node->children.size() == 2
+             && node->children[0]->identifier == AST_Node_Type::Var_Decl
+           )
+        {
+          std::vector<eval::AST_Node_Impl_Ptr<T>> new_children;
+          new_children.push_back(std::move(node->children[0]->children[0]));
+          new_children.push_back(std::move(node->children[1]));
+          return chaiscript::make_unique<eval::AST_Node_Impl<T>, eval::Assign_Decl_AST_Node<T>>(node->text, 
+              node->location, std::move(new_children) );
+        }
+
+        return node;
+      }
+    };
+
 
     struct If {
       template<typename T>
@@ -334,7 +356,7 @@ namespace chaiscript {
 
             const auto make_constant = [&node, &fun_name](auto val){
               const auto match = fun_name + "(" + node->children[1]->children[0]->text + ")";
-              return chaiscript::make_unique<eval::AST_Node_Impl<T>, eval::Constant_AST_Node<T>>(std::move(match), node->location, Boxed_Value(val));
+              return chaiscript::make_unique<eval::AST_Node_Impl<T>, eval::Constant_AST_Node<T>>(std::move(match), node->location, const_var(val));
             };
 
             if (fun_name == "double") {
@@ -371,21 +393,21 @@ namespace chaiscript {
         const auto &prefix_node = child_at(*for_node, 2);
 
         if (child_count(*for_node) == 4
-            && eq_node.identifier == AST_Node_Type::Equation
+            && eq_node.identifier == AST_Node_Type::Assign_Decl
             && child_count(eq_node) == 2
-            && child_at(eq_node, 0).identifier == AST_Node_Type::Var_Decl
+            && child_at(eq_node, 0).identifier == AST_Node_Type::Id
             && child_at(eq_node, 1).identifier == AST_Node_Type::Constant
             && binary_node.identifier == AST_Node_Type::Binary
             && binary_node.text == "<"
             && child_count(binary_node) == 2
             && child_at(binary_node, 0).identifier == AST_Node_Type::Id
-            && child_at(binary_node, 0).text == child_at(child_at(eq_node,0), 0).text
+            && child_at(binary_node, 0).text == child_at(eq_node,0).text
             && child_at(binary_node, 1).identifier == AST_Node_Type::Constant
             && prefix_node.identifier == AST_Node_Type::Prefix
             && prefix_node.text == "++"
             && child_count(prefix_node) == 1
             && child_at(prefix_node, 0).identifier == AST_Node_Type::Id
-            && child_at(prefix_node, 0).text == child_at(child_at(eq_node,0), 0).text)
+            && child_at(prefix_node, 0).text == child_at(eq_node,0).text)
         {
           const Boxed_Value &begin = dynamic_cast<const eval::Constant_AST_Node<T> &>(child_at(eq_node, 1)).m_value;
           const Boxed_Value &end = dynamic_cast<const eval::Constant_AST_Node<T> &>(child_at(binary_node, 1)).m_value;
@@ -440,7 +462,7 @@ namespace chaiscript {
     };
 
     typedef Optimizer<optimizer::Partial_Fold, optimizer::Unused_Return, optimizer::Constant_Fold, 
-      optimizer::If, optimizer::Return, optimizer::Dead_Code, optimizer::Block, optimizer::For_Loop> Optimizer_Default; 
+      optimizer::If, optimizer::Return, optimizer::Dead_Code, optimizer::Block, optimizer::For_Loop, optimizer::Assign_Decl> Optimizer_Default; 
 
   }
 }
