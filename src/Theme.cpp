@@ -5,6 +5,8 @@
 #include "Options.h"
 #include "..\Shared\Tokenizer.h"
 #include "CP_Main.h"
+#include <tinyxml2.h>
+#include "XmlFileLoad.h"
 
 CTheme::CTheme(void)
 {
@@ -130,10 +132,20 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 
 	Log(StrF(_T("Loading Theme %s"), csPath));
 
-	TiXmlDocument doc;
-	if(!doc.LoadFile(csPath.GetBuffer()))
+	tinyxml2::XMLDocument doc;
+	std::string xmlBytes;
+	std::string xmlErr;
+	int xmlErrLine = 0;
+	bool bXmlLoaded = LoadUtf8FileForXml(csPath, xmlBytes, xmlErr);
+	if(bXmlLoaded && doc.Parse(xmlBytes.c_str()) != tinyxml2::XML_SUCCESS)
 	{
-		m_csLastError.Format(_T("Error loading Theme %s - reason = %s"), csPath, doc.ErrorDesc());
+		bXmlLoaded = false;
+		xmlErr = doc.ErrorStr() != nullptr ? doc.ErrorStr() : "";
+		xmlErrLine = doc.ErrorLineNum();
+	}
+	if(!bXmlLoaded)
+	{
+		m_csLastError.Format(_T("Error loading Theme %s - reason = %s, Line: %d"), csPath, CTextConvert::Utf8ToUnicode(xmlErr.c_str()), xmlErrLine);
 		Log(m_csLastError);
 		// Leave the cache clear: it is written before parsing, so a failure used
 		// to poison it and every later Load(same theme, bCheckLastWriteTime=true)
@@ -155,7 +167,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		return false;
 	}
 
-	TiXmlElement *ItemHeader = doc.FirstChildElement("Ditto_Theme_File");
+	tinyxml2::XMLElement *ItemHeader = doc.FirstChildElement("Ditto_Theme_File");
 	if(!ItemHeader)
 	{
 		m_csLastError.Format(_T("Error finding the section Ditto_Theme_File"));
@@ -165,10 +177,10 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		return false;
 	}
 
-	CString csVersion = ItemHeader->Attribute("Version");
+	CString csVersion = AttrOrNull(ItemHeader, "Version");
 	m_lFileVersion = ATOI(csVersion);
-	m_csAuthor = ItemHeader->Attribute("Author");
-	m_csNotes = ItemHeader->Attribute("Notes");
+	m_csAuthor = AttrOrNull(ItemHeader, "Author");
+	m_csNotes = AttrOrNull(ItemHeader, "Notes");
 
 	if(bHeaderOnly)
 		return true;
@@ -253,21 +265,21 @@ void CTheme::LoadWindowsAccentColor()
 	}
 }
 
-bool CTheme::LoadColor(TiXmlElement *pParent, CStringA csNode, COLORREF &Color)
+bool CTheme::LoadColor(tinyxml2::XMLElement *pParent, CStringA csNode, COLORREF &Color)
 {
 	int intValue = 0;
 	return LoadElement(pParent, csNode, Color, intValue);
 }
 
-bool CTheme::LoadInt(TiXmlElement *pParent, CStringA csNode, int &intValue)
+bool CTheme::LoadInt(tinyxml2::XMLElement *pParent, CStringA csNode, int &intValue)
 {
 	COLORREF colorValue = 0;
 	return LoadElement(pParent, csNode, colorValue, intValue);
 }
 
-bool CTheme::LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color, int &intValue)
+bool CTheme::LoadElement(tinyxml2::XMLElement *pParent, CStringA csNode, COLORREF &Color, int &intValue)
 {
-	TiXmlElement *pColorNode = pParent->FirstChildElement(csNode);
+	tinyxml2::XMLElement *pColorNode = pParent->FirstChildElement(csNode);
 	if(pColorNode == NULL)
 	{
 		m_csLastError.Format(_T("Theme Load, error loading Node = %s"), csNode);
@@ -275,7 +287,7 @@ bool CTheme::LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color
 		return false;
 	}
 
-	TiXmlNode *pColor = pColorNode->FirstChild();
+	tinyxml2::XMLNode *pColor = pColorNode->FirstChild();
 	if(pColor == NULL)
 	{
 		m_csLastError.Format(_T("Theme Load, error getting node text for = %s"), csNode);
@@ -483,7 +495,7 @@ void CTheme::LoadTokenDefaults()
 	m_bDarkTheme = RelLuminance(m_surfaceBase) < 0.5;
 }
 
-void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
+void CTheme::LoadTokensFromXml(tinyxml2::XMLElement *pParent)
 {
 	m_bParsedThemeXml = true;
 
@@ -515,7 +527,7 @@ void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
 
 	if (pParent->FirstChildElement("Accent_Default") != NULL)
 	{
-		TiXmlNode *pValue = pParent->FirstChildElement("Accent_Default")->FirstChild();
+		tinyxml2::XMLNode *pValue = pParent->FirstChildElement("Accent_Default")->FirstChild();
 		CString csValue = pValue ? pValue->Value() : "";
 		csValue.Trim();
 
@@ -541,10 +553,10 @@ void CTheme::LoadTokensFromXml(TiXmlElement *pParent)
 	if (pParent->FirstChildElement("RowHeight_Comfortable") != NULL)
 		LoadInt(pParent, "RowHeight_Comfortable", m_rowHeightComfortable);
 
-	TiXmlElement *pFontNode = pParent->FirstChildElement("Font_Family");
+	tinyxml2::XMLElement *pFontNode = pParent->FirstChildElement("Font_Family");
 	if (pFontNode != NULL)
 	{
-		TiXmlNode *pValue = pFontNode->FirstChild();
+		tinyxml2::XMLNode *pValue = pFontNode->FirstChild();
 		if (pValue != NULL)
 		{
 			m_csFontFamily = pValue->Value();

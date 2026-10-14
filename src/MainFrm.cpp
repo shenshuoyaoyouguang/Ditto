@@ -9,7 +9,6 @@
 #include "CopyProperties.h"
 #include ".\mainfrm.h"
 #include "HyperLink.h"
-#include "tinyxml\tinyxml.h"
 #include "Path.h"
 #include "DittoCopyBuffer.h"
 #include "HotKeys.h"

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "tinyxml\Tinyxml.h"
-#include "tinyxml\tinystr.h"
+#include <tinyxml2.h>
 #include "ThemeColorMath.h"
 
 class CTheme
@@ -92,15 +91,15 @@ public:
 	// PickContrastOn, EnsureContrast).
 
 protected:
-	bool LoadElement(TiXmlElement *pParent, CStringA csNode, COLORREF &Color, int &intValue);
+	bool LoadElement(tinyxml2::XMLElement *pParent, CStringA csNode, COLORREF &Color, int &intValue);
 
-	bool LoadInt(TiXmlElement *pParent, CStringA csNode, int &intValue);
-	bool LoadColor(TiXmlElement *pParent, CStringA csNode, COLORREF &Color);
+	bool LoadInt(tinyxml2::XMLElement *pParent, CStringA csNode, int &intValue);
+	bool LoadColor(tinyxml2::XMLElement *pParent, CStringA csNode, COLORREF &Color);
 	void LoadWindowsAccentColor();
 
 	// v4 token handling
 	void LoadTokenDefaults();
-	void LoadTokensFromXml(TiXmlElement *pParent);
+	void LoadTokensFromXml(tinyxml2::XMLElement *pParent);
 	void FinalizeTokens(const CString& csThemeName);
 	void DeriveTokensFromLegacy();
 	void RefreshAccentDerived();

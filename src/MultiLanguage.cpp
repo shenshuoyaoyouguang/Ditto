@@ -7,6 +7,8 @@
 #include "MultiLanguage.h"
 #include "..\Shared\TextConvert.h"
 #include "..\Shared\TextConvert.h"
+#include <tinyxml2.h>
+#include "XmlFileLoad.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -354,15 +356,25 @@ bool CMultiLanguage::LoadLanguageFile(CString csFile)
 		return false;
 	}
 
-	TiXmlDocument doc;
-	if(!doc.LoadFile(csPath.GetBuffer()))
+	tinyxml2::XMLDocument doc;
+	std::string xmlBytes;
+	std::string xmlErr;
+	int xmlErrLine = 0;
+	bool bXmlLoaded = LoadUtf8FileForXml(csPath, xmlBytes, xmlErr);
+	if(bXmlLoaded && doc.Parse(xmlBytes.c_str()) != tinyxml2::XML_SUCCESS)
 	{
-		m_csLastError.Format(_T("Error loading file %s - reason = %s, Line: %d, column: %d"), csFile, CTextConvert::AnsiToUnicode(doc.ErrorDesc()), doc.ErrorRow(), doc.ErrorCol());
+		bXmlLoaded = false;
+		xmlErr = doc.ErrorStr() != nullptr ? doc.ErrorStr() : "";
+		xmlErrLine = doc.ErrorLineNum();
+	}
+	if(!bXmlLoaded)
+	{
+		m_csLastError.Format(_T("Error loading file %s - reason = %s, Line: %d"), csFile, CTextConvert::Utf8ToUnicode(xmlErr.c_str()), xmlErrLine);
 		Log(m_csLastError);
 		return false;
 	}
 
-	TiXmlElement *ItemHeader = doc.FirstChildElement("Ditto_Language_File");
+	tinyxml2::XMLElement *ItemHeader = doc.FirstChildElement("Ditto_Language_File");
 	if(!ItemHeader)
 	{
 		m_csLastError.Format(_T("Error finding the section Ditto_Language_File"));
@@ -371,11 +383,11 @@ bool CMultiLanguage::LoadLanguageFile(CString csFile)
 		return false;
 	}
 
-	CString csVersion = ItemHeader->Attribute("Version");
+	CString csVersion = AttrOrNull(ItemHeader, "Version");
 	m_lFileVersion = ATOI(csVersion);
-	m_csAuthor = ItemHeader->Attribute("Author");
-	m_csNotes = ItemHeader->Attribute("Notes");
-	m_csLangCode = ItemHeader->Attribute("LanguageCode");
+	m_csAuthor = AttrOrNull(ItemHeader, "Author");
+	m_csNotes = AttrOrNull(ItemHeader, "Notes");
+	m_csLangCode = AttrOrNull(ItemHeader, "LanguageCode");
 
 	if(m_bOnlyGetHeader)
 		return true;
@@ -404,10 +416,10 @@ bool CMultiLanguage::LoadLanguageFile(CString csFile)
 	return true;
 }
 
-bool CMultiLanguage::LoadSection(TiXmlNode &doc, LANGUAGE_ARRAY &Array, CString csSection)
+bool CMultiLanguage::LoadSection(tinyxml2::XMLNode &doc, LANGUAGE_ARRAY &Array, CString csSection)
 {
 	CStringA csSectionA = CTextConvert::UnicodeToAnsi(csSection);
-	TiXmlNode *node = doc.FirstChild(csSectionA);
+	tinyxml2::XMLNode *node = doc.FirstChildElement(csSectionA);
 	if(!node)
 	{
 		m_csLastError.Format(_T("Error finding the section %s"), csSection);
@@ -416,25 +428,25 @@ bool CMultiLanguage::LoadSection(TiXmlNode &doc, LANGUAGE_ARRAY &Array, CString 
 		return false;
 	}
 
-	TiXmlNode* ForeignNode;
+	tinyxml2::XMLNode* ForeignNode;
 	CString csID;
 	CString csLineFeed("\n");
-		
-	TiXmlElement *ItemElement = node->FirstChildElement();
+
+	tinyxml2::XMLElement *ItemElement = node->FirstChildElement();
 
 	//load all items for this section
 	//they look like
 	//<Item English_Text = "Use Ctrl - Num" ID= "32777"></Item>
 	while(ItemElement)
 	{
- 		ForeignNode = ItemElement->FirstChild();
- 		if(ForeignNode)
- 		{
+  		ForeignNode = ItemElement->FirstChild();
+  		if(ForeignNode)
+  		{
 			CLangItem *plItem = new CLangItem;
 			if(plItem)
 			{
-				plItem->m_csEnglishLang = ItemElement->Attribute("English_Text");
-				csID = ItemElement->Attribute("ID");
+				plItem->m_csEnglishLang = AttrOrNull(ItemElement, "English_Text");
+				csID = AttrOrNull(ItemElement, "ID");
 				plItem->m_nID = ATOI(csID);
 				if(plItem->m_nID == 0)
 				{
@@ -457,10 +469,10 @@ bool CMultiLanguage::LoadSection(TiXmlNode &doc, LANGUAGE_ARRAY &Array, CString 
 	return true;
 }
 
-bool CMultiLanguage::LoadStringTableSection(TiXmlNode &doc, LANGUAGE_MAP &Map, CString csSection)
+bool CMultiLanguage::LoadStringTableSection(tinyxml2::XMLNode &doc, LANGUAGE_MAP &Map, CString csSection)
 {
 	CStringA csSectionA = CTextConvert::UnicodeToAnsi(csSection);
-	TiXmlNode *node = doc.FirstChild(csSectionA);
+	tinyxml2::XMLNode *node = doc.FirstChildElement(csSectionA);
 	if(!node)
 	{
 		CString cs;
@@ -471,9 +483,9 @@ bool CMultiLanguage::LoadStringTableSection(TiXmlNode &doc, LANGUAGE_MAP &Map, C
 	}
 
 	CString csLineFeed("\n");
-	TiXmlNode* ForeignNode;
-		
-	TiXmlElement *ItemElement = node->FirstChildElement();
+	tinyxml2::XMLNode* ForeignNode;
+
+	tinyxml2::XMLElement *ItemElement = node->FirstChildElement();
 
 	//load all items for this section
 	//they look like
@@ -482,8 +494,8 @@ bool CMultiLanguage::LoadStringTableSection(TiXmlNode &doc, LANGUAGE_MAP &Map, C
 	{
 		CLangItem *plItem = new CLangItem;
 
-		plItem->m_csEnglishLang = ItemElement->Attribute("English_Text");
-		plItem->m_csID = ItemElement->Attribute("ID");
+		plItem->m_csEnglishLang = AttrOrNull(ItemElement, "English_Text");
+		plItem->m_csID = AttrOrNull(ItemElement, "ID");
 
 		ForeignNode = ItemElement->FirstChild();
 		if(ForeignNode) 

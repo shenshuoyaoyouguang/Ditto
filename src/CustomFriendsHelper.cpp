@@ -3,6 +3,8 @@
 #include "CP_Main.h"
 #include "..\Shared\Tokenizer.h"
 #include "..\Shared\TextConvert.h"
+#include <tinyxml2.h>
+#include "XmlFileLoad.h"
 
 
 CCustomFriendsHelper::CCustomFriendsHelper()
@@ -20,21 +22,21 @@ void CCustomFriendsHelper::Load()
 
 	CString oldValues = CGetSetOptions::GetCustomSendToList();
 
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 	CStringA xmlA = CTextConvert::UnicodeToUTF8(oldValues);
 	doc.Parse(xmlA);
 
-	TiXmlElement *ItemHeader = doc.FirstChildElement("CustomFriends");
+	tinyxml2::XMLElement *ItemHeader = doc.FirstChildElement("CustomFriends");
 
 	if (ItemHeader != NULL)
 	{
-		TiXmlElement *ItemElement = ItemHeader->FirstChildElement();
+		tinyxml2::XMLElement *ItemElement = ItemHeader->FirstChildElement();
 
 		while (ItemElement)
 		{
 			Name_Desc array_item;
-			array_item.m_name = ItemElement->Attribute("name");
-			array_item.m_desc = ItemElement->Attribute("desc");
+			array_item.m_name = AttrOrNull(ItemElement, "name");
+			array_item.m_desc = AttrOrNull(ItemElement, "desc");
 			
 			m_list.push_back(array_item);
 
@@ -55,14 +57,14 @@ void CCustomFriendsHelper::Save()
 		values += lineValue;
 	}*/
 
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 
-	TiXmlElement* friendOuter = new TiXmlElement("CustomFriends");
-	doc.LinkEndChild(friendOuter);
+	tinyxml2::XMLElement* friendOuter = doc.NewElement("CustomFriends");
+	doc.InsertEndChild(friendOuter);
 
 	for (auto & listItem : m_list)
 	{
-		TiXmlElement* friendElement = new TiXmlElement("Friend");
+		tinyxml2::XMLElement* friendElement = doc.NewElement("Friend");
 
 		CStringA nameA = CTextConvert::UnicodeToUTF8(listItem.m_name);
 		friendElement->SetAttribute("name",  nameA);
@@ -70,11 +72,10 @@ void CCustomFriendsHelper::Save()
 		CStringA descA = CTextConvert::UnicodeToUTF8(listItem.m_desc);
 		friendElement->SetAttribute("desc", descA);
 
-		friendOuter->LinkEndChild(friendElement);
+		friendOuter->InsertEndChild(friendElement);
 	}
-	
-	TiXmlPrinter printer;
-	printer.SetLineBreak("");
+
+	tinyxml2::XMLPrinter printer(nullptr, true);
 	doc.Accept(&printer);
 	CString cs = printer.CStr();
 

@@ -32,6 +32,8 @@
 #include "CreateQRCodeImage.h"
 #include "ListLayoutMath.h"
 #include "QRCodeViewer.h"
+#include <tinyxml2.h>
+#include "XmlFileLoad.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -6741,21 +6743,21 @@ static void LoadPastSearchesInto(CSymbolEdit& edit, const CString& values)
 {
 	CStringArray searches;
 
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 	CStringA xmlA = CTextConvert::UnicodeToUTF8(values);
 	doc.Parse(xmlA);
 
-	TiXmlElement* ItemHeader = doc.FirstChildElement("PastSearches");
+	tinyxml2::XMLElement* ItemHeader = doc.FirstChildElement("PastSearches");
 	if (ItemHeader != NULL)
 	{
-		TiXmlElement* ItemElement = ItemHeader->FirstChildElement();
+		tinyxml2::XMLElement* ItemElement = ItemHeader->FirstChildElement();
 
 		int count = 0;
 		while (ItemElement)
 		{
 			if (count < CSymbolEdit::kMaxSavedSearches)
 			{
-				CString item = ItemElement->Attribute("text");
+				CString item = AttrOrNull(ItemElement, "text");
 
 				CString toAdd = item.Left(CSymbolEdit::kMaxSavedSearchLength);
 				if (toAdd != _T(""))
@@ -6779,25 +6781,24 @@ static void LoadPastSearchesInto(CSymbolEdit& edit, const CString& values)
 
 static CString SavePastSearchesFrom(const CSymbolEdit& edit)
 {
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 
-	TiXmlElement* outer = new TiXmlElement("PastSearches");
-	doc.LinkEndChild(outer);
+	tinyxml2::XMLElement* outer = doc.NewElement("PastSearches");
+	doc.InsertEndChild(outer);
 
 	const CStringArray& searches = edit.GetSearches();
 	INT_PTR count = searches.GetSize();
 	for (INT_PTR i = 0; i < count; i++)
 	{
-		TiXmlElement* searchElement = new TiXmlElement("Search");
+		tinyxml2::XMLElement* searchElement = doc.NewElement("Search");
 
 		CStringA t = CTextConvert::UnicodeToUTF8(searches[i]);
 		searchElement->SetAttribute("text", t);
 
-		outer->LinkEndChild(searchElement);
+		outer->InsertEndChild(searchElement);
 	}
 
-	TiXmlPrinter printer;
-	printer.SetLineBreak("");
+	tinyxml2::XMLPrinter printer(nullptr, true);
 	doc.Accept(&printer);
 
 	return CString(printer.CStr());

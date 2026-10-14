@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ChaiScriptXml.h"
-#include "tinyxml\tinyxml.h"
+#include <tinyxml2.h>
+#include "XmlFileLoad.h"
 #include "..\Shared\TextConvert.h"
 #include "Misc.h"
 #include "ActionEnums.h"
@@ -37,25 +38,25 @@ void CChaiScriptXml::Load(CString values)
 	m_assignedGuidOnLoad = false;
 	m_list.clear();
 	
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 	CStringA xmlA = CTextConvert::UnicodeToUTF8(values);
 	doc.Parse(xmlA);
 
-	TiXmlElement *ItemHeader = doc.FirstChildElement("ChaiScripts");
+	tinyxml2::XMLElement *ItemHeader = doc.FirstChildElement("ChaiScripts");
 
 	if (ItemHeader != NULL)
 	{
-		TiXmlElement *ItemElement = ItemHeader->FirstChildElement();
+		tinyxml2::XMLElement *ItemElement = ItemHeader->FirstChildElement();
 
 		while (ItemElement)
 		{
 			CDittoChaiScriptXmlItem array_item;
-			ItemElement->Attribute("active", &array_item.m_active);
-			array_item.m_name = ItemElement->Attribute("name");
-			array_item.m_description = ItemElement->Attribute("description");
-			array_item.m_script = ItemElement->Attribute("script");
-			array_item.m_guid = ItemElement->Attribute("guid");
-			array_item.m_version = ItemElement->Attribute("vesion");
+			ItemElement->QueryIntAttribute("active", &array_item.m_active);
+			array_item.m_name = AttrOrNull(ItemElement, "name");
+			array_item.m_description = AttrOrNull(ItemElement, "description");
+			array_item.m_script = AttrOrNull(ItemElement, "script");
+			array_item.m_guid = AttrOrNull(ItemElement, "guid");
+			array_item.m_version = AttrOrNull(ItemElement, "vesion");
 
 			if (array_item.m_guid == "")
 			{
@@ -73,14 +74,14 @@ void CChaiScriptXml::Load(CString values)
 CString CChaiScriptXml::Save()
 {
 	m_assignedGuidOnLoad = false;
-	TiXmlDocument doc;
+	tinyxml2::XMLDocument doc;
 
-	TiXmlElement* friendOuter = new TiXmlElement("ChaiScripts");
-	doc.LinkEndChild(friendOuter);
+	tinyxml2::XMLElement* friendOuter = doc.NewElement("ChaiScripts");
+	doc.InsertEndChild(friendOuter);
 
 	for (auto & listItem : m_list)
 	{
-		TiXmlElement* friendElement = new TiXmlElement("ChaiScriptItem");
+		tinyxml2::XMLElement* friendElement = doc.NewElement("ChaiScriptItem");
 
 		friendElement->SetAttribute("active", listItem.m_active);
 
@@ -99,11 +100,10 @@ CString CChaiScriptXml::Save()
 		CStringA version = CTextConvert::UnicodeToUTF8(listItem.m_version);
 		friendElement->SetAttribute("version", version);
 
-		friendOuter->LinkEndChild(friendElement);
+		friendOuter->InsertEndChild(friendElement);
 	}
 
-	TiXmlPrinter printer;
-	printer.SetLineBreak("");
+	tinyxml2::XMLPrinter printer(nullptr, true);
 	doc.Accept(&printer);
 	CString cs = printer.CStr();
 

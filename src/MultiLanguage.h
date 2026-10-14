@@ -5,8 +5,7 @@
 #if !defined(AFX_MULTILANGUAGE_H__DA57BA64_C421_4368_9498_1EFCE49A5C52__INCLUDED_)
 #define AFX_MULTILANGUAGE_H__DA57BA64_C421_4368_9498_1EFCE49A5C52__INCLUDED_
 
-#include "tinyxml\Tinyxml.h"
-#include "tinyxml\tinystr.h"
+#include <tinyxml2.h>
 
 #if _MSC_VER > 1000
 #pragma once
@@ -106,8 +105,8 @@ protected:
 	bool	m_bOnlyGetHeader;
 
 protected:
-	bool LoadSection(TiXmlNode &doc, LANGUAGE_ARRAY &Array, CString csSection);
-	bool LoadStringTableSection(TiXmlNode &doc, LANGUAGE_MAP &Map, CString csSection);
+	bool LoadSection(tinyxml2::XMLNode &doc, LANGUAGE_ARRAY &Array, CString csSection);
+	bool LoadStringTableSection(tinyxml2::XMLNode &doc, LANGUAGE_MAP &Map, CString csSection);
 
 	bool UpdateMenuToLanguage(CMenu *pMenu, LANGUAGE_ARRAY &Array);
 	bool UpdateWindowToLanguage(CWnd *pParent, LANGUAGE_ARRAY &Array);

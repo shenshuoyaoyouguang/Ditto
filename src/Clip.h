@@ -11,7 +11,6 @@
 #include <afxole.h>
 #include <afxtempl.h>
 #include <memory>
-#include "tinyxml\tinyxml.h"
 #include "..\Shared\IClip.h"
 #include "Misc.h"
 
