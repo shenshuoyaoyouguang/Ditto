@@ -181,7 +181,7 @@ LRESULT CFluentDialog::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	GetClientRect(rcNewClient);
 	RescaleChildren(rcOldClient, rcNewClient);
 
-	AppFonts::Inst().Init(newDpi, CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
+	AppFonts::Inst().Init(newDpi, AppFonts::SnapshotFontFamily());
 	AppFonts::ApplyToChildren(this);
 
 	m_bRescaling = false;
@@ -328,7 +328,7 @@ LRESULT CFluentPropertyPage::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	GetClientRect(rcNewClient);
 	RescaleChildren(rcOldClient, rcNewClient);
 
-	AppFonts::Inst().Init(newDpi, CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
+	AppFonts::Inst().Init(newDpi, AppFonts::SnapshotFontFamily());
 	AppFonts::ApplyToChildren(this);
 
 	m_bRescaling = false;

@@ -26,6 +26,11 @@ namespace theme
 
 // Finished values only: twenty semantic colors plus control sizes, the font
 // family and the dark flag. No m_has* flags, no legacy colors, no walk state.
+// Exclusion rule (spec story 10, "legacy themes keep loading with the same
+// look"): fields with no v4 equivalent -- Caption*/Border*/CaptionSize/
+// CaptionFontSize, ScrollBar*, SearchTextBoxFocusText, DescriptionWindow*,
+// GroupTree* -- stay on live reads. Widening the snapshot is a follow-up;
+// mapping a legacy-only surface onto a token would recompute its pixels.
 struct ThemeTokenSnapshot
 {
 	COLORREF surfaceBase = RGB(0, 0, 0);

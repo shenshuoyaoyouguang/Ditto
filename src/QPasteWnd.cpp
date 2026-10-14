@@ -2257,7 +2257,7 @@ void CQPasteWnd::UpdateFont()
 	m_lstHeader.SetLogFont(lf);
 
 	// search box and statics use the app font ramp (plan section 4.2)
-	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI(), CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
+	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI(), AppFonts::SnapshotFontFamily());
 
 	m_SearchFont.DeleteObject();
 	m_SearchFont.CreateFontIndirect(&AppFonts::Inst().BodyLogFont());
@@ -2273,11 +2273,12 @@ void CQPasteWnd::UpdateFont()
 	m_groupFont.DeleteObject();
 	m_groupFont.CreateFontIndirect(&lfCaption);
 	m_stGroup.SetFont(&m_groupFont);
-	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
-	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textSecondary);
+	const auto& tokens = CGetSetOptions::m_Theme.GetTokenSnapshot();
+	m_stGroup.SetBkColor(tokens.surfaceBase);
+	m_stGroup.SetTextColor(tokens.textSecondary);
 
-	m_noSearchResultsStatic.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
-	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textSecondary);
+	m_noSearchResultsStatic.SetBkColor(tokens.surfaceBase);
+	m_noSearchResultsStatic.SetTextColor(tokens.textSecondary);
 	m_noSearchResultsStatic.SetFont(&m_SearchFont);
 
 	m_lstHeader.CreateSmallFont();

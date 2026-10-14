@@ -289,6 +289,110 @@ static void test_size_and_font_overrides()
 	CHECK_TRUE(snap.fontFamily == L"Segoe UI");
 }
 
+// Publish parity: these build the request the way CTheme::PublishTokenSnapshot
+// does (member flag + member value per token, concrete legacy rows as the
+// walk refs, ClipPastedColor as the built-in accent) and assert the producer
+// output against independent hand-worked values. If the runtime mapping drops
+// or miswires a field, these fail; they are the lock on the single producer.
+
+static ditto::theme::ThemeSnapshotRequest PublishStyleRequest()
+{
+	// Simulated post-LoadDefaults member state, light OS, no xml parsed:
+	// every has-flag false, ClipPastedColor at its RGB(0,255,0) default.
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0, 255, 0);
+	req.rowOddBG = RGB(255, 255, 255);
+	req.rowEvenBG = RGB(243, 243, 243);
+	return req;
+}
+
+static void test_publish_builtin_palette_matches_producer()
+{
+	ditto::theme::ThemeTokenSnapshot snap =
+		ditto::theme::BuildThemeSnapshot(PublishStyleRequest());
+
+	CHECK_COLOR(snap.surfaceBase, 0xF3, 0xF3, 0xF3);
+	CHECK_COLOR(snap.surfaceElevated, 0xFF, 0xFF, 0xFF);
+	CHECK_COLOR(snap.surfaceRowAlt, 0xF9, 0xF9, 0xF9);
+	CHECK_COLOR(snap.textPrimary, 0x1A, 0x1A, 0x1A);
+	CHECK_COLOR(snap.accentDefault, 0x00, 0xFF, 0x00);
+	// Accent.Subtle = BlendOver(#F3F3F3, lime, 31), hand-worked per channel:
+	// R/B: MulDiv(-243,31,255) = -7533/255 = -29.54 -> -30 -> 213;
+	// G: MulDiv(12,31,255) = 372/255 = 1.46 -> 1 -> 244.
+	CHECK_COLOR(snap.accentSubtle, 213, 244, 213);
+	// Lime on near-white is ~1.2:1; black (15.3:1) beats white (1.4:1).
+	CHECK_COLOR(snap.textOnAccent, 0x00, 0x00, 0x00);
+	// Lime shifted toward black keeps R=B=0 and clears WCAG AA.
+	CHECK_TRUE(GetRValue(snap.accentText) == 0);
+	CHECK_TRUE(GetBValue(snap.accentText) == 0);
+	CHECK_TRUE(GetGValue(snap.accentText) > 0);
+	CHECK_TRUE(ContrastRatio(snap.accentText, snap.surfaceBase) >= 4.5);
+	CHECK_COLOR(snap.stateHover, 234, 234, 234);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, snap.surfaceBase) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, RGB(255, 255, 255)) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, RGB(243, 243, 243)) >= 1.25);
+	CHECK_TRUE(snap.radiusControl == 4);
+	CHECK_TRUE(snap.rowHeightCompact == 30);
+	CHECK_TRUE(snap.rowHeightComfortable == 44);
+	CHECK_TRUE(snap.fontFamily == L"auto");
+	CHECK_TRUE(snap.isDarkTheme == false);
+}
+
+static void test_publish_legacy_dark_matches_producer()
+{
+	// Simulated legacy member state: dark MainWindowBG parsed from xml, rows
+	// at their LoadDefaults pair, no explicit tokens, no other legacy nodes.
+	ditto::theme::ThemeSnapshotRequest req = PublishStyleRequest();
+	req.parsedXml = true;
+	req.hasLegacyMainWindowBG = true;
+	req.legacyMainWindowBG = RGB(0x20, 0x20, 0x20);
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+
+	// Same hand-worked derivation as test_legacy_dark_base_drives_derivation.
+	CHECK_COLOR(snap.surfaceBase, 0x20, 0x20, 0x20);
+	CHECK_COLOR(snap.surfaceElevated, 31, 31, 31);
+	CHECK_COLOR(snap.surfaceRowAlt, 32, 32, 32);
+	CHECK_COLOR(snap.textPrimary, 0xFF, 0xFF, 0xFF);
+	CHECK_COLOR(snap.textSecondary, 170, 170, 170);
+	CHECK_COLOR(snap.textDisabled, 115, 115, 115);
+	CHECK_COLOR(snap.accentDefault, 0x4C, 0xC2, 0xFF);
+	CHECK_COLOR(snap.stateHover, 45, 45, 45);
+	CHECK_COLOR(snap.stateSelectedBG, 37, 52, 59);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, snap.surfaceBase) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, RGB(255, 255, 255)) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, RGB(243, 243, 243)) >= 1.25);
+	CHECK_COLOR(snap.textOnAccent, 0x00, 0x00, 0x00);
+	CHECK_TRUE(snap.isDarkTheme == true);
+}
+
+static void test_publish_explicit_override_matches_producer()
+{
+	// Simulated member state with explicit tokens (has-flags true): black
+	// Surface.Base plus a pinned hover, as CTheme holds after LoadTokensFromXml.
+	ditto::theme::ThemeSnapshotRequest req = PublishStyleRequest();
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+	req.stateHover.has = true;
+	req.stateHover.value = RGB(0x12, 0x34, 0x56);
+	req.surfaceBase.has = true;
+	req.surfaceBase.value = RGB(0x00, 0x00, 0x00);
+	req.fontFamily.has = true;
+	req.fontFamily.value = L"Segoe UI";
+	req.radiusControl.has = true;
+	req.radiusControl.value = 8;
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+
+	CHECK_TRUE(snap.stateHover == RGB(0x12, 0x34, 0x56));
+	CHECK_TRUE(snap.isDarkTheme == true);
+	// Same hand-worked subtle as test_explicit_overrides_win.
+	CHECK_COLOR(snap.accentSubtle, 0, 12, 22);
+	CHECK_TRUE(snap.fontFamily == L"Segoe UI");
+	CHECK_TRUE(snap.radiusControl == 8);
+}
+
 int main()
 {
 	test_light_defaults_carry_finished_values();
@@ -299,6 +403,9 @@ int main()
 	test_golden_accent_keeps_hue_and_clears_aa();
 	test_grey_accent_picks_black_on_accent();
 	test_size_and_font_overrides();
+	test_publish_builtin_palette_matches_producer();
+	test_publish_legacy_dark_matches_producer();
+	test_publish_explicit_override_matches_producer();
 
 	if (g_failures > 0)
 	{

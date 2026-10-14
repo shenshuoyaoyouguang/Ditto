@@ -81,9 +81,11 @@ public:
 	CString FontFamily() const { return m_csFontFamily; }
 	bool IsDarkTheme() const { return m_bDarkTheme; }
 
-	// Read-only snapshot of the finished token values, rebuilt once per
-	// finalize path (T1). The concrete class and the global instance stay;
-	// no consumer reads this yet (T2/T3 territory).
+	// Read-only snapshot of the finished token values, rebuilt on every
+	// FinalizeTokens() and system-accent refresh through the single producer
+	// in ThemeTokens.h. The concrete class and the global instance stay for
+	// the legacy-only surfaces (see the exclusion rule on
+	// ThemeTokenSnapshot); migrated views read through here.
 	const ditto::theme::ThemeTokenSnapshot& GetTokenSnapshot() const { return m_tokenSnapshot; }
 
 	CString Notes() const { return m_csNotes; }
