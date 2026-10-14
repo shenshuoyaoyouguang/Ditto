@@ -38,6 +38,19 @@ jobs:
         run: |
           if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
             vcpkg --version
+            # Fetch the pinned baseline into every vcpkg checkout CI may use
+            # (msbuild restores via $env:VCPKG_ROOT, cl steps via PATH vcpkg).
+            # Runner checkouts can predate it and fail manifest restore.
+            $roots = @()
+            $roots += Split-Path ((Get-Command vcpkg).Source) -Parent
+            if ($env:VCPKG_ROOT) { $roots += $env:VCPKG_ROOT }
+            foreach ($r in ($roots | Select-Object -Unique)) {
+              $gitDir = Join-Path $r '.git'
+              if (Test-Path $gitDir) {
+                if (Test-Path (Join-Path $gitDir 'shallow')) { git -C $r fetch --unshallow --tags }
+                else { git -C $r fetch --tags }
+              }
+            }
           } else {
             git clone https://github.com/microsoft/vcpkg.git
             .\vcpkg\bootstrap-vcpkg.bat
@@ -53,6 +66,14 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
+            # Fetch the pinned baseline: runner checkouts can predate it and
+            # fail manifest restore with "failed to `git show` versions/baseline.json".
+            $vcpkgRoot = Split-Path ((Get-Command vcpkg).Source) -Parent
+            $gitDir = Join-Path $vcpkgRoot '.git'
+            if (Test-Path $gitDir) {
+              if (Test-Path (Join-Path $gitDir 'shallow')) { git -C $vcpkgRoot fetch --unshallow --tags }
+              else { git -C $vcpkgRoot fetch --tags }
+            }
             vcpkg install --triplet x64-windows
           } else {
             git clone https://github.com/microsoft/vcpkg.git
