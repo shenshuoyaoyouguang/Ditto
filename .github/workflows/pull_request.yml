@@ -102,6 +102,9 @@ jobs:
         run: |
           if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
             vcpkg --version
+            # Activate MSBuild-side integration: stock VS targets do not honor
+            # VcpkgEnableManifest by themselves (no restore, no include paths).
+            vcpkg integrate install
             # Fetch the pinned baseline into every vcpkg checkout CI may use
             # (msbuild restores via $env:VCPKG_ROOT, cl steps via PATH vcpkg),
             # then sync each working tree to it: runner checkouts can predate it
