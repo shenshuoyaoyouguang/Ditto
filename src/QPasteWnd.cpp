@@ -526,8 +526,8 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	m_alwaysOnToWarningStatic.Create(onTopMsg, WS_CHILD | SS_CENTERIMAGE | SS_NOTIFY, CRect(0, 0, 0, 0), this, ON_TOP_WARNING);
-	m_alwaysOnToWarningStatic.SetBkColor(CGetSetOptions::m_Theme.AccentSubtle());
-	m_alwaysOnToWarningStatic.SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
+	m_alwaysOnToWarningStatic.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().accentSubtle);
+	m_alwaysOnToWarningStatic.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary);
 	m_alwaysOnToWarningStatic.SetToggleCursor(true);
 	m_alwaysOnToWarningStatic.SetFont(&m_groupFont);
 
@@ -2273,11 +2273,11 @@ void CQPasteWnd::UpdateFont()
 	m_groupFont.DeleteObject();
 	m_groupFont.CreateFontIndirect(&lfCaption);
 	m_stGroup.SetFont(&m_groupFont);
-	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
+	m_stGroup.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
+	m_stGroup.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textSecondary);
 
-	m_noSearchResultsStatic.SetBkColor(CGetSetOptions::m_Theme.MainWindowBG());
-	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.TextSecondary());
+	m_noSearchResultsStatic.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
+	m_noSearchResultsStatic.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textSecondary);
 	m_noSearchResultsStatic.SetFont(&m_SearchFont);
 
 	m_lstHeader.CreateSmallFont();
@@ -6337,8 +6337,8 @@ void CQPasteWnd::UpdateSidebarTreeDock()
 		}
 
 		m_GroupTree.ModifyStyle(TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS, TVS_TRACKSELECT | TVS_FULLROWSELECT);
-		m_GroupTree.SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
-		m_GroupTree.SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
+		m_GroupTree.SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
+		m_GroupTree.SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary);
 
 		if (m_DittoWindow.m_dpi.GetDPI() > 0)
 			m_GroupTree.SetItemHeight(m_DittoWindow.m_dpi.Scale(22));
@@ -6995,7 +6995,7 @@ BOOL CQPasteWnd::OnEraseBkgnd(CDC* pDC)
 {
 	CRect rect;
 	GetClientRect(&rect);
-	CBrush myBrush(CGetSetOptions::m_Theme.MainWindowBG());    // dialog background color
+	CBrush myBrush(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);    // dialog background color
 	CBrush* pOld = pDC->SelectObject(&myBrush);
 	BOOL bRes = pDC->PatBlt(0, 0, rect.Width(), rect.Height(), PATCOPY);
 	pDC->SelectObject(pOld);    // restore old brush
