@@ -1,4 +1,4 @@
-﻿// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
 #include "stdafx.h"
@@ -8386,16 +8386,9 @@ bool CQPasteWnd::DoActionGmail()
 
 void CQPasteWnd::RefreshScrollBarColors()
 {
-	m_modernScrollBar.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
-	);
-	m_modernScrollBarHorz.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
-	);
+	const ThemeTokenSnapshot& s = CGetSetOptions::m_Theme.Snapshot();
+	m_modernScrollBar.SetColors(s.scrollBarTrack, s.scrollBarThumb, s.scrollBarThumbHover);
+	m_modernScrollBarHorz.SetColors(s.scrollBarTrack, s.scrollBarThumb, s.scrollBarThumbHover);
 }
 
 void CQPasteWnd::RefreshThemeColors()

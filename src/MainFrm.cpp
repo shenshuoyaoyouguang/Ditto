@@ -108,7 +108,13 @@ static BOOL CALLBACK RefreshCaptionColorsProc(HWND hwnd, LPARAM lParam)
 	// CEditFrameWnd sits on the CFrameWnd branch entirely. Every window
 	// caches its caption colours at creation time, so each of them needs its
 	// own hook or a light/dark switch leaves them on the old palette.
-	if (pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
+	// CQPasteWnd derives from CWndEx and RefreshThemeColors is non-virtual, so
+	// the CWndEx branch below would match first and run the caption-only base
+	// instead of CQPasteWnd::RefreshThemeColors (which also refreshes the
+	// scrollbars). Check the derived class first.
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CQPasteWnd)))
+		((CQPasteWnd*)pWnd)->RefreshThemeColors();
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CWndEx)))
 		((CWndEx*)pWnd)->RefreshThemeColors();
 	else if (pWnd->IsKindOf(RUNTIME_CLASS(CEditFrameWnd)))
 		((CEditFrameWnd*)pWnd)->RefreshThemeColors();
@@ -116,6 +122,8 @@ static BOOL CALLBACK RefreshCaptionColorsProc(HWND hwnd, LPARAM lParam)
 		((QRCodeViewer*)pWnd)->RefreshThemeColors();
 	else if (pWnd->IsKindOf(RUNTIME_CLASS(CToolTipEx)))
 		((CToolTipEx*)pWnd)->RefreshThemeColors();
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(COptionsSheet)))
+		((COptionsSheet*)pWnd)->RefreshThemeColors();
 
 	return TRUE;
 }

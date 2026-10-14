@@ -581,6 +581,8 @@ void CTheme::FinalizeTokens(const CString& csThemeName)
 	// cache field is only committed on the full-load path, so the built-in
 	// palette branch and the parse-failure fallback would both report empty.
 	AuditContrast(csThemeName);
+
+	BuildSnapshot();
 }
 
 void CTheme::DeriveTokensFromLegacy()
@@ -680,6 +682,8 @@ void CTheme::RefreshSystemAccent()
 	}
 
 	RefreshAccentDerived();
+
+	BuildSnapshot();
 }
 
 void CTheme::RefreshAccentDerived()
@@ -801,4 +805,54 @@ void CTheme::AuditContrast(const CString& csThemeName)
 		csMsg.Format(_T("[theme]   %d of %d pairs below the threshold\r\n"), nFail, nCount);
 
 	OutputDebugString(csMsg);
+}
+
+void CTheme::BuildSnapshot()
+{
+	m_snapshot.surfaceBase = m_surfaceBase;
+	m_snapshot.surfaceElevated = m_surfaceElevated;
+	m_snapshot.surfaceRowAlt = m_surfaceRowAlt;
+	m_snapshot.textPrimary = m_textPrimary;
+	m_snapshot.textSecondary = m_textSecondary;
+	m_snapshot.textDisabled = m_textDisabled;
+	m_snapshot.textOnAccent = m_textOnAccent;
+	m_snapshot.accentDefault = m_accentDefault;
+	m_snapshot.accentSubtle = m_accentSubtle;
+	m_snapshot.accentText = m_accentText;
+	m_snapshot.strokeCard = m_strokeCard;
+	m_snapshot.strokeDivider = m_strokeDivider;
+	m_snapshot.controlFill = m_controlFill;
+	m_snapshot.controlHover = m_controlHover;
+	m_snapshot.controlPressed = m_controlPressed;
+	m_snapshot.controlDisabledBG = m_controlDisabledBG;
+	m_snapshot.stateHover = m_stateHover;
+	m_snapshot.stateSelectedBG = m_stateSelectedBG;
+	m_snapshot.stateSelectedText = m_stateSelectedText;
+	m_snapshot.indicatorBadge = m_indicatorBadge;
+	m_snapshot.radiusControl = m_radiusControl;
+	m_snapshot.rowHeightCompact = m_rowHeightCompact;
+	m_snapshot.rowHeightComfortable = m_rowHeightComfortable;
+	CStringA fontA(m_csFontFamily);
+	m_snapshot.fontFamily = std::string((LPCSTR)fontA);
+	m_snapshot.isDarkTheme = m_bDarkTheme;
+
+	m_snapshot.scrollBarTrack = m_scrollBarTrack;
+	m_snapshot.scrollBarThumb = m_scrollBarThumb;
+	m_snapshot.scrollBarThumbHover = m_scrollBarThumbHover;
+
+	m_snapshot.captionLeft = m_CaptionLeft;
+	m_snapshot.captionRight = m_CaptionRight;
+	m_snapshot.border = m_Border;
+	m_snapshot.captionTextColor = m_CaptionTextColor;
+	m_snapshot.captionLeftTopMost = m_CaptionLeftTopMost;
+	m_snapshot.captionRightTopMost = m_CaptionRightTopMost;
+	m_snapshot.borderTopMost = m_BorderTopMost;
+	m_snapshot.captionLeftNotConnected = m_CaptionLeftNotConnected;
+	m_snapshot.captionRightNotConnected = m_CaptionRightNotConnected;
+	m_snapshot.borderNotConnected = m_BorderNotConnected;
+	m_snapshot.captionSize = m_captionSize;
+	m_snapshot.captionFontSize = m_captionFontSize;
+
+	m_snapshot.listBoxOddRowsBG = m_ListBoxOddRowsBG;
+	m_snapshot.listBoxEvenRowsBG = m_ListBoxEvenRowsBG;
 }

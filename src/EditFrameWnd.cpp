@@ -178,9 +178,9 @@ void CEditFrameWnd::RefreshThemeColors()
 	// g_Opt is an extern CGetSetOptions, so g_Opt.m_Theme and
 	// CGetSetOptions::m_Theme are the same object; use the latter like the
 	// other windows do. Replays exactly what OnCreate applied.
-	CTheme& theme = CGetSetOptions::m_Theme;
-	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
-	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+	const ThemeTokenSnapshot& s = CGetSetOptions::m_Theme.Snapshot();
+	m_DittoWindow.SetCaptionColors(s.captionLeft, s.captionRight, s.border);
+	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, s.captionSize, s.captionFontSize);
 
 	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 }

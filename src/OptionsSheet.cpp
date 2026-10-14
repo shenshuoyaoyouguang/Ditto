@@ -237,6 +237,17 @@ HBRUSH COptionsSheet::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	return CPropertySheet::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
+void COptionsSheet::RefreshThemeColors()
+{
+	if (!m_bNavCreated)
+		return;
+
+	const ThemeTokenSnapshot& s = CGetSetOptions::m_Theme.Snapshot();
+	m_navBg.DeleteObject();
+	m_navBg.CreateSolidBrush(s.surfaceBase);
+	m_nav.Invalidate();
+}
+
 void COptionsSheet::LayoutNav(int cx, int cy)
 {
 	if (m_bNavCreated == false)
