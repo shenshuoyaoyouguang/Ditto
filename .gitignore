@@ -78,3 +78,5 @@ Debug/portable
 /.zcode/
 /dist/
 .omo/*
+.opencode/*
+skills-lock.json
