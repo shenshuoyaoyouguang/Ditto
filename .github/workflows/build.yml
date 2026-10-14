@@ -12,12 +12,12 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2025
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Generate build number
         id: buildnumber
@@ -31,15 +31,34 @@ jobs:
             echo "VERSION_DOT_FILENAME=3.25.${env:BUILD_NUMBER}.0" | Out-File -FilePath $env:GITHUB_ENV -Append
             
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
-      - name: Restore NuGet packages
+      - name: Setup vcpkg (manifest mode provides zlib/libpng/tinyxml2)
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+        run: |
+          if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
+            vcpkg --version
+          } else {
+            git clone https://github.com/microsoft/vcpkg.git
+            .\vcpkg\bootstrap-vcpkg.bat
+            # Wire the fresh clone into MSBuild so manifest restore works
+            .\vcpkg\vcpkg.exe integrate install
+          }
 
       - name: Setup MSVC
         # v1.13.0, pinned by SHA so a tag rewrite cannot change what CI runs
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+
+      - name: Restore vcpkg deps for xml parity test
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
+            vcpkg install --triplet x64-windows
+          } else {
+            git clone https://github.com/microsoft/vcpkg.git
+            .\vcpkg\bootstrap-vcpkg.bat
+            .\vcpkg\vcpkg.exe install --triplet x64-windows
+          }
 
       - name: Build theme colour tests
         run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_theme_colors.cpp /Fe:test_theme_colors.exe
@@ -64,6 +83,21 @@ jobs:
 
       - name: Run list layout math tests
         run: .\test_list_layout_math.exe
+
+      - name: Build xml file load tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src tests\test_xml_file_load.cpp /Fe:test_xml_file_load.exe
+
+      - name: Run xml file load tests
+        run: .\test_xml_file_load.exe
+
+      - name: Build xml parity tests
+        run: cl /nologo /std:c++17 /W4 /EHsc /I src /I vcpkg_installed\x64-windows\include tests\test_xml_parity.cpp /Fe:test_xml_parity.exe /link vcpkg_installed\x64-windows\lib\tinyxml2.lib
+
+      - name: Run xml parity tests
+        run: |
+          copy vcpkg_installed\x64-windows\bin\tinyxml2.dll .
+          New-Item -ItemType Directory -Force test_parity_out | Out-Null
+          .\test_xml_parity.exe Debug\Language Debug\Themes test_parity_out
         
       - name: Build
         run: msbuild CP_Main_10.sln /p:Configuration=Release /p:Platform=x64
@@ -86,7 +120,9 @@ jobs:
       - name: upload-unsigned-exe
         id: upload-unsigned-exe
         if: steps.check_signing.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
+        # NOTE: upload-only in this repo (no download-artifact step); keep upload-artifact
+        # major version consistent if a download side is ever added (v6 download requires v6 upload).
+        uses: actions/upload-artifact@v6
         with: 
           name: unsigned-exe
           retention-days: 1
@@ -109,14 +145,14 @@ jobs:
           output-artifact-directory: '/Release64'      
                    
       - name: Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.7
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.9
         with:
           path: DittoSetup\DittoSetup_10.iss
           
       - name: upload-unsigned-artifact
         id: upload-unsigned-artifact
         if: steps.check_signing.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with: 
           name: unsigned-intaller
           retention-days: 1
@@ -205,7 +241,7 @@ jobs:
 
       - name: Upload unsigned build artifacts
         if: steps.check_signing.outputs.available != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-build-${{env.VERSION_FILENAME}}
           retention-days: 7
