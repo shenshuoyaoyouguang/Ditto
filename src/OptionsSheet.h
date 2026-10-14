@@ -22,6 +22,11 @@ public:
 
 	void SetNotifyWnd(HWND hWnd);
 
+	// Rebuilds the cached nav-background brush from the central token snapshot
+	// after a theme reload (the dialog stays open while the General page
+	// previews themes, so the OnInitDialog brush would otherwise go stale).
+	void RefreshThemeColors();
+
 // Attributes
 public:
 

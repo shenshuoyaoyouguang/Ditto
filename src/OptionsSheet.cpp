@@ -163,7 +163,7 @@ BOOL COptionsSheet::OnInitDialog()
 	// The list only owner-draws its items, so the empty area below the last
 	// one kept the system window colour -- a light strip under a dark sheet.
 	m_navBg.DeleteObject();
-	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.SurfaceBase());
+	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
 	m_bNavCreated = true;
 	FillNavItems();
 
@@ -235,6 +235,19 @@ HBRUSH COptionsSheet::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	}
 
 	return CPropertySheet::OnCtlColor(pDC, pWnd, nCtlColor);
+}
+
+void COptionsSheet::RefreshThemeColors()
+{
+	if (m_bNavCreated == false || GetSafeHwnd() == NULL)
+		return;
+
+	m_navBg.DeleteObject();
+	m_navBg.CreateSolidBrush(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
+
+	if (m_nav.GetSafeHwnd() != NULL)
+		m_nav.Invalidate();
+	Invalidate();
 }
 
 void COptionsSheet::LayoutNav(int cx, int cy)

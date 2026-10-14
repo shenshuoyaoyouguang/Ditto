@@ -719,6 +719,9 @@ void COptionsGeneral::OnCbnSelchangeComboTheme()
 		{
 			theApp.m_pMainFrame->m_quickPaste.m_pwndPaste->RefreshThemeColors();
 		}
+
+		if (m_pParent != NULL)
+			m_pParent->RefreshThemeColors();
 	}
 }
 

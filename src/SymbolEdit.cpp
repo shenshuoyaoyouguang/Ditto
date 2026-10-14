@@ -679,12 +679,12 @@ HBRUSH CSymbolEdit::CtlColor(CDC* pDC, UINT n)
 	{
 		pDC->SetTextColor(CGetSetOptions::m_Theme.SearchTextBoxFocusText());
 		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
-		color = CGetSetOptions::m_Theme.SurfaceElevated();
+		color = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated;
 	}
 	else
 	{
 		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
-		color = CGetSetOptions::m_Theme.SurfaceElevated();
+		color = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated;
 	}
 
 	if (color != m_lastBrushColor)
