@@ -31,7 +31,7 @@ BOOL CFluentProgressBar::OnEraseBkgnd(CDC* pDC)
 	{
 		CRect rc;
 		GetClientRect(rc);
-		pDC->FillSolidRect(rc, CGetSetOptions::m_Theme.SurfaceBase());
+		pDC->FillSolidRect(rc, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
 		return TRUE;
 	}
 
@@ -43,7 +43,7 @@ void CFluentProgressBar::OnPaint()
 {
 	CPaintDC dc(this);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& tokens = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	CRect rc;
 	GetClientRect(rc);
 
@@ -53,9 +53,9 @@ void CFluentProgressBar::OnPaint()
 	// paint the whole client area first: the corners outside the rounded path
 	// belong to the dialog surface, not to the bar
 	SolidBrush surface(Color(255,
-		GetRValue(theme.SurfaceBase()),
-		GetGValue(theme.SurfaceBase()),
-		GetBValue(theme.SurfaceBase())));
+		GetRValue(tokens.surfaceBase),
+		GetGValue(tokens.surfaceBase),
+		GetBValue(tokens.surfaceBase)));
 	graphics.FillRectangle(&surface, 0.0f, 0.0f, (REAL)rc.Width(), (REAL)rc.Height());
 
 	int radius = max(2, (int)(rc.Height() / 2));
@@ -70,7 +70,7 @@ void CFluentProgressBar::OnPaint()
 	path.AddArc(rect.X, rect.Y + rect.Height - d, d, d, 90, 90);
 	path.CloseFigure();
 
-	SolidBrush trough(Color(255, GetRValue(theme.ControlFill()), GetGValue(theme.ControlFill()), GetBValue(theme.ControlFill())));
+	SolidBrush trough(Color(255, GetRValue(tokens.controlFill), GetGValue(tokens.controlFill), GetBValue(tokens.controlFill)));
 	graphics.FillPath(&trough, &path);
 
 	int nLower = 0;
@@ -99,13 +99,13 @@ void CFluentProgressBar::OnPaint()
 			fillPath.AddArc(fill.X, fill.Y + fill.Height - fillD, fillD, fillD, 90, 90);
 			fillPath.CloseFigure();
 
-			SolidBrush fillBrush(Color(255, GetRValue(theme.AccentDefault()), GetGValue(theme.AccentDefault()), GetBValue(theme.AccentDefault())));
+			SolidBrush fillBrush(Color(255, GetRValue(tokens.accentDefault), GetGValue(tokens.accentDefault), GetBValue(tokens.accentDefault)));
 			graphics.FillPath(&fillBrush, &fillPath);
 		}
 	}
 
 	// stroke last, otherwise a full progress value paints over the outline
-	COLORREF strokeColor = theme.StrokeCard();
+	COLORREF strokeColor = tokens.strokeCard;
 	Pen stroke(Color(255, GetRValue(strokeColor), GetGValue(strokeColor), GetBValue(strokeColor)));
 	graphics.DrawPath(&stroke, &path);
 }

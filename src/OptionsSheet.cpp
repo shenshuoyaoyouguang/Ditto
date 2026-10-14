@@ -184,7 +184,7 @@ BOOL COptionsSheet::OnInitDialog()
 
 	// fluent window chrome (no custom frame rework on the property sheet)
 	DwmTheme::ApplyRoundedCorners(m_hWnd, true);
-	DwmTheme::ApplyDarkCaption(m_hWnd, CGetSetOptions::m_Theme.IsDarkTheme());
+	DwmTheme::ApplyDarkCaption(m_hWnd, CGetSetOptions::m_Theme.GetTokenSnapshot().isDarkTheme);
 
 	m_bModeless = TRUE;
 	m_nFlags &= ~WF_CONTINUEMODAL;
@@ -228,8 +228,8 @@ HBRUSH COptionsSheet::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	if (nCtlColor == CTLCOLOR_LISTBOX && pWnd != NULL && m_bNavCreated &&
 		pWnd->GetSafeHwnd() == m_nav.GetSafeHwnd())
 	{
-		pDC->SetTextColor(CGetSetOptions::m_Theme.TextPrimary());
-		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceBase());
+		pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary);
+		pDC->SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
 		if (m_navBg.GetSafeHandle() != NULL)
 			return (HBRUSH)m_navBg.GetSafeHandle();
 	}
@@ -378,19 +378,19 @@ void COptionsSheet::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 
 	CDC* pDC = CDC::FromHandle(lpDrawItemStruct->hDC);
 	CRect rc(lpDrawItemStruct->rcItem);
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	bool bSelected = (lpDrawItemStruct->itemState & ODS_SELECTED) != 0;
 	bool bFocused = (lpDrawItemStruct->itemState & ODS_FOCUS) != 0;
 
 	// the nav column paints as one surface; the full-width item background
 	// plus the active accent bar read as a single selection pill
-	pDC->FillSolidRect(rc, bSelected ? theme.AccentSubtle() : theme.SurfaceBase());
+	pDC->FillSolidRect(rc, bSelected ? theme.accentSubtle : theme.surfaceBase);
 
 	if (bSelected)
 	{
 		CRect rcBar(rc.left + 4, rc.top + 6, rc.left + 7, rc.bottom - 6);
-		pDC->FillSolidRect(rcBar, theme.AccentDefault());
+		pDC->FillSolidRect(rcBar, theme.accentDefault);
 	}
 
 	CString csText;
@@ -400,7 +400,7 @@ void COptionsSheet::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	dpi.SetHwnd(lpDrawItemStruct->hwndItem);
 
 	pDC->SetBkMode(TRANSPARENT);
-	pDC->SetTextColor(bSelected ? theme.TextPrimary() : theme.TextSecondary());
+	pDC->SetTextColor(bSelected ? theme.textPrimary : theme.textSecondary);
 	CFont* pOld = pDC->SelectObject(bSelected ? AppFonts::Inst().Get(Font_BodyStrong) : AppFonts::Inst().Get(Font_Body));
 	// Same inset as the CSidebar rows: without it the label sits flush against
 	// the window edge and runs over the accent bar drawn at rc.left + 4.
@@ -414,7 +414,7 @@ void COptionsSheet::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 		// keyboard focus ring on the nav entry
 		CRect rcFocus(rc);
 		rcFocus.DeflateRect(2, 2, 2, 2);
-		CPen pen(PS_SOLID, 1, theme.AccentDefault());
+		CPen pen(PS_SOLID, 1, theme.accentDefault);
 		CPen* pOldPen = pDC->SelectObject(&pen);
 		pDC->SelectStockObject(NULL_BRUSH);
 		pDC->Rectangle(rcFocus);

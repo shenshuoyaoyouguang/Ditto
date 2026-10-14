@@ -88,7 +88,7 @@ void CDittoWindow::DoCreate(CWnd *pWnd)
 	// DWMWA_USE_IMMERSIVE_DARK_MODE returns S_OK for both light and dark, so
 	// storing the return value made "light applied at startup" look like "dark
 	// already applied" and every later switch to dark was skipped.
-	BOOL bDark = CGetSetOptions::m_Theme.IsDarkTheme() ? TRUE : FALSE;
+	BOOL bDark = CGetSetOptions::m_Theme.GetTokenSnapshot().isDarkTheme ? TRUE : FALSE;
 	m_bDwmDarkApplied = bDark ? true : false;
 	m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
 

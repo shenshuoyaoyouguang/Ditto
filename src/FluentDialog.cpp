@@ -82,15 +82,15 @@ void CFluentDialog::ApplyFluentStyle()
 	AppFonts::Inst().EnsureInitialized();
 	AppFonts::ApplyToChildren(this);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	m_brBackground.DeleteObject();
-	m_brBackground.CreateSolidBrush(theme.SurfaceBase());
+	m_brBackground.CreateSolidBrush(theme.surfaceBase);
 
 	// List boxes and edit controls paint their own background, so they need a
 	// brush of their own -- returning the dialog brush would make them
 	// indistinguishable from the dialog.
 	m_brControl.DeleteObject();
-	m_brControl.CreateSolidBrush(theme.SurfaceElevated());
+	m_brControl.CreateSolidBrush(theme.surfaceElevated);
 }
 
 BOOL CFluentDialog::OnEraseBkgnd(CDC* pDC)
@@ -108,7 +108,7 @@ BOOL CFluentDialog::OnEraseBkgnd(CDC* pDC)
 
 HBRUSH CFluentDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	switch (nCtlColor)
 	{
@@ -118,7 +118,7 @@ HBRUSH CFluentDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		break;
 
 	case CTLCOLOR_STATIC:
-		pDC->SetTextColor(theme.TextPrimary());
+		pDC->SetTextColor(theme.textPrimary);
 		pDC->SetBkMode(TRANSPARENT);
 		if (m_brBackground.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brBackground.GetSafeHandle();
@@ -134,9 +134,9 @@ HBRUSH CFluentDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		// data dialog are WS_DISABLED) would keep the full strength text colour
 		// and lose the greyed-out affordance.
 		pDC->SetTextColor(pWnd != NULL && pWnd->IsWindowEnabled()
-			? theme.TextPrimary()
-			: theme.TextDisabled());
-		pDC->SetBkColor(theme.SurfaceElevated());
+			? theme.textPrimary
+			: theme.textDisabled);
+		pDC->SetBkColor(theme.surfaceElevated);
 		if (m_brControl.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brControl.GetSafeHandle();
 		break;
@@ -181,7 +181,7 @@ LRESULT CFluentDialog::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	GetClientRect(rcNewClient);
 	RescaleChildren(rcOldClient, rcNewClient);
 
-	AppFonts::Inst().Init(newDpi, CGetSetOptions::m_Theme.FontFamily());
+	AppFonts::Inst().Init(newDpi, CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
 	AppFonts::ApplyToChildren(this);
 
 	m_bRescaling = false;
@@ -248,12 +248,12 @@ void CFluentPropertyPage::ApplyFluentStyle()
 	AppFonts::Inst().EnsureInitialized();
 	AppFonts::ApplyToChildren(this);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	m_brBackground.DeleteObject();
-	m_brBackground.CreateSolidBrush(theme.SurfaceBase());
+	m_brBackground.CreateSolidBrush(theme.surfaceBase);
 
 	m_brControl.DeleteObject();
-	m_brControl.CreateSolidBrush(theme.SurfaceElevated());
+	m_brControl.CreateSolidBrush(theme.surfaceElevated);
 }
 
 BOOL CFluentPropertyPage::OnEraseBkgnd(CDC* pDC)
@@ -271,7 +271,7 @@ BOOL CFluentPropertyPage::OnEraseBkgnd(CDC* pDC)
 
 HBRUSH CFluentPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	switch (nCtlColor)
 	{
@@ -281,7 +281,7 @@ HBRUSH CFluentPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		break;
 
 	case CTLCOLOR_STATIC:
-		pDC->SetTextColor(theme.TextPrimary());
+		pDC->SetTextColor(theme.textPrimary);
 		pDC->SetBkMode(TRANSPARENT);
 		if (m_brBackground.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brBackground.GetSafeHandle();
@@ -294,9 +294,9 @@ HBRUSH CFluentPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		// data dialog are WS_DISABLED) would keep the full strength text colour
 		// and lose the greyed-out affordance.
 		pDC->SetTextColor(pWnd != NULL && pWnd->IsWindowEnabled()
-			? theme.TextPrimary()
-			: theme.TextDisabled());
-		pDC->SetBkColor(theme.SurfaceElevated());
+			? theme.textPrimary
+			: theme.textDisabled);
+		pDC->SetBkColor(theme.surfaceElevated);
 		if (m_brControl.GetSafeHandle() != NULL)
 			return (HBRUSH)m_brControl.GetSafeHandle();
 		break;
@@ -328,7 +328,7 @@ LRESULT CFluentPropertyPage::OnDpiChanged(WPARAM wParam, LPARAM lParam)
 	GetClientRect(rcNewClient);
 	RescaleChildren(rcOldClient, rcNewClient);
 
-	AppFonts::Inst().Init(newDpi, CGetSetOptions::m_Theme.FontFamily());
+	AppFonts::Inst().Init(newDpi, CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
 	AppFonts::ApplyToChildren(this);
 
 	m_bRescaling = false;

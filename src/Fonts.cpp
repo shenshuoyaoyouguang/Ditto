@@ -53,7 +53,7 @@ bool AppFonts::EnsureInitialized()
 		ReleaseDC(NULL, hdc);
 	}
 
-	Init(dpi, CGetSetOptions::m_Theme.FontFamily());
+	Init(dpi, CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
 	return m_fonts[Font_Body].GetSafeHandle() != NULL;
 }
 

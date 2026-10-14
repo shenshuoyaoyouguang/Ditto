@@ -532,7 +532,7 @@ void CSymbolEdit::OnPaint()
 
 	// Clearing the background - always the elevated surface, never a system
 	// color (system window color flashed white under dark themes)
-	dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
+	dc.FillSolidRect(rect, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 
 	if (m_hSymbolIcon)
 	{
@@ -563,7 +563,7 @@ void CSymbolEdit::OnPaint()
 
 	if(this == GetFocus() || text.GetLength() > 0)
 	{
-		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 
 		oldFont = dc.SelectObject(GetFont());
 
@@ -577,7 +577,7 @@ void CSymbolEdit::OnPaint()
 	}
 	else
 	{
-		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(rect, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 	}
 
 
@@ -589,7 +589,7 @@ void CSymbolEdit::OnPaint()
 
 		oldFont = dc.SelectObject(&m_fontPrompt);
 		COLORREF color = dc.GetTextColor();
-		dc.SetTextColor(m_bCustomPromptColor ? m_colorPromptText : CGetSetOptions::m_Theme.TextSecondary());
+		dc.SetTextColor(m_bCustomPromptColor ? m_colorPromptText : CGetSetOptions::m_Theme.GetTokenSnapshot().textSecondary);
 
 		dc.DrawText(m_strPromptText, textRect, DT_LEFT | DT_SINGLELINE | DT_EDITCONTROL | DT_VCENTER | DT_NOPREFIX);
 		dc.SetTextColor(color);
@@ -678,12 +678,12 @@ HBRUSH CSymbolEdit::CtlColor(CDC* pDC, UINT n)
 	if (::GetFocus() == m_hWnd)
 	{
 		pDC->SetTextColor(CGetSetOptions::m_Theme.SearchTextBoxFocusText());
-		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
+		pDC->SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 		color = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated;
 	}
 	else
 	{
-		pDC->SetBkColor(CGetSetOptions::m_Theme.SurfaceElevated());
+		pDC->SetBkColor(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 		color = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated;
 	}
 
@@ -1037,19 +1037,19 @@ void CSymbolEdit::OnNcPaint()
 
 	CRect b(0, r.Height() - m_centerTextDiff- m_windowDpi->Scale(1), r.Width(), r.Height());
 
-	COLORREF c = CGetSetOptions::m_Theme.StrokeCard();
+	COLORREF c = CGetSetOptions::m_Theme.GetTokenSnapshot().strokeCard;
 
 	if (this == GetFocus() || text.GetLength() > 0)
 	{
-		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SurfaceElevated());
-		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(t, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
+		dc.FillSolidRect(b, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 
-		c = CGetSetOptions::m_Theme.AccentDefault();
+		c = CGetSetOptions::m_Theme.GetTokenSnapshot().accentDefault;
 	}
 	else
 	{
-		dc.FillSolidRect(t, CGetSetOptions::m_Theme.SurfaceElevated());
-		dc.FillSolidRect(b, CGetSetOptions::m_Theme.SurfaceElevated());
+		dc.FillSolidRect(t, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
+		dc.FillSolidRect(b, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceElevated);
 	}
 
 	//if ((text.GetLength() > 0 || this == GetFocus()) && m_windowDpi)

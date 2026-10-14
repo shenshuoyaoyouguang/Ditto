@@ -2257,7 +2257,7 @@ void CQPasteWnd::UpdateFont()
 	m_lstHeader.SetLogFont(lf);
 
 	// search box and statics use the app font ramp (plan section 4.2)
-	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI(), CGetSetOptions::m_Theme.FontFamily());
+	AppFonts::Inst().Init(m_DittoWindow.m_dpi.GetDPI(), CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str()));
 
 	m_SearchFont.DeleteObject();
 	m_SearchFont.CreateFontIndirect(&AppFonts::Inst().BodyLogFont());

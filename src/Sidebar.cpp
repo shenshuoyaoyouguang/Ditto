@@ -95,13 +95,13 @@ void CSidebar::OnPaint()
 {
 	CPaintDC dc(this);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& tokens = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	if (m_dpi == NULL)
 	{
 		CRect rcEmpty;
 		GetClientRect(rcEmpty);
-		dc.FillSolidRect(rcEmpty, theme.SurfaceBase());
+		dc.FillSolidRect(rcEmpty, tokens.surfaceBase);
 		return;
 	}
 
@@ -111,10 +111,10 @@ void CSidebar::OnPaint()
 	CRect rcClient;
 	GetClientRect(rcClient);
 
-	dc.FillSolidRect(rcClient, theme.SurfaceBase());
+	dc.FillSolidRect(rcClient, tokens.surfaceBase);
 
 	// right divider separates the sidebar from the list
-	dc.FillSolidRect(rcClient.right - m_dpi->Scale(1), 0, m_dpi->Scale(1), rcClient.Height(), theme.StrokeDivider());
+	dc.FillSolidRect(rcClient.right - m_dpi->Scale(1), 0, m_dpi->Scale(1), rcClient.Height(), tokens.strokeDivider);
 
 	dc.SetBkMode(TRANSPARENT);
 	CFont* pFont = AppFonts::Inst().Get(Font_Caption);
@@ -129,21 +129,21 @@ void CSidebar::OnPaint()
 		{
 			CRect rcActive(rc);
 			rcActive.DeflateRect(m_dpi->Scale(2), 0, m_dpi->Scale(2), 0);
-			dc.FillSolidRect(rcActive, theme.AccentSubtle());
+			dc.FillSolidRect(rcActive, tokens.accentSubtle);
 
 			// accent bar on the left edge of the active row
 			CRect rcBar(rc.left, rc.top + m_dpi->Scale(4), rc.left + m_dpi->Scale(3), rc.bottom - m_dpi->Scale(4));
-			dc.FillSolidRect(rcBar, theme.AccentDefault());
+			dc.FillSolidRect(rcBar, tokens.accentDefault);
 		}
 		else if (bHover)
 		{
 			CRect rcHover(rc);
 			rcHover.DeflateRect(m_dpi->Scale(2), 0, m_dpi->Scale(2), 0);
-			dc.FillSolidRect(rcHover, theme.ControlHover());
+			dc.FillSolidRect(rcHover, tokens.controlHover);
 		}
 
 		CFont* pOld = dc.SelectObject(pFont);
-		dc.SetTextColor(bActive ? theme.TextPrimary() : theme.TextSecondary());
+		dc.SetTextColor(bActive ? tokens.textPrimary : tokens.textSecondary);
 		CRect rcText(rc);
 		rcText.left += m_dpi->Scale(10);
 		dc.DrawText(m_labels[i], rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
@@ -155,7 +155,7 @@ void CSidebar::OnPaint()
 	GetGroupsArea(rcGroups);
 
 	CRect rcCaption(rcGroups.left, rcGroups.top - m_dpi->Scale(24), rcGroups.right, rcGroups.top);
-	dc.SetTextColor(theme.TextSecondary());
+	dc.SetTextColor(tokens.textSecondary);
 	CFont* pCaption = dc.SelectObject(AppFonts::Inst().Get(Font_Caption));
 	dc.DrawText(m_csGroupsCaption, rcCaption, DT_LEFT | DT_BOTTOM | DT_SINGLELINE | DT_NOPREFIX);
 	dc.SelectObject(pCaption);

@@ -195,15 +195,15 @@ BOOL CAdvGeneral::OnInitDialog()
 	m_propertyGrid.SetFont(this->GetFont());
 
 	// align the mfc property grid with the theme tokens (plan section 5.6)
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& tokens = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	m_propertyGrid.SetCustomColors(
-		theme.SurfaceElevated(),
-		theme.TextPrimary(),
-		theme.ControlFill(),
-		theme.TextSecondary(),
-		theme.SurfaceElevated(),
-		theme.TextSecondary(),
-		theme.StrokeDivider());
+		tokens.surfaceElevated,
+		tokens.textPrimary,
+		tokens.controlFill,
+		tokens.textSecondary,
+		tokens.surfaceElevated,
+		tokens.textSecondary,
+		tokens.strokeDivider);
 
 	pGroupTest->AddSubItem(new CMFCPropertyGridProperty(_T("Activate window delay (100ms default)"), (long)CGetSetOptions::SendKeysDelay(), _T(""), SETTING_ACTIVATE_WINDOW_DELAY));
 
