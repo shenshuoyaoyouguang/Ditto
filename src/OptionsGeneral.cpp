@@ -719,6 +719,11 @@ void COptionsGeneral::OnCbnSelchangeComboTheme()
 		{
 			theApp.m_pMainFrame->m_quickPaste.m_pwndPaste->RefreshThemeColors();
 		}
+
+		// The nav background brush is cached once at sheet init; rebuild it so
+		// an options dialog left open across a theme change drops the old colour.
+		if (m_pParent != NULL)
+			m_pParent->RefreshThemeColors();
 	}
 }
 

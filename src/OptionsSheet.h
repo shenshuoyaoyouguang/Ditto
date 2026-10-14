@@ -30,6 +30,13 @@ public:
 
 	BOOL m_themeChanged;
 
+	// Rebuilds the cached nav background brush from the (possibly reloaded)
+	// theme snapshot and invalidates the nav list so the empty area below the
+	// last item repaints. Neither switch path reached this before: the
+	// system-switch fan-out had no COptionsSheet branch, and the in-dialog
+	// change only refreshed the paste window.
+	void RefreshThemeColors();
+
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(COptionsSheet)

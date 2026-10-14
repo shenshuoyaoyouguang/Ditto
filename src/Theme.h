@@ -2,6 +2,7 @@
 
 #include <tinyxml2.h>
 #include "ThemeColorMath.h"
+#include "ThemeTokens.h"
 
 class CTheme
 {
@@ -79,6 +80,12 @@ public:
 	int RowHeightComfortable() const { return m_rowHeightComfortable; }
 	CString FontFamily() const { return m_csFontFamily; }
 	bool IsDarkTheme() const { return m_bDarkTheme; }
+
+	// Read-only snapshot of every resolved token, taken after token resolution
+	// or full-load failure fallback. First-slice color-caching holders
+	// (scrollbar, caption, options nav) read this instead of the
+	// scattered getters so a theme switch fans out through one seam.
+	const ThemeTokenSnapshot& Snapshot() const { return m_snapshot; }
 
 	CString Notes() const { return m_csNotes; }
 	CString Author() const { return m_csAuthor; }
@@ -210,4 +217,11 @@ protected:
 	CString m_lastTheme;
 
 	void LoadDefaults();
+
+	// Rebuilds m_snapshot from the resolved members after token resolution or
+	// full-load failure fallback, so the snapshot always reflects the last
+	// resolution. Lives here (MFC side) because it reads
+	// CString m_csFontFamily; the snapshot itself is MFC-free.
+	void BuildSnapshot();
+	ThemeTokenSnapshot m_snapshot{};
 };

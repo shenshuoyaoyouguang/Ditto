@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM64">
@@ -951,6 +951,7 @@
     <ClInclude Include="src\TabCtrl.h" />
     <ClInclude Include="src\Theme.h" />
     <ClInclude Include="src\ThemeColorMath.h" />
+    <ClInclude Include="src\ThemeTokens.h" />
     <ClInclude Include="src\ListLayoutMath.h" />
     <ClInclude Include="src\ToolTipEx.h" />
     <ClInclude Include="src\TrayWnd.h" />
