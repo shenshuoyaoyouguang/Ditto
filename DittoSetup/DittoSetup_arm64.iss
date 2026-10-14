@@ -73,6 +73,10 @@ Name: AddFireWallException; Description: Add Windows Firewall exception for Ditt
 #ifdef bit64
   Source: ..\ARM64\Release\Ditto.exe; DestDir: {app}; DestName: Ditto.exe; Check: InstallARM64; Flags: ignoreversion; AfterInstall: AddProgramToFirewall(ExpandConstant('{app}\Ditto.exe'), 'Ditto_FromInstaller_64');
   Source: ..\ARM64\Release\ICU_Loader.dll; DestDir: {app}; Check: InstallARM64; Flags: ignoreversion
+  ; vcpkg shared libs (zlib, libpng, tinyxml2 ports), applocal-copied next to Ditto.exe by the build; filenames follow the ports and change if ports/baseline change
+  Source: ..\ARM64\Release\z.dll; DestDir: {app}; Check: InstallARM64; Flags: ignoreversion
+  Source: ..\ARM64\Release\libpng16.dll; DestDir: {app}; Check: InstallARM64; Flags: ignoreversion
+  Source: ..\ARM64\Release\tinyxml2.dll; DestDir: {app}; Check: InstallARM64; Flags: ignoreversion
   Source: ..\ARM64\Release\Addins\DittoUtil.dll; DestDir: {app}\Addins; Check: InstallARM64; Flags: ignoreversion
 
   ; "C:\Windows\sysnative" will be converted to "C:\Windows\System32"

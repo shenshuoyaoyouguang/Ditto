@@ -159,6 +159,9 @@ jobs:
           path: |
             Release64\Ditto.exe
             Release64\ICU_Loader.dll
+            Release64\z.dll
+            Release64\libpng16.dll
+            Release64\tinyxml2.dll
             Release64\Addins\DittoUtil.dll
             
       - id: sign-exe
@@ -278,6 +281,9 @@ jobs:
           path: |
             Release64\Ditto.exe
             Release64\ICU_Loader.dll
+            Release64\z.dll
+            Release64\libpng16.dll
+            Release64\tinyxml2.dll
             Release64\Addins\DittoUtil.dll
             DittoSetup\output\DittoSetup_${{env.VERSION_FILENAME}}.exe
             DittoSetup\output\DittoPortable_${{env.VERSION_FILENAME}}.zip
