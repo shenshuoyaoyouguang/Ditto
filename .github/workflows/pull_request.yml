@@ -31,13 +31,16 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
-            # Fetch the pinned baseline: runner checkouts can predate it and
-            # fail manifest restore with "failed to `git show` versions/baseline.json".
+            # Sync the registry checkout to the pinned baseline: runner checkouts
+            # can predate it, and vcpkg reads version entries from the checkout
+            # (stale entries fail with "no version database entry for ...").
+            $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
             $vcpkgRoot = Split-Path ((Get-Command vcpkg).Source) -Parent
             $gitDir = Join-Path $vcpkgRoot '.git'
             if (Test-Path $gitDir) {
               if (Test-Path (Join-Path $gitDir 'shallow')) { git -C $vcpkgRoot fetch --unshallow --tags }
               else { git -C $vcpkgRoot fetch --tags }
+              git -C $vcpkgRoot checkout -f $baseline
             }
             vcpkg install --triplet x64-windows
           } else {
@@ -100,8 +103,10 @@ jobs:
           if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
             vcpkg --version
             # Fetch the pinned baseline into every vcpkg checkout CI may use
-            # (msbuild restores via $env:VCPKG_ROOT, cl steps via PATH vcpkg).
-            # Runner checkouts can predate it and fail manifest restore.
+            # (msbuild restores via $env:VCPKG_ROOT, cl steps via PATH vcpkg),
+            # then sync each working tree to it: runner checkouts can predate it
+            # and vcpkg reads version entries from the checkout.
+            $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
             $roots = @()
             $roots += Split-Path ((Get-Command vcpkg).Source) -Parent
             if ($env:VCPKG_ROOT) { $roots += $env:VCPKG_ROOT }
@@ -110,6 +115,7 @@ jobs:
               if (Test-Path $gitDir) {
                 if (Test-Path (Join-Path $gitDir 'shallow')) { git -C $r fetch --unshallow --tags }
                 else { git -C $r fetch --tags }
+                git -C $r checkout -f $baseline
               }
             }
           } else {
