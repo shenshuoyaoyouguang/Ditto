@@ -29,7 +29,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4AB8C80-F35F-451E-853B-07CEDD49E500}</ProjectGuid>
     <RootNamespace>focus</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.26100</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Vcpkg">
