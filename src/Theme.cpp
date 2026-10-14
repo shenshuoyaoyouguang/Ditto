@@ -163,6 +163,10 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 			LoadWindowsAccentColor();
 			FinalizeTokens(csTheme);
 		}
+		else if (!bHeaderOnly)
+		{
+			BuildSnapshot();
+		}
 
 		return false;
 	}
@@ -174,6 +178,8 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		Log(m_csLastError);
 		m_lastTheme = _T("");
 		m_LastWriteTime = 0;
+		if (!bHeaderOnly)
+			BuildSnapshot();
 		return false;
 	}
 

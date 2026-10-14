@@ -81,9 +81,9 @@ public:
 	CString FontFamily() const { return m_csFontFamily; }
 	bool IsDarkTheme() const { return m_bDarkTheme; }
 
-	// Read-only snapshot of every resolved token, taken at the tail of
-	// FinalizeTokens() and RefreshSystemAccent(). First-slice color-caching
-	// holders (scrollbar, caption, options nav) read this instead of the
+	// Read-only snapshot of every resolved token, taken after token resolution
+	// or full-load failure fallback. First-slice color-caching holders
+	// (scrollbar, caption, options nav) read this instead of the
 	// scattered getters so a theme switch fans out through one seam.
 	const ThemeTokenSnapshot& Snapshot() const { return m_snapshot; }
 
@@ -218,9 +218,9 @@ protected:
 
 	void LoadDefaults();
 
-	// Rebuilds m_snapshot from the resolved members. Called only from
-	// FinalizeTokens() and RefreshSystemAccent(), so the snapshot always
-	// reflects the last resolution. Lives here (MFC side) because it reads
+	// Rebuilds m_snapshot from the resolved members after token resolution or
+	// full-load failure fallback, so the snapshot always reflects the last
+	// resolution. Lives here (MFC side) because it reads
 	// CString m_csFontFamily; the snapshot itself is MFC-free.
 	void BuildSnapshot();
 	ThemeTokenSnapshot m_snapshot{};
