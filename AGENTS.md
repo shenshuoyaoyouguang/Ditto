@@ -4,7 +4,7 @@ Ditto — Windows clipboard manager (MFC C++ desktop app). Saves every clipboard
 
 ## Build
 
-- Solution: `CP_Main_10.sln` (VS 2022, v143 toolset, MFC dynamic, Unicode, C++17).
+- Solution: `CP_Main_10.sln` (VS 2026, v145 toolset, MFC dynamic, Unicode, C++17).
 - CLI build (what CI does, see `.github/workflows/pull_request.yml`):
   ```
   msbuild CP_Main_10.sln /p:Configuration=Release /p:Platform=x64
