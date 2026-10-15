@@ -446,18 +446,18 @@ int CQPasteWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_modernScrollBar.Create(this, &m_lstHeader, ScrollBarOrientation::Vertical);
 	m_modernScrollBar.SetDPI(&m_DittoWindow.m_dpi);
 	m_modernScrollBar.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarTrack,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumb,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumbHover
 	);
 
 	// Create modern scrollbar overlay (horizontal)
 	m_modernScrollBarHorz.Create(this, &m_lstHeader, ScrollBarOrientation::Horizontal);
 	m_modernScrollBarHorz.SetDPI(&m_DittoWindow.m_dpi);
 	m_modernScrollBarHorz.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarTrack,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumb,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumbHover
 	);
 
 	// WS_CHILD is required: without it the tree is a top-level popup, so the later
@@ -8388,14 +8388,14 @@ bool CQPasteWnd::DoActionGmail()
 void CQPasteWnd::RefreshScrollBarColors()
 {
 	m_modernScrollBar.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarTrack,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumb,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumbHover
 	);
 	m_modernScrollBarHorz.SetColors(
-		CGetSetOptions::m_Theme.ScrollBarTrack(),
-		CGetSetOptions::m_Theme.ScrollBarThumb(),
-		CGetSetOptions::m_Theme.ScrollBarThumbHover()
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarTrack,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumb,
+		CGetSetOptions::m_Theme.GetTokenSnapshot().scrollBarThumbHover
 	);
 }
 

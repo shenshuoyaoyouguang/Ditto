@@ -67,7 +67,7 @@ int CEditFrameWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_DittoWindow.DoCreate(this);
 	m_DittoWindow.m_bDrawChevron = false;
-	m_DittoWindow.SetCaptionColors(g_Opt.m_Theme.CaptionLeft(), g_Opt.m_Theme.CaptionRight(), g_Opt.m_Theme.Border());
+	m_DittoWindow.SetCaptionColors(g_Opt.m_Theme.GetTokenSnapshot().captionLeft, g_Opt.m_Theme.GetTokenSnapshot().captionRight, g_Opt.m_Theme.GetTokenSnapshot().captionBorder);
 	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, g_Opt.m_Theme.GetCaptionSize(), g_Opt.m_Theme.GetCaptionFontSize());
 
 	m_crIcon.SetRect(-2, -15, 15, 0);
@@ -179,7 +179,7 @@ void CEditFrameWnd::RefreshThemeColors()
 	// CGetSetOptions::m_Theme are the same object; use the latter like the
 	// other windows do. Replays exactly what OnCreate applied.
 	CTheme& theme = CGetSetOptions::m_Theme;
-	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionColors(theme.GetTokenSnapshot().captionLeft, theme.GetTokenSnapshot().captionRight, theme.GetTokenSnapshot().captionBorder);
 	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
 
 	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);

@@ -197,7 +197,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	}
 	else
 	{
-		fill = bEnabled ? theme.surfaceBase : theme.surfaceBase;
+		fill = theme.surfaceBase;
 	}
 
 	FillPath(hdc, rcBox, m.ringGap, fill);

@@ -153,12 +153,12 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 	}
 	else
 	{
-		left = CGetSetOptions::m_Theme.CaptionLeft();
-		right = CGetSetOptions::m_Theme.CaptionRight();
-		border = CGetSetOptions::m_Theme.Border();
+		left = CGetSetOptions::m_Theme.GetTokenSnapshot().captionLeft;
+		right = CGetSetOptions::m_Theme.GetTokenSnapshot().captionRight;
+		border = CGetSetOptions::m_Theme.GetTokenSnapshot().captionBorder;
 	}
 
-	m_DittoWindow.SetCaptionTextColor(CGetSetOptions::m_Theme.CaptionTextColor());
+	m_DittoWindow.SetCaptionTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().captionTextColor);
 
 	bResult = m_DittoWindow.SetCaptionColors(left, right, border);
 

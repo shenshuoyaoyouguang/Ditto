@@ -67,7 +67,7 @@ BOOL QRCodeViewer::CreateEx(CWnd *pParentWnd, unsigned char* bitmapData, int ima
 		m_desc.SetFont(&m_font);	
 
 		m_DittoWindow.DoCreate(this);
-		m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.CaptionLeft(), CGetSetOptions::m_Theme.CaptionRight(), CGetSetOptions::m_Theme.Border());
+		m_DittoWindow.SetCaptionColors(CGetSetOptions::m_Theme.GetTokenSnapshot().captionLeft, CGetSetOptions::m_Theme.GetTokenSnapshot().captionRight, CGetSetOptions::m_Theme.GetTokenSnapshot().captionBorder);
 		m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, CGetSetOptions::m_Theme.GetCaptionSize(), CGetSetOptions::m_Theme.GetCaptionFontSize());
 		m_DittoWindow.m_bDrawMinimize = false;
 		m_DittoWindow.m_bDrawMaximize = true;
@@ -188,7 +188,7 @@ void QRCodeViewer::RefreshThemeColors()
 {
 	// Replays exactly what OnCreate applied; see CWndEx::RefreshThemeColors.
 	CTheme& theme = CGetSetOptions::m_Theme;
-	m_DittoWindow.SetCaptionColors(theme.CaptionLeft(), theme.CaptionRight(), theme.Border());
+	m_DittoWindow.SetCaptionColors(theme.GetTokenSnapshot().captionLeft, theme.GetTokenSnapshot().captionRight, theme.GetTokenSnapshot().captionBorder);
 	m_DittoWindow.SetCaptionOn(this, CGetSetOptions::GetCaptionPos(), true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
 
 	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);

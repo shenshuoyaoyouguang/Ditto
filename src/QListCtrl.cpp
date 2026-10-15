@@ -545,8 +545,8 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			}
 			else
 			{
-				crBkgnd = CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedBG;
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedText);
+				crBkgnd = CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedNoFocusBG;
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedNoFocusText);
 			}
 		}
 		else

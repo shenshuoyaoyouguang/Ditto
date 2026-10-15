@@ -393,6 +393,64 @@ static void test_publish_explicit_override_matches_producer()
 	CHECK_TRUE(snap.radiusControl == 8);
 }
 
+// Copy fields: the nine pure-copy members (unfocused selection, scrollbar,
+// active caption) carry request -> snapshot identity. Values are hand-picked
+// distinct literals so a miswired field cannot pass by coincidence.
+
+static void test_copy_fields_carry_identity()
+{
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+	req.stateSelectedNoFocusBG = RGB(0xCC, 0xCC, 0xCC);
+	req.stateSelectedNoFocusText = RGB(0x11, 0x22, 0x33);
+	req.scrollBarTrack = RGB(0xF0, 0xF0, 0xF0);
+	req.scrollBarThumb = RGB(0xB4, 0xB4, 0xB4);
+	req.scrollBarThumbHover = RGB(0x8C, 0x8C, 0x8C);
+	req.captionLeft = RGB(0xFF, 0xFF, 0xFF);
+	req.captionRight = RGB(0xCC, 0xCC, 0xCC);
+	req.captionTextColor = RGB(0xBF, 0xBF, 0xBF);
+	req.captionBorder = RGB(0x99, 0x88, 0x77);
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+
+	CHECK_TRUE(snap.stateSelectedNoFocusBG == RGB(0xCC, 0xCC, 0xCC));
+	CHECK_TRUE(snap.stateSelectedNoFocusText == RGB(0x11, 0x22, 0x33));
+	CHECK_TRUE(snap.scrollBarTrack == RGB(0xF0, 0xF0, 0xF0));
+	CHECK_TRUE(snap.scrollBarThumb == RGB(0xB4, 0xB4, 0xB4));
+	CHECK_TRUE(snap.scrollBarThumbHover == RGB(0x8C, 0x8C, 0x8C));
+	CHECK_TRUE(snap.captionLeft == RGB(0xFF, 0xFF, 0xFF));
+	CHECK_TRUE(snap.captionRight == RGB(0xCC, 0xCC, 0xCC));
+	CHECK_TRUE(snap.captionTextColor == RGB(0xBF, 0xBF, 0xBF));
+	CHECK_TRUE(snap.captionBorder == RGB(0x99, 0x88, 0x77));
+}
+
+// Focus distinction: the unfocused-selection tokens keep their own values even
+// when the focused-selection tokens resolve differently, so the list can tell
+// focused from unfocused selection apart (story-10 regression lock).
+
+static void test_no_focus_selection_stays_distinct()
+{
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+	req.stateSelectedBG.has = true;
+	req.stateSelectedBG.value = RGB(0xD5, 0xE1, 0xEC);
+	req.stateSelectedText.has = true;
+	req.stateSelectedText.value = RGB(0x1A, 0x1A, 0x1A);
+	req.stateSelectedNoFocusBG = RGB(0xCC, 0xCC, 0xCC);
+	req.stateSelectedNoFocusText = RGB(0x00, 0x00, 0x00);
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+
+	CHECK_TRUE(snap.stateSelectedBG == RGB(0xD5, 0xE1, 0xEC));
+	CHECK_TRUE(snap.stateSelectedNoFocusBG == RGB(0xCC, 0xCC, 0xCC));
+	CHECK_TRUE(snap.stateSelectedBG != snap.stateSelectedNoFocusBG);
+	CHECK_TRUE(snap.stateSelectedNoFocusText == RGB(0x00, 0x00, 0x00));
+}
+
 int main()
 {
 	test_light_defaults_carry_finished_values();
@@ -406,6 +464,8 @@ int main()
 	test_publish_builtin_palette_matches_producer();
 	test_publish_legacy_dark_matches_producer();
 	test_publish_explicit_override_matches_producer();
+	test_copy_fields_carry_identity();
+	test_no_focus_selection_stays_distinct();
 
 	if (g_failures > 0)
 	{

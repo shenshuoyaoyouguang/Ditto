@@ -25,12 +25,18 @@ namespace theme
 {
 
 // Finished values only: twenty semantic colors plus control sizes, the font
-// family and the dark flag. No m_has* flags, no legacy colors, no walk state.
+// family and the dark flag, plus nine pure-copy members (unfocused selection,
+// scrollbar, active caption) that mirror their resolved CTheme members with
+// no derivation. No m_has* flags, no legacy colors, no walk state.
 // Exclusion rule (spec story 10, "legacy themes keep loading with the same
-// look"): fields with no v4 equivalent -- Caption*/Border*/CaptionSize/
-// CaptionFontSize, ScrollBar*, SearchTextBoxFocusText, DescriptionWindow*,
-// GroupTree* -- stay on live reads. Widening the snapshot is a follow-up;
-// mapping a legacy-only surface onto a token would recompute its pixels.
+// look"): fields with no v4 equivalent stay on live reads -- Caption TopMost /
+// NotConnected variants, caption sizes, SearchTextBoxFocusText,
+// SearchTextBoxFocusBorder, SearchTextHighlight, DescriptionWindow*,
+// GroupTree*. Covered by the snapshot: the twenty v4 tokens plus
+// StateSelectedNoFocusBG/Text, ScrollBarTrack/Thumb/ThumbHover,
+// CaptionLeft/Right/TextColor/Border. Widening the snapshot beyond this
+// covered set is a follow-up; mapping a legacy-only surface onto a token
+// would recompute its pixels.
 struct ThemeTokenSnapshot
 {
 	COLORREF surfaceBase = RGB(0, 0, 0);
@@ -53,6 +59,15 @@ struct ThemeTokenSnapshot
 	COLORREF stateSelectedBG = RGB(0, 0, 0);
 	COLORREF stateSelectedText = RGB(0, 0, 0);
 	COLORREF indicatorBadge = RGB(0, 0, 0);
+	COLORREF stateSelectedNoFocusBG = RGB(0, 0, 0);
+	COLORREF stateSelectedNoFocusText = RGB(0, 0, 0);
+	COLORREF scrollBarTrack = RGB(0, 0, 0);
+	COLORREF scrollBarThumb = RGB(0, 0, 0);
+	COLORREF scrollBarThumbHover = RGB(0, 0, 0);
+	COLORREF captionLeft = RGB(0, 0, 0);
+	COLORREF captionRight = RGB(0, 0, 0);
+	COLORREF captionTextColor = RGB(0, 0, 0);
+	COLORREF captionBorder = RGB(0, 0, 0);
 	int radiusControl = 0;
 	int rowHeightCompact = 0;
 	int rowHeightComfortable = 0;
@@ -136,6 +151,20 @@ struct ThemeSnapshotRequest
 	COLORREF legacyClipPasted = RGB(0, 0, 0);
 	bool hasLegacyQuickPasteIndex = false;
 	COLORREF legacyQuickPasteIndex = RGB(0, 0, 0);
+
+	// Pure-copy members: already resolved by CTheme (LoadColor from the xml or
+	// LoadDefaults), so the producer hands them through with no derivation.
+	// Defaults mirror CTheme::LoadDefaults so an empty request still resolves
+	// to the shipped built-in look.
+	COLORREF stateSelectedNoFocusBG = RGB(204, 204, 204);
+	COLORREF stateSelectedNoFocusText = RGB(0, 0, 0);
+	COLORREF scrollBarTrack = RGB(240, 240, 240);
+	COLORREF scrollBarThumb = RGB(180, 180, 180);
+	COLORREF scrollBarThumbHover = RGB(140, 140, 140);
+	COLORREF captionLeft = RGB(255, 255, 255);
+	COLORREF captionRight = RGB(204, 204, 204);
+	COLORREF captionTextColor = RGB(191, 191, 191);
+	COLORREF captionBorder = RGB(204, 204, 204);
 };
 
 // Slice 1: default palettes plus the always-on accent refresh. Mirrors
@@ -345,6 +374,18 @@ inline ThemeTokenSnapshot BuildThemeSnapshot(const ThemeSnapshotRequest& req)
 	snap.rowHeightCompact = req.rowHeightCompact.has ? req.rowHeightCompact.value : 30;
 	snap.rowHeightComfortable = req.rowHeightComfortable.has ? req.rowHeightComfortable.value : 44;
 	snap.fontFamily = req.fontFamily.has ? req.fontFamily.value : L"auto";
+
+	// Pure copy: resolved members pass through untouched (no derivation, no
+	// walk, no legacy remapping), so the pixels match the live reads exactly.
+	snap.stateSelectedNoFocusBG = req.stateSelectedNoFocusBG;
+	snap.stateSelectedNoFocusText = req.stateSelectedNoFocusText;
+	snap.scrollBarTrack = req.scrollBarTrack;
+	snap.scrollBarThumb = req.scrollBarThumb;
+	snap.scrollBarThumbHover = req.scrollBarThumbHover;
+	snap.captionLeft = req.captionLeft;
+	snap.captionRight = req.captionRight;
+	snap.captionTextColor = req.captionTextColor;
+	snap.captionBorder = req.captionBorder;
 
 	return snap;
 }

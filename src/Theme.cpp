@@ -786,6 +786,15 @@ void CTheme::PublishTokenSnapshot()
 	req.stateSelectedBG = { m_hasStateSelectedBG, m_stateSelectedBG };
 	req.stateSelectedText = { m_hasStateSelectedText, m_stateSelectedText };
 	req.indicatorBadge = { m_hasIndicatorBadge, m_indicatorBadge };
+	req.stateSelectedNoFocusBG = m_ListBoxSelectedNoFocusBG;
+	req.stateSelectedNoFocusText = m_ListBoxSelectedNoFocusText;
+	req.scrollBarTrack = m_scrollBarTrack;
+	req.scrollBarThumb = m_scrollBarThumb;
+	req.scrollBarThumbHover = m_scrollBarThumbHover;
+	req.captionLeft = m_CaptionLeft;
+	req.captionRight = m_CaptionRight;
+	req.captionTextColor = m_CaptionTextColor;
+	req.captionBorder = m_Border;
 	req.radiusControl = { true, m_radiusControl };
 	req.rowHeightCompact = { true, m_rowHeightCompact };
 	req.rowHeightComfortable = { true, m_rowHeightComfortable };
