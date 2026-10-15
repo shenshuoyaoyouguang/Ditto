@@ -39,10 +39,10 @@ CDittoWindow::CDittoWindow(void)
 	// ShowQPasteWindow re-applies on every show), and the values equal
 	// CTheme::LoadDefaults, so seeding from the live theme never renders
 	// anything the old literals did not.
-	m_CaptionColorLeft = CGetSetOptions::m_Theme.CaptionLeft();
-	m_CaptionColorRight = CGetSetOptions::m_Theme.CaptionRight();
-	m_CaptionTextColor = CGetSetOptions::m_Theme.CaptionTextColor();
-	m_border = CGetSetOptions::m_Theme.Border();
+	m_CaptionColorLeft = CGetSetOptions::m_Theme.GetTokenSnapshot().captionLeft;
+	m_CaptionColorRight = CGetSetOptions::m_Theme.GetTokenSnapshot().captionRight;
+	m_CaptionTextColor = CGetSetOptions::m_Theme.GetTokenSnapshot().captionTextColor;
+	m_border = CGetSetOptions::m_Theme.GetTokenSnapshot().captionBorder;
 	m_sendWMClose = true;
 	m_customWindowTitle = _T("");
 	m_useCustomWindowTitle = false;
@@ -88,7 +88,7 @@ void CDittoWindow::DoCreate(CWnd *pWnd)
 	// DWMWA_USE_IMMERSIVE_DARK_MODE returns S_OK for both light and dark, so
 	// storing the return value made "light applied at startup" look like "dark
 	// already applied" and every later switch to dark was skipped.
-	BOOL bDark = CGetSetOptions::m_Theme.IsDarkTheme() ? TRUE : FALSE;
+	BOOL bDark = CGetSetOptions::m_Theme.GetTokenSnapshot().isDarkTheme ? TRUE : FALSE;
 	m_bDwmDarkApplied = bDark ? true : false;
 	m_bDwmDarkSupported = DwmTheme::ApplyDarkCaption(pWnd->GetSafeHwnd(), bDark);
 

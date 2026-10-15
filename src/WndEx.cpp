@@ -136,7 +136,7 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 
 	// Single fan-out: every variant resolves to one SetCaptionColors call, so
 	// the palette can only come from the live theme, never a stale copy.
-	const ThemeTokenSnapshot& s = CGetSetOptions::m_Theme.Snapshot();
+	const auto& s = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	COLORREF left;
 	COLORREF right;
 	COLORREF border;
@@ -156,7 +156,7 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 	{
 		left = s.captionLeft;
 		right = s.captionRight;
-		border = s.border;
+		border = s.captionBorder;
 	}
 
 	m_DittoWindow.SetCaptionTextColor(s.captionTextColor);

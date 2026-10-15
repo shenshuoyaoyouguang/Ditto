@@ -165,7 +165,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		}
 		else if (!bHeaderOnly)
 		{
-			BuildSnapshot();
+			PublishTokenSnapshot();
 		}
 
 		return false;
@@ -179,7 +179,7 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		m_lastTheme = _T("");
 		m_LastWriteTime = 0;
 		if (!bHeaderOnly)
-			BuildSnapshot();
+			PublishTokenSnapshot();
 		return false;
 	}
 
@@ -588,7 +588,7 @@ void CTheme::FinalizeTokens(const CString& csThemeName)
 	// palette branch and the parse-failure fallback would both report empty.
 	AuditContrast(csThemeName);
 
-	BuildSnapshot();
+	PublishTokenSnapshot();
 }
 
 void CTheme::DeriveTokensFromLegacy()
@@ -688,8 +688,6 @@ void CTheme::RefreshSystemAccent()
 	}
 
 	RefreshAccentDerived();
-
-	BuildSnapshot();
 }
 
 void CTheme::RefreshAccentDerived()
@@ -744,6 +742,95 @@ void CTheme::RefreshAccentDerived()
 	// Themes that pin the node keep their value.
 	if (!m_hasLegacySearchTextHighlight)
 		m_searchTextHighlight = EnsureContrastOnRows(m_accentText, m_ListBoxOddRowsBG, m_ListBoxEvenRowsBG, m_bDarkTheme);
+
+	// The live-accent re-resolve path (Load short-circuit) returns without a
+	// full FinalizeTokens, so publish here too; the full-load path republishes
+	// the final values at the end of FinalizeTokens.
+	PublishTokenSnapshot();
+}
+
+// Single producer: the runtime only fills the request from its resolved
+// members and stores what BuildThemeSnapshot() returns. Presence flags,
+// legacy fallbacks and the minimum-separation walk all resolve inside the
+// producer (ThemeTokens.h), so the tests cover the shipped values, not a
+// twin. Load/Derive/Refresh/Audit semantics are unchanged; the audit still
+// reads the members and stays diagnostic-only. The member-to-request mapping
+// is locked by the test_publish_* cases in tests/test_theme_tokens.cpp.
+// Note: the radii carry no presence flag (LoadTokenDefaults seeds them, the
+// xml overwrites them), so they map with has=true and the member value.
+void CTheme::PublishTokenSnapshot()
+{
+	ditto::theme::ThemeSnapshotRequest req;
+	// Built-in palette branch: LoadTokenDefaults seeded from the OS setting
+	// and LoadWindowsAccentColor may have pointed ClipPastedColor at the live
+	// system accent; the producer takes it as the built-in accent.
+	req.osDark = DarkAppWindows10Setting() ? true : false;
+	req.parsedXml = m_bParsedThemeXml;
+	req.builtInAccent = m_clipPastedColor;
+	// Walk reference surfaces: the concrete legacy pair the list draws, which
+	// default to the same white/#F3F3F3 the producer assumes.
+	req.rowOddBG = m_ListBoxOddRowsBG;
+	req.rowEvenBG = m_ListBoxEvenRowsBG;
+
+	req.surfaceBase = { m_hasSurfaceBase, m_surfaceBase };
+	req.surfaceElevated = { m_hasSurfaceElevated, m_surfaceElevated };
+	req.surfaceRowAlt = { m_hasSurfaceRowAlt, m_surfaceRowAlt };
+	req.textPrimary = { m_hasTextPrimary, m_textPrimary };
+	req.textSecondary = { m_hasTextSecondary, m_textSecondary };
+	req.textDisabled = { m_hasTextDisabled, m_textDisabled };
+	req.textOnAccent = { m_hasTextOnAccent, m_textOnAccent };
+	req.accentDefault = { m_hasAccentDefault, m_accentDefault };
+	req.accentSubtle = { m_hasAccentSubtle, m_accentSubtle };
+	req.accentText = { m_hasAccentText, m_accentText };
+	req.strokeCard = { m_hasStrokeCard, m_strokeCard };
+	req.strokeDivider = { m_hasStrokeDivider, m_strokeDivider };
+	req.controlFill = { m_hasControlFill, m_controlFill };
+	req.controlHover = { m_hasControlHover, m_controlHover };
+	req.controlPressed = { m_hasControlPressed, m_controlPressed };
+	req.controlDisabledBG = { m_hasControlDisabledBG, m_controlDisabledBG };
+	req.stateHover = { m_hasStateHover, m_stateHover };
+	req.stateSelectedBG = { m_hasStateSelectedBG, m_stateSelectedBG };
+	req.stateSelectedText = { m_hasStateSelectedText, m_stateSelectedText };
+	req.indicatorBadge = { m_hasIndicatorBadge, m_indicatorBadge };
+	req.stateSelectedNoFocusBG = m_ListBoxSelectedNoFocusBG;
+	req.stateSelectedNoFocusText = m_ListBoxSelectedNoFocusText;
+	req.scrollBarTrack = m_scrollBarTrack;
+	req.scrollBarThumb = m_scrollBarThumb;
+	req.scrollBarThumbHover = m_scrollBarThumbHover;
+	req.captionLeft = m_CaptionLeft;
+	req.captionRight = m_CaptionRight;
+	req.captionTextColor = m_CaptionTextColor;
+	req.captionBorder = m_Border;
+	req.captionLeftTopMost = m_CaptionLeftTopMost;
+	req.captionRightTopMost = m_CaptionRightTopMost;
+	req.borderTopMost = m_BorderTopMost;
+	req.captionLeftNotConnected = m_CaptionLeftNotConnected;
+	req.captionRightNotConnected = m_CaptionRightNotConnected;
+	req.borderNotConnected = m_BorderNotConnected;
+	req.captionSize = m_captionSize;
+	req.captionFontSize = m_captionFontSize;
+	req.listBoxOddRowsBG = m_ListBoxOddRowsBG;
+	req.listBoxEvenRowsBG = m_ListBoxEvenRowsBG;
+	req.radiusControl = { true, m_radiusControl };
+	req.rowHeightCompact = { true, m_rowHeightCompact };
+	req.rowHeightComfortable = { true, m_rowHeightComfortable };
+	req.fontFamily = { m_hasFontFamily, std::wstring((LPCTSTR)m_csFontFamily) };
+
+	req.hasLegacyMainWindowBG = m_hasLegacyMainWindowBG;
+	req.legacyMainWindowBG = m_mainWindowBG;
+	req.hasLegacySearchFocusBG = m_hasLegacySearchTextBoxFocusBG;
+	req.legacySearchFocusBG = m_searchTextBoxFocusBG;
+	req.hasLegacyDescriptionBG = m_hasLegacyDescriptionWindowBG;
+	req.legacyDescriptionBG = m_descriptionWindowBG;
+	req.hasLegacyEvenRowsBG = m_hasLegacyListBoxEvenRowsBG;
+	req.hasLegacyOddRowsText = m_hasLegacyListBoxOddRowsText;
+	req.legacyOddRowsText = m_ListBoxOddRowsText;
+	req.hasLegacyClipPasted = m_hasLegacyClipPastedColor;
+	req.legacyClipPasted = m_clipPastedColor;
+	req.hasLegacyQuickPasteIndex = m_hasLegacySmallQuickPasteIndexColor;
+	req.legacyQuickPasteIndex = m_listSmallQuickPasteIndexColor;
+
+	m_tokenSnapshot = ditto::theme::BuildThemeSnapshot(req);
 }
 
 // Contrast self-check.
@@ -811,54 +898,4 @@ void CTheme::AuditContrast(const CString& csThemeName)
 		csMsg.Format(_T("[theme]   %d of %d pairs below the threshold\r\n"), nFail, nCount);
 
 	OutputDebugString(csMsg);
-}
-
-void CTheme::BuildSnapshot()
-{
-	m_snapshot.surfaceBase = m_surfaceBase;
-	m_snapshot.surfaceElevated = m_surfaceElevated;
-	m_snapshot.surfaceRowAlt = m_surfaceRowAlt;
-	m_snapshot.textPrimary = m_textPrimary;
-	m_snapshot.textSecondary = m_textSecondary;
-	m_snapshot.textDisabled = m_textDisabled;
-	m_snapshot.textOnAccent = m_textOnAccent;
-	m_snapshot.accentDefault = m_accentDefault;
-	m_snapshot.accentSubtle = m_accentSubtle;
-	m_snapshot.accentText = m_accentText;
-	m_snapshot.strokeCard = m_strokeCard;
-	m_snapshot.strokeDivider = m_strokeDivider;
-	m_snapshot.controlFill = m_controlFill;
-	m_snapshot.controlHover = m_controlHover;
-	m_snapshot.controlPressed = m_controlPressed;
-	m_snapshot.controlDisabledBG = m_controlDisabledBG;
-	m_snapshot.stateHover = m_stateHover;
-	m_snapshot.stateSelectedBG = m_stateSelectedBG;
-	m_snapshot.stateSelectedText = m_stateSelectedText;
-	m_snapshot.indicatorBadge = m_indicatorBadge;
-	m_snapshot.radiusControl = m_radiusControl;
-	m_snapshot.rowHeightCompact = m_rowHeightCompact;
-	m_snapshot.rowHeightComfortable = m_rowHeightComfortable;
-	CStringA fontA(m_csFontFamily);
-	m_snapshot.fontFamily = std::string((LPCSTR)fontA);
-	m_snapshot.isDarkTheme = m_bDarkTheme;
-
-	m_snapshot.scrollBarTrack = m_scrollBarTrack;
-	m_snapshot.scrollBarThumb = m_scrollBarThumb;
-	m_snapshot.scrollBarThumbHover = m_scrollBarThumbHover;
-
-	m_snapshot.captionLeft = m_CaptionLeft;
-	m_snapshot.captionRight = m_CaptionRight;
-	m_snapshot.border = m_Border;
-	m_snapshot.captionTextColor = m_CaptionTextColor;
-	m_snapshot.captionLeftTopMost = m_CaptionLeftTopMost;
-	m_snapshot.captionRightTopMost = m_CaptionRightTopMost;
-	m_snapshot.borderTopMost = m_BorderTopMost;
-	m_snapshot.captionLeftNotConnected = m_CaptionLeftNotConnected;
-	m_snapshot.captionRightNotConnected = m_CaptionRightNotConnected;
-	m_snapshot.borderNotConnected = m_BorderNotConnected;
-	m_snapshot.captionSize = m_captionSize;
-	m_snapshot.captionFontSize = m_captionFontSize;
-
-	m_snapshot.listBoxOddRowsBG = m_ListBoxOddRowsBG;
-	m_snapshot.listBoxEvenRowsBG = m_ListBoxEvenRowsBG;
 }

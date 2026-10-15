@@ -81,11 +81,12 @@ public:
 	CString FontFamily() const { return m_csFontFamily; }
 	bool IsDarkTheme() const { return m_bDarkTheme; }
 
-	// Read-only snapshot of every resolved token, taken after token resolution
-	// or full-load failure fallback. First-slice color-caching holders
-	// (scrollbar, caption, options nav) read this instead of the
-	// scattered getters so a theme switch fans out through one seam.
-	const ThemeTokenSnapshot& Snapshot() const { return m_snapshot; }
+	// Read-only snapshot of the finished token values, rebuilt on every
+	// FinalizeTokens(), system-accent refresh and full-load failure fallback
+	// through the single producer in ThemeTokens.h. The concrete class and
+	// the global instance stay for the legacy-only surfaces (see the
+	// exclusion rule on ThemeTokenSnapshot); migrated views read through here.
+	const ditto::theme::ThemeTokenSnapshot& GetTokenSnapshot() const { return m_tokenSnapshot; }
 
 	CString Notes() const { return m_csNotes; }
 	CString Author() const { return m_csAuthor; }
@@ -114,6 +115,7 @@ protected:
 	// alias) and re-derives everything that depends on it.
 	void RefreshSystemAccent();
 	void ResetTokenFlags();
+	void PublishTokenSnapshot();
 
 	// Reports the theme's resolved token pairs to the debugger, flagging any
 	// that fall under their WCAG AA threshold. Called at the end of
@@ -189,6 +191,7 @@ protected:
 	int m_rowHeightCompact;
 	int m_rowHeightComfortable;
 	CString m_csFontFamily;
+	ditto::theme::ThemeTokenSnapshot m_tokenSnapshot;
 
 	// true when the value came from the theme xml, false when defaulted/derived
 	bool m_hasSurfaceBase, m_hasSurfaceElevated, m_hasSurfaceRowAlt;
@@ -217,11 +220,4 @@ protected:
 	CString m_lastTheme;
 
 	void LoadDefaults();
-
-	// Rebuilds m_snapshot from the resolved members after token resolution or
-	// full-load failure fallback, so the snapshot always reflects the last
-	// resolution. Lives here (MFC side) because it reads
-	// CString m_csFontFamily; the snapshot itself is MFC-free.
-	void BuildSnapshot();
-	ThemeTokenSnapshot m_snapshot{};
 };

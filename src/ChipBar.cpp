@@ -124,18 +124,18 @@ void CChipBar::OnPaint()
 {
 	CPaintDC dc(this);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& tokens = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	if (m_bChipsLaidOut == false)
 		LayoutChips();
 
-	dc.FillSolidRect(&dc.m_ps.rcPaint, theme.SurfaceBase());
+	dc.FillSolidRect(&dc.m_ps.rcPaint, tokens.surfaceBase);
 
 	CFont* pFont = AppFonts::Inst().Get(Font_Caption);
 	int radius = m_dpi != NULL ? m_dpi->Scale(11) : 11;
 
 	dc.SetBkMode(TRANSPARENT);
-	dc.SetTextColor(theme.TextSecondary());
+	dc.SetTextColor(tokens.textSecondary);
 
 	for (int i = 0; i < CHIP_COUNT; i++)
 	{
@@ -145,8 +145,8 @@ void CChipBar::OnPaint()
 
 		if (bActive)
 		{
-			FillChipRect(&dc, rc, radius, theme.AccentSubtle(), theme.AccentDefault());
-			dc.SetTextColor(theme.TextPrimary());
+			FillChipRect(&dc, rc, radius, tokens.accentSubtle, tokens.accentDefault);
+			dc.SetTextColor(tokens.textPrimary);
 
 			// Focus ring, so the keyboard path is visible. Without it the row
 			// gave no indication that it had focus at all. The fill matches the
@@ -155,16 +155,16 @@ void CChipBar::OnPaint()
 			{
 				CRect rcFocus = rc;
 				rcFocus.InflateRect(m_dpi != NULL ? m_dpi->Scale(2) : 2, m_dpi != NULL ? m_dpi->Scale(2) : 2);
-				FillChipRect(&dc, rcFocus, radius, theme.SurfaceBase(), theme.AccentDefault());
+				FillChipRect(&dc, rcFocus, radius, tokens.surfaceBase, tokens.accentDefault);
 			}
 		}
 		else if (bHover)
 		{
-			FillChipRect(&dc, rc, radius, theme.ControlHover(), theme.StrokeCard());
+			FillChipRect(&dc, rc, radius, tokens.controlHover, tokens.strokeCard);
 		}
 		else
 		{
-			FillChipRect(&dc, rc, radius, theme.ControlFill(), theme.StrokeCard());
+			FillChipRect(&dc, rc, radius, tokens.controlFill, tokens.strokeCard);
 		}
 
 		CFont* pOld = dc.SelectObject(pFont);
@@ -173,7 +173,7 @@ void CChipBar::OnPaint()
 		dc.SelectObject(pOld);
 
 		if (bActive)
-			dc.SetTextColor(theme.TextSecondary());
+			dc.SetTextColor(tokens.textSecondary);
 	}
 }
 

@@ -71,7 +71,7 @@ FluentOptionPaint::Metrics FluentOptionPaint::GetMetrics(HWND hwndControl)
 	CDPI dpi;
 	dpi.SetHwnd(hwndControl);
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	Metrics m;
 	m.box = dpi.Scale(16);
@@ -81,8 +81,8 @@ FluentOptionPaint::Metrics FluentOptionPaint::GetMetrics(HWND hwndControl)
 	m.markWidth = dpi.Scale(1.6f);	// Scale is int-only; the fractional part
 									// is what makes the glyph look drawn
 									// rather than stepped
-	m.radius = dpi.Scale(theme.RadiusControl());
-	m.rowH = dpi.Scale(theme.RowHeightCompact());
+	m.radius = dpi.Scale(theme.radiusControl);
+	m.rowH = dpi.Scale(theme.rowHeightCompact);
 	m.comboH = dpi.Scale(24);
 	m.arrowZoneW = dpi.Scale(20);
 	m.arrowW = dpi.Scale(9);
@@ -153,7 +153,7 @@ static CString ControlText(HWND hwnd){
 void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m,
 	const FluentControlState& state, bool bChecked)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	const bool bEnabled = IsReallyEnabled(state.hwnd, state);
 	const bool bFocus = IsFocused(state.hwnd);
 
@@ -165,30 +165,30 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	// Stroke weight carries the hover / pressed affordance on the box only; the
 	// label deliberately gets no fill of its own (see the header note).
 	int strokeW = m.ringGap;
-	COLORREF fill = theme.SurfaceBase();
-	COLORREF stroke = theme.StrokeCard();
+	COLORREF fill = theme.surfaceBase;
+	COLORREF stroke = theme.strokeCard;
 
 	if (bEnabled)
 	{
 		if (state.bPressed)
 		{
-			stroke = theme.ControlPressed();
+			stroke = theme.controlPressed;
 			strokeW = m.ringWidth;
 		}
 		else if (state.bHover)
 		{
-			stroke = theme.ControlHover();
+			stroke = theme.controlHover;
 			strokeW = m.ringWidth;
 		}
 	}
 	else
 	{
-		stroke = theme.StrokeCard();
+		stroke = theme.strokeCard;
 	}
 
 	if (bChecked)
 	{
-		fill = bEnabled ? theme.AccentDefault() : theme.ControlDisabledBG();
+		fill = bEnabled ? theme.accentDefault : theme.controlDisabledBG;
 		if (bEnabled && state.bPressed)
 			fill = ShiftToward(fill, false, 0.08);
 		else if (bEnabled && state.bHover)
@@ -197,7 +197,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	}
 	else
 	{
-		fill = bEnabled ? theme.SurfaceBase() : theme.SurfaceBase();
+		fill = theme.surfaceBase;
 	}
 
 	FillPath(hdc, rcBox, m.ringGap, fill);
@@ -226,7 +226,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 		tick.AddLine(x + w * 0.42f, y + h - inset,
 			x + w - inset * 0.85f, y + inset);
 
-		COLORREF tickColor = bEnabled ? theme.TextOnAccent() : theme.TextDisabled();
+		COLORREF tickColor = bEnabled ? theme.textOnAccent : theme.textDisabled;
 		Pen pen(Color(255, GetRValue(tickColor), GetGValue(tickColor), GetBValue(tickColor)), m.markWidth);
 		pen.SetLineJoin(LineJoinRound);
 		pen.SetStartCap(LineCapRound);
@@ -241,7 +241,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	{
 		CRect rcRing(rcBox);
 		rcRing.InflateRect(m.ringGap, m.ringGap);
-		StrokePath(hdc, rcRing, m.ringGap + m.ringWidth, theme.AccentDefault(), m.ringWidth);
+		StrokePath(hdc, rcRing, m.ringGap + m.ringWidth, theme.accentDefault, m.ringWidth);
 	}
 
 	// Label
@@ -252,7 +252,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
 	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
-	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
+	::SetTextColor(hdc, bEnabled ? theme.textPrimary : theme.textDisabled);
 	// No DT_NOPREFIX: "&" in a caption is a keyboard accelerator and the system
 	// draws the underline for us, which is what keeps Alt+A working once this
 	// replaces the stock button painting.
@@ -267,7 +267,7 @@ void FluentOptionPaint::PaintCheckBox(HDC hdc, const CRect& rc, const Metrics& m
 void FluentOptionPaint::PaintRadio(HDC hdc, const CRect& rc, const Metrics& m,
 	const FluentControlState& state, bool bChecked)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	const bool bEnabled = IsReallyEnabled(state.hwnd, state);
 	const bool bFocus = IsFocused(state.hwnd);
 
@@ -277,25 +277,25 @@ void FluentOptionPaint::PaintRadio(HDC hdc, const CRect& rc, const Metrics& m,
 
 	if (bEnabled == false)
 	{
-		FillPath(hdc, rcBox, r, theme.SurfaceBase());
-		StrokePath(hdc, rcBox, r, theme.StrokeCard(), m.ringGap);
+		FillPath(hdc, rcBox, r, theme.surfaceBase);
+		StrokePath(hdc, rcBox, r, theme.strokeCard, m.ringGap);
 	}
 	else if (bChecked)
 	{
-		FillPath(hdc, rcBox, r, theme.SurfaceBase());
-		StrokePath(hdc, rcBox, r, theme.AccentDefault(), m.ringWidth);
+		FillPath(hdc, rcBox, r, theme.surfaceBase);
+		StrokePath(hdc, rcBox, r, theme.accentDefault, m.ringWidth);
 
 		const int dot = m.box / 2;
 		CRect rcDot(rcBox.left + (m.box - dot) / 2, rcBox.top + (m.box - dot) / 2,
 			rcBox.left + (m.box + dot) / 2, rcBox.top + (m.box + dot) / 2);
-		FillPath(hdc, rcDot, dot / 2, theme.AccentDefault());
+		FillPath(hdc, rcDot, dot / 2, theme.accentDefault);
 	}
 	else
 	{
-		FillPath(hdc, rcBox, r, theme.SurfaceBase());
-		COLORREF stroke = state.bPressed ? theme.ControlPressed()
-			: state.bHover ? theme.ControlHover()
-			: theme.StrokeCard();
+		FillPath(hdc, rcBox, r, theme.surfaceBase);
+		COLORREF stroke = state.bPressed ? theme.controlPressed
+			: state.bHover ? theme.controlHover
+			: theme.strokeCard;
 		StrokePath(hdc, rcBox, r, stroke, (state.bHover || state.bPressed) ? m.ringWidth : m.ringGap);
 	}
 
@@ -303,7 +303,7 @@ void FluentOptionPaint::PaintRadio(HDC hdc, const CRect& rc, const Metrics& m,
 	{
 		CRect rcRing(rcBox);
 		rcRing.InflateRect(m.ringGap, m.ringGap);
-		StrokePath(hdc, rcRing, r + m.ringGap, theme.AccentDefault(), m.ringWidth);
+		StrokePath(hdc, rcRing, r + m.ringGap, theme.accentDefault, m.ringWidth);
 	}
 
 	CRect rcText(rcBox.right + m.boxGap, rc.top, rc.right, rc.bottom);
@@ -313,7 +313,7 @@ void FluentOptionPaint::PaintRadio(HDC hdc, const CRect& rc, const Metrics& m,
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
 	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
-	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
+	::SetTextColor(hdc, bEnabled ? theme.textPrimary : theme.textDisabled);
 	::DrawTextW(hdc, ControlText(state.hwnd), -1, &rcText,
 		DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 	::SelectObject(hdc, hOldFont);
@@ -335,7 +335,7 @@ void FluentOptionPaint::PaintButton(HDC hdc, const CRect& rc, const Metrics& m,
 void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& mIn,
 	const FluentControlState& state, FluentButtonStyle style, int radiusOverride)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	const bool bEnabled = IsReallyEnabled(state.hwnd, state);
 	const bool bFocus = IsFocused(state.hwnd);
 
@@ -354,33 +354,33 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 
 	if (bEnabled == false)
 	{
-		background = theme.ControlDisabledBG();
-		text = theme.TextDisabled();
+		background = theme.controlDisabledBG;
+		text = theme.textDisabled;
 	}
 	else if (style == FBS_Accent)
 	{
-		background = theme.AccentDefault();
+		background = theme.accentDefault;
 		if (state.bPressed)
 			background = ShiftToward(background, false, 0.08);
 		else if (state.bHover)
 			background = ShiftToward(background, true, 0.08);
-		text = theme.TextOnAccent();
+		text = theme.textOnAccent;
 	}
 	else if (style == FBS_Subtle)
 	{
-		background = state.bPressed ? theme.ControlPressed()
-			: state.bHover ? theme.ControlHover()
-			: theme.SurfaceBase();
-		text = theme.TextPrimary();
+		background = state.bPressed ? theme.controlPressed
+			: state.bHover ? theme.controlHover
+			: theme.surfaceBase;
+		text = theme.textPrimary;
 	}
 	else
 	{
-		background = state.bPressed ? theme.ControlPressed()
-			: state.bHover ? theme.ControlHover()
-			: theme.ControlFill();
-		text = theme.TextPrimary();
+		background = state.bPressed ? theme.controlPressed
+			: state.bHover ? theme.controlHover
+			: theme.controlFill;
+		text = theme.textPrimary;
 		bStroke = true;
-		stroke = theme.StrokeCard();
+		stroke = theme.strokeCard;
 	}
 
 	FillPath(hdc, rc, m.radius, background);
@@ -394,7 +394,7 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 		// inward ring costs nothing, and a button this size is never clipped.
 		CRect rcRing(rc);
 		rcRing.DeflateRect(m.ringGap, m.ringGap);
-		StrokePath(hdc, rcRing, max(1, m.radius - m.ringGap), theme.AccentDefault(), m.ringWidth);
+		StrokePath(hdc, rcRing, max(1, m.radius - m.ringGap), theme.accentDefault, m.ringWidth);
 	}
 
 	CString csText = ControlText(state.hwnd);
@@ -416,23 +416,23 @@ void FluentOptionPaint::PaintButtonAs(HDC hdc, const CRect& rc, const Metrics& m
 static void PaintComboFieldImpl(HDC hdc, const CRect& rc, const FluentOptionPaint::Metrics& m,
 	HWND hwnd, const FluentControlState& state)
 {
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	const bool bEnabled = IsReallyEnabled(hwnd, state);
 	const bool bFocus = IsFocused(hwnd);
 
 	COLORREF background;
 	if (bEnabled == false)
-		background = theme.ControlDisabledBG();
+		background = theme.controlDisabledBG;
 	else if (state.bPressed)
-		background = theme.ControlPressed();
+		background = theme.controlPressed;
 	else if (state.bHover)
-		background = theme.ControlHover();
+		background = theme.controlHover;
 	else
-		background = theme.ControlFill();
+		background = theme.controlFill;
 
 	FillPath(hdc, rc, m.radius, background);
 	StrokePath(hdc, rc, m.radius,
-		bFocus && bEnabled ? theme.AccentDefault() : theme.StrokeCard(), m.ringGap);
+		bFocus && bEnabled ? theme.accentDefault : theme.strokeCard, m.ringGap);
 
 	// Chevron rather than a filled triangle, matching Win11. Two strokes, so
 	// it inherits the same anti-aliasing as everything else here.
@@ -452,8 +452,8 @@ static void PaintComboFieldImpl(HDC hdc, const CRect& rc, const FluentOptionPain
 			(REAL)(cx + halfW), (REAL)(cy - halfH / 2));
 
 		COLORREF pen = bEnabled
-			? ((bFocus || state.bHover) ? theme.TextPrimary() : theme.TextSecondary())
-			: theme.TextDisabled();
+			? ((bFocus || state.bHover) ? theme.textPrimary : theme.textSecondary)
+			: theme.textDisabled;
 		Pen p(Color(255, GetRValue(pen), GetGValue(pen), GetBValue(pen)), m.markWidth);
 		p.SetLineJoin(LineJoinRound);
 		p.SetStartCap(LineCapRound);
@@ -482,7 +482,7 @@ static void PaintComboFieldImpl(HDC hdc, const CRect& rc, const FluentOptionPain
 	CFont* pFont = AppFonts::Inst().Get(Font_Body);
 	HFONT hOldFont = (HFONT)::SelectObject(hdc, pFont->GetSafeHandle());
 	::SetBkMode(hdc, TRANSPARENT);
-	::SetTextColor(hdc, bEnabled ? theme.TextPrimary() : theme.TextDisabled());
+	::SetTextColor(hdc, bEnabled ? theme.textPrimary : theme.textDisabled);
 	::DrawTextW(hdc, csText, -1, &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 	::SelectObject(hdc, hOldFont);
 }
@@ -554,7 +554,7 @@ void FluentOptionPaint::PaintComboItem(LPDRAWITEMSTRUCT pDrawItemStruct, const M
 	if (pDrawItemStruct == NULL || pDrawItemStruct->CtlType != ODT_COMBOBOX)
 		return;
 
-	CTheme& theme = CGetSetOptions::m_Theme;
+	const auto& theme = CGetSetOptions::m_Theme.GetTokenSnapshot();
 
 	CDC* pDC = CDC::FromHandle(pDrawItemStruct->hDC);
 	CRect rc(pDrawItemStruct->rcItem);
@@ -565,7 +565,7 @@ void FluentOptionPaint::PaintComboItem(LPDRAWITEMSTRUCT pDrawItemStruct, const M
 	// Full-width fill, no inset: this list lives in a system popup window, so
 	// any gap left unfilled shows up as a light stripe in a dark theme.
 	FillSolid(pDC->GetSafeHdc(), rc,
-		bSelected ? theme.StateSelectedBG() : theme.SurfaceElevated());
+		bSelected ? theme.stateSelectedBG : theme.surfaceElevated);
 
 	CDPI dpi;
 	dpi.SetHwnd(pDrawItemStruct->hwndItem);
@@ -576,7 +576,7 @@ void FluentOptionPaint::PaintComboItem(LPDRAWITEMSTRUCT pDrawItemStruct, const M
 		// Same marker as CSidebar and the options nav list, so "selected" means
 		// one thing across the app. CChipBar keeps the outlined variant.
 		CRect rcBar(rc.left, rc.top + vInset, rc.left + m.selBarW, rc.bottom - vInset);
-		FillSolid(pDC->GetSafeHdc(), rcBar, theme.AccentDefault());
+		FillSolid(pDC->GetSafeHdc(), rcBar, theme.accentDefault);
 	}
 
 	CRect rcText(rc);
@@ -602,9 +602,9 @@ void FluentOptionPaint::PaintComboItem(LPDRAWITEMSTRUCT pDrawItemStruct, const M
 	HFONT hOldFont = (HFONT)::SelectObject(pDC->GetSafeHdc(), pFont->GetSafeHandle());
 	::SetBkMode(pDC->GetSafeHdc(), TRANSPARENT);
 	::SetTextColor(pDC->GetSafeHdc(),
-		bDisabled ? theme.TextDisabled()
-		: bSelected ? theme.StateSelectedText()
-		: theme.TextPrimary());
+		bDisabled ? theme.textDisabled
+		: bSelected ? theme.stateSelectedText
+		: theme.textPrimary);
 	::DrawTextW(pDC->GetSafeHdc(), csText, -1, &rcText,
 		DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 	::SelectObject(pDC->GetSafeHdc(), hOldFont);
@@ -639,7 +639,7 @@ LRESULT FluentOptionPaint::Paint(HWND hwnd, FluentControlState* pState)
 	// The dialog background is behind us; the control rect is not opaque, so
 	// fill with the same colour the dialog paints rather than leaving the
 	// bitmap's undefined contents behind.
-	FillSolid(dc.GetSafeHdc(), rc, CGetSetOptions::m_Theme.SurfaceBase());
+	FillSolid(dc.GetSafeHdc(), rc, CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);
 
 	switch (pState->kind)
 	{

@@ -35,6 +35,10 @@ public:
 	// Sends WM_SETFONT to every child of pWnd (default: Body).
 	static void ApplyToChildren(CWnd* pWnd, CFont* pFont = NULL);
 
+	// The snapshot font family as a CString (one home for the
+	// CString(snapshot.fontFamily.c_str()) conversion).
+	static CString SnapshotFontFamily();
+
 private:
 	AppFonts();
 

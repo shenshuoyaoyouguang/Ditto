@@ -22,6 +22,13 @@ public:
 
 	void SetNotifyWnd(HWND hWnd);
 
+	// Rebuilds the cached nav-background brush from the central token snapshot
+	// and invalidates the nav list. Needed on both switch paths: the dialog
+	// stays open while the General page previews themes (the OnInitDialog
+	// brush would otherwise go stale), and the system-switch fan-out now
+	// carries a COptionsSheet branch.
+	void RefreshThemeColors();
+
 // Attributes
 public:
 
@@ -29,13 +36,6 @@ public:
 public:
 
 	BOOL m_themeChanged;
-
-	// Rebuilds the cached nav background brush from the (possibly reloaded)
-	// theme snapshot and invalidates the nav list so the empty area below the
-	// last item repaints. Neither switch path reached this before: the
-	// system-switch fan-out had no COptionsSheet branch, and the in-dialog
-	// change only refreshed the paste window.
-	void RefreshThemeColors();
 
 // Overrides
 	// ClassWizard generated virtual function overrides

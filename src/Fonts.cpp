@@ -53,7 +53,7 @@ bool AppFonts::EnsureInitialized()
 		ReleaseDC(NULL, hdc);
 	}
 
-	Init(dpi, CGetSetOptions::m_Theme.FontFamily());
+	Init(dpi, SnapshotFontFamily());
 	return m_fonts[Font_Body].GetSafeHandle() != NULL;
 }
 
@@ -71,6 +71,11 @@ CFont* AppFonts::Get(FontToken token)
 		return &m_fonts[Font_Body];
 
 	return &m_fonts[token];
+}
+
+CString AppFonts::SnapshotFontFamily()
+{
+	return CString(CGetSetOptions::m_Theme.GetTokenSnapshot().fontFamily.c_str());
 }
 
 bool AppFonts::BuildFont(CFont& font, int size96, int weight, bool underline, bool isBody)

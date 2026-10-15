@@ -521,8 +521,8 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		// substring search, one search per token).
 		// values stay independent per ListLayoutMath.h: Scale(8+extra) must not
 		// be split into Scale(8)+Scale(extra).
-		const COLORREF oddRowBG = CGetSetOptions::m_Theme.ListBoxOddRowsBG();
-		const COLORREF evenRowBG = CGetSetOptions::m_Theme.ListBoxEvenRowsBG();
+		const COLORREF oddRowBG = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase;
+		const COLORREF evenRowBG = CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceRowAlt;
 		const COLORREF parityRowBG = ((nItem % 2) == 0) ? oddRowBG : evenRowBG;
 
 		const int s1px = m_windowDpi->Scale(1);
@@ -540,13 +540,13 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 		{
 			if (bListHasFocus)
 			{
-				crBkgnd = CGetSetOptions::m_Theme.StateSelectedBG();
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.StateSelectedText());
+				crBkgnd = CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedBG;
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedText);
 			}
 			else
 			{
-				crBkgnd = CGetSetOptions::m_Theme.ListBoxSelectedNoFocusBG();
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxSelectedNoFocusText());
+				crBkgnd = CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedNoFocusBG;
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().stateSelectedNoFocusText);
 			}
 		}
 		else
@@ -558,16 +558,16 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			if ((nItem % 2) == 0)
 			{
 				crBkgnd = oddRowBG;
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxOddRowsText());
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary);
 			}
 			else
 			{
 				crBkgnd = evenRowBG;
-				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.ListBoxEvenRowsText());
+				OldColor = pDC->SetTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary);
 			}
 
 			if (nItem == m_hoverItem)
-				crBkgnd = CGetSetOptions::m_Theme.StateHover();
+				crBkgnd = CGetSetOptions::m_Theme.GetTokenSnapshot().stateHover;
 		}
 
 		if (bSelected)
@@ -606,7 +606,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			pastedRect.left++;
 			pastedRect.right = pastedRect.left + s2px;
 
-			pDC->FillSolidRect(pastedRect, CGetSetOptions::m_Theme.ClipPastedColor());
+			pDC->FillSolidRect(pastedRect, CGetSetOptions::m_Theme.GetTokenSnapshot().accentDefault);
 		}
 
 		// set firstTenNum to the first ten number (1-10) corresponding to
@@ -629,7 +629,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		// draw the symbol box (tinted to the text color so the black glyphs
 		// stay visible on dark rows)
-		COLORREF iconTint = CGetSetOptions::m_Theme.TextPrimary();
+		COLORREF iconTint = CGetSetOptions::m_Theme.GetTokenSnapshot().textPrimary;
 		if (strSymbols.GetLength() > 0)
 		{
 			if (flags.isGroup) //group
@@ -661,7 +661,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 
 		if (DrawRtfText(nItem, rcText, pDC) == FALSE)
 		{
-			auto highlightColor = CGetSetOptions::m_Theme.SearchTextHighlight();
+			auto highlightColor = CGetSetOptions::m_Theme.GetTokenSnapshot().accentText;
 			//use unprintable characters so it doesn't find copied html to convert
 			if (m_searchText.GetLength() > 0 &&
 				FindNoCaseAndInsert(csText, m_searchText, StrF(_T("\x01\x04 color='#%02x%02x%02x'\x02"), GetRValue(highlightColor), GetGValue(highlightColor), GetBValue(highlightColor)), _T("\x01\x03\x04\x02"), m_linesPerRow) > 0)
@@ -702,7 +702,7 @@ void CQListCtrl::OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult)
 			crHotKey.top += m_windowDpi->Scale(1 + extraFromClipWasPaste);
 
 			// IndicatorBadge read once: text color and rule pen use the same token.
-			const COLORREF badgeColor = CGetSetOptions::m_Theme.IndicatorBadge();
+			const COLORREF badgeColor = CGetSetOptions::m_Theme.GetTokenSnapshot().indicatorBadge;
 			HFONT hOldFont = (HFONT)pDC->SelectObject(m_SmallFont);
 			COLORREF localOldTextColor = pDC->SetTextColor(badgeColor);
 
@@ -1305,7 +1305,7 @@ BOOL CQListCtrl::OnEraseBkgnd(CDC* pDC)
 
 	CRect rect;
 	GetClientRect(&rect);
-	CBrush myBrush(CGetSetOptions::m_Theme.MainWindowBG());    // dialog background color
+	CBrush myBrush(CGetSetOptions::m_Theme.GetTokenSnapshot().surfaceBase);    // dialog background color
 	CBrush* pOld = pDC->SelectObject(&myBrush);
 	BOOL bRes = pDC->PatBlt(0, 0, rect.Width(), rect.Height(), PATCOPY);
 	pDC->SelectObject(pOld);    // restore old brush
