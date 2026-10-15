@@ -25,18 +25,20 @@ namespace theme
 {
 
 // Finished values only: twenty semantic colors plus control sizes, the font
-// family and the dark flag, plus nine pure-copy members (unfocused selection,
-// scrollbar, active caption) that mirror their resolved CTheme members with
-// no derivation. No m_has* flags, no legacy colors, no walk state.
+// family and the dark flag, plus nineteen pure-copy members (unfocused
+// selection, scrollbar, all three caption variants with sizes, and the legacy
+// row pair the selection walk separates from) that mirror their resolved
+// CTheme members with no derivation. No m_has* flags, no legacy colors, no
+// walk state.
 // Exclusion rule (spec story 10, "legacy themes keep loading with the same
-// look"): fields with no v4 equivalent stay on live reads -- Caption TopMost /
-// NotConnected variants, caption sizes, SearchTextBoxFocusText,
-// SearchTextBoxFocusBorder, SearchTextHighlight, DescriptionWindow*,
-// GroupTree*. Covered by the snapshot: the twenty v4 tokens plus
-// StateSelectedNoFocusBG/Text, ScrollBarTrack/Thumb/ThumbHover,
-// CaptionLeft/Right/TextColor/Border. Widening the snapshot beyond this
-// covered set is a follow-up; mapping a legacy-only surface onto a token
-// would recompute its pixels.
+// look"): fields with no snapshot carrier stay on live reads --
+// SearchTextBoxFocusText, DescriptionWindow*, GroupTree*. Covered by the
+// snapshot: the twenty v4 tokens plus StateSelectedNoFocusBG/Text,
+// ScrollBarTrack/Thumb/ThumbHover, CaptionLeft/Right/TextColor/Border,
+// CaptionLeft/Right/Border TopMost + NotConnected, captionSize/captionFontSize,
+// ListBoxOddRowsBG/EvenRowsBG. Mapping a legacy-only surface onto a token
+// would recompute its pixels, so widening beyond this covered set stays a
+// follow-up.
 struct ThemeTokenSnapshot
 {
 	COLORREF surfaceBase = RGB(0, 0, 0);
@@ -68,6 +70,16 @@ struct ThemeTokenSnapshot
 	COLORREF captionRight = RGB(0, 0, 0);
 	COLORREF captionTextColor = RGB(0, 0, 0);
 	COLORREF captionBorder = RGB(0, 0, 0);
+	COLORREF captionLeftTopMost = RGB(0, 0, 0);
+	COLORREF captionRightTopMost = RGB(0, 0, 0);
+	COLORREF borderTopMost = RGB(0, 0, 0);
+	COLORREF captionLeftNotConnected = RGB(0, 0, 0);
+	COLORREF captionRightNotConnected = RGB(0, 0, 0);
+	COLORREF borderNotConnected = RGB(0, 0, 0);
+	int captionSize = 0;
+	int captionFontSize = 0;
+	COLORREF listBoxOddRowsBG = RGB(0, 0, 0);
+	COLORREF listBoxEvenRowsBG = RGB(0, 0, 0);
 	int radiusControl = 0;
 	int rowHeightCompact = 0;
 	int rowHeightComfortable = 0;
@@ -165,6 +177,16 @@ struct ThemeSnapshotRequest
 	COLORREF captionRight = RGB(204, 204, 204);
 	COLORREF captionTextColor = RGB(191, 191, 191);
 	COLORREF captionBorder = RGB(204, 204, 204);
+	COLORREF captionLeftTopMost = RGB(255, 255, 255);
+	COLORREF captionRightTopMost = RGB(204, 204, 204);
+	COLORREF borderTopMost = RGB(204, 204, 204);
+	COLORREF captionLeftNotConnected = RGB(255, 255, 255);
+	COLORREF captionRightNotConnected = RGB(255, 255, 0);
+	COLORREF borderNotConnected = RGB(204, 204, 204);
+	int captionSize = 32;
+	int captionFontSize = 14;
+	COLORREF listBoxOddRowsBG = RGB(255, 255, 255);
+	COLORREF listBoxEvenRowsBG = RGB(243, 243, 243);
 };
 
 // Slice 1: default palettes plus the always-on accent refresh. Mirrors
@@ -386,6 +408,16 @@ inline ThemeTokenSnapshot BuildThemeSnapshot(const ThemeSnapshotRequest& req)
 	snap.captionRight = req.captionRight;
 	snap.captionTextColor = req.captionTextColor;
 	snap.captionBorder = req.captionBorder;
+	snap.captionLeftTopMost = req.captionLeftTopMost;
+	snap.captionRightTopMost = req.captionRightTopMost;
+	snap.borderTopMost = req.borderTopMost;
+	snap.captionLeftNotConnected = req.captionLeftNotConnected;
+	snap.captionRightNotConnected = req.captionRightNotConnected;
+	snap.borderNotConnected = req.borderNotConnected;
+	snap.captionSize = req.captionSize;
+	snap.captionFontSize = req.captionFontSize;
+	snap.listBoxOddRowsBG = req.listBoxOddRowsBG;
+	snap.listBoxEvenRowsBG = req.listBoxEvenRowsBG;
 
 	return snap;
 }

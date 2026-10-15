@@ -136,29 +136,30 @@ bool CWndEx::SetCaptionColorActive(BOOL bPersistant, BOOL ConnectedToClipboard)
 
 	// Single fan-out: every variant resolves to one SetCaptionColors call, so
 	// the palette can only come from the live theme, never a stale copy.
+	const auto& s = CGetSetOptions::m_Theme.GetTokenSnapshot();
 	COLORREF left;
 	COLORREF right;
 	COLORREF border;
 	if(ConnectedToClipboard == false)
 	{
-		left = CGetSetOptions::m_Theme.CaptionLeftNotConnected();
-		right = CGetSetOptions::m_Theme.CaptionRightNotConnected();
-		border = CGetSetOptions::m_Theme.BorderNotConnected();
+		left = s.captionLeftNotConnected;
+		right = s.captionRightNotConnected;
+		border = s.borderNotConnected;
 	}
 	else if(bPersistant)
 	{
-		left = CGetSetOptions::m_Theme.CaptionLeftTopMost();
-		right = CGetSetOptions::m_Theme.CaptionRightTopMost();
-		border = CGetSetOptions::m_Theme.BorderTopMost();
+		left = s.captionLeftTopMost;
+		right = s.captionRightTopMost;
+		border = s.borderTopMost;
 	}
 	else
 	{
-		left = CGetSetOptions::m_Theme.GetTokenSnapshot().captionLeft;
-		right = CGetSetOptions::m_Theme.GetTokenSnapshot().captionRight;
-		border = CGetSetOptions::m_Theme.GetTokenSnapshot().captionBorder;
+		left = s.captionLeft;
+		right = s.captionRight;
+		border = s.captionBorder;
 	}
 
-	m_DittoWindow.SetCaptionTextColor(CGetSetOptions::m_Theme.GetTokenSnapshot().captionTextColor);
+	m_DittoWindow.SetCaptionTextColor(s.captionTextColor);
 
 	bResult = m_DittoWindow.SetCaptionColors(left, right, border);
 

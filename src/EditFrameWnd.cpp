@@ -180,10 +180,11 @@ void CEditFrameWnd::RefreshThemeColors()
 	// other windows do. Replays exactly what OnCreate applied.
 	CTheme& theme = CGetSetOptions::m_Theme;
 	m_DittoWindow.SetCaptionColors(theme.GetTokenSnapshot().captionLeft, theme.GetTokenSnapshot().captionRight, theme.GetTokenSnapshot().captionBorder);
-	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, theme.GetCaptionSize(), theme.GetCaptionFontSize());
+	m_DittoWindow.SetCaptionOn(this, CAPTION_TOP, true, theme.GetTokenSnapshot().captionSize, theme.GetTokenSnapshot().captionFontSize);
 
 	::RedrawWindow(GetSafeHwnd(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_NOERASE);
 }
+
 
 HITTEST_RET CEditFrameWnd::OnNcHitTest(CPoint point) 
 {

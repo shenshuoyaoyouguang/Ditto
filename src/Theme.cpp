@@ -163,6 +163,10 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 			LoadWindowsAccentColor();
 			FinalizeTokens(csTheme);
 		}
+		else if (!bHeaderOnly)
+		{
+			PublishTokenSnapshot();
+		}
 
 		return false;
 	}
@@ -174,6 +178,8 @@ bool CTheme::Load(CString csTheme, bool bHeaderOnly, bool bCheckLastWriteTime)
 		Log(m_csLastError);
 		m_lastTheme = _T("");
 		m_LastWriteTime = 0;
+		if (!bHeaderOnly)
+			PublishTokenSnapshot();
 		return false;
 	}
 
@@ -795,6 +801,16 @@ void CTheme::PublishTokenSnapshot()
 	req.captionRight = m_CaptionRight;
 	req.captionTextColor = m_CaptionTextColor;
 	req.captionBorder = m_Border;
+	req.captionLeftTopMost = m_CaptionLeftTopMost;
+	req.captionRightTopMost = m_CaptionRightTopMost;
+	req.borderTopMost = m_BorderTopMost;
+	req.captionLeftNotConnected = m_CaptionLeftNotConnected;
+	req.captionRightNotConnected = m_CaptionRightNotConnected;
+	req.borderNotConnected = m_BorderNotConnected;
+	req.captionSize = m_captionSize;
+	req.captionFontSize = m_captionFontSize;
+	req.listBoxOddRowsBG = m_ListBoxOddRowsBG;
+	req.listBoxEvenRowsBG = m_ListBoxEvenRowsBG;
 	req.radiusControl = { true, m_radiusControl };
 	req.rowHeightCompact = { true, m_rowHeightCompact };
 	req.rowHeightComfortable = { true, m_rowHeightComfortable };

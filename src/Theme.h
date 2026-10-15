@@ -82,10 +82,10 @@ public:
 	bool IsDarkTheme() const { return m_bDarkTheme; }
 
 	// Read-only snapshot of the finished token values, rebuilt on every
-	// FinalizeTokens() and system-accent refresh through the single producer
-	// in ThemeTokens.h. The concrete class and the global instance stay for
-	// the legacy-only surfaces (see the exclusion rule on
-	// ThemeTokenSnapshot); migrated views read through here.
+	// FinalizeTokens(), system-accent refresh and full-load failure fallback
+	// through the single producer in ThemeTokens.h. The concrete class and
+	// the global instance stay for the legacy-only surfaces (see the
+	// exclusion rule on ThemeTokenSnapshot); migrated views read through here.
 	const ditto::theme::ThemeTokenSnapshot& GetTokenSnapshot() const { return m_tokenSnapshot; }
 
 	CString Notes() const { return m_csNotes; }

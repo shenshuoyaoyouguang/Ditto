@@ -393,9 +393,10 @@ static void test_publish_explicit_override_matches_producer()
 	CHECK_TRUE(snap.radiusControl == 8);
 }
 
-// Copy fields: the nine pure-copy members (unfocused selection, scrollbar,
-// active caption) carry request -> snapshot identity. Values are hand-picked
-// distinct literals so a miswired field cannot pass by coincidence.
+// Copy fields: the nineteen pure-copy members (unfocused selection,
+// scrollbar, active caption, TopMost/NotConnected caption variants, caption
+// sizes, legacy row pair) carry request -> snapshot identity. Values are
+// hand-picked distinct literals so a miswired field cannot pass by coincidence.
 
 static void test_copy_fields_carry_identity()
 {
@@ -412,6 +413,16 @@ static void test_copy_fields_carry_identity()
 	req.captionRight = RGB(0xCC, 0xCC, 0xCC);
 	req.captionTextColor = RGB(0xBF, 0xBF, 0xBF);
 	req.captionBorder = RGB(0x99, 0x88, 0x77);
+	req.captionLeftTopMost = RGB(0x10, 0x20, 0x30);
+	req.captionRightTopMost = RGB(0x40, 0x50, 0x60);
+	req.borderTopMost = RGB(0x70, 0x80, 0x90);
+	req.captionLeftNotConnected = RGB(0x01, 0x02, 0x03);
+	req.captionRightNotConnected = RGB(0xFF, 0xFF, 0x00);
+	req.borderNotConnected = RGB(0x04, 0x05, 0x06);
+	req.captionSize = 28;
+	req.captionFontSize = 12;
+	req.listBoxOddRowsBG = RGB(0xAA, 0xBB, 0xCC);
+	req.listBoxEvenRowsBG = RGB(0xDD, 0xEE, 0xFF);
 
 	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
 
@@ -424,6 +435,16 @@ static void test_copy_fields_carry_identity()
 	CHECK_TRUE(snap.captionRight == RGB(0xCC, 0xCC, 0xCC));
 	CHECK_TRUE(snap.captionTextColor == RGB(0xBF, 0xBF, 0xBF));
 	CHECK_TRUE(snap.captionBorder == RGB(0x99, 0x88, 0x77));
+	CHECK_TRUE(snap.captionLeftTopMost == RGB(0x10, 0x20, 0x30));
+	CHECK_TRUE(snap.captionRightTopMost == RGB(0x40, 0x50, 0x60));
+	CHECK_TRUE(snap.borderTopMost == RGB(0x70, 0x80, 0x90));
+	CHECK_TRUE(snap.captionLeftNotConnected == RGB(0x01, 0x02, 0x03));
+	CHECK_TRUE(snap.captionRightNotConnected == RGB(0xFF, 0xFF, 0x00));
+	CHECK_TRUE(snap.borderNotConnected == RGB(0x04, 0x05, 0x06));
+	CHECK_TRUE(snap.captionSize == 28);
+	CHECK_TRUE(snap.captionFontSize == 12);
+	CHECK_TRUE(snap.listBoxOddRowsBG == RGB(0xAA, 0xBB, 0xCC));
+	CHECK_TRUE(snap.listBoxEvenRowsBG == RGB(0xDD, 0xEE, 0xFF));
 }
 
 // Focus distinction: the unfocused-selection tokens keep their own values even
@@ -451,6 +472,82 @@ static void test_no_focus_selection_stays_distinct()
 	CHECK_TRUE(snap.stateSelectedNoFocusText == RGB(0x00, 0x00, 0x00));
 }
 
+// Snapshot invariants (ported from the first-slice seam): the producer's
+// finished values obey the same three constraints the member-copy seam
+// checked -- dark-flag-vs-surface polarity, accent-text 4.5:1 on the surface,
+// selected-pill 1.25:1 separation from the surface and BOTH stored row refs.
+// Expected values are hand-worked WCAG figures, never implementation output.
+
+static void test_snapshot_dark_flag_follows_surface()
+{
+	// WCAG: L(#FFFFFF) = 1.0 (light), L(#000000) = 0.0 (dark). The flag must
+	// agree with the overridden surface polarity.
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+	req.surfaceBase.has = true;
+
+	req.surfaceBase.value = RGB(255, 255, 255);
+	CHECK_TRUE(ditto::theme::BuildThemeSnapshot(req).isDarkTheme == false);
+
+	req.surfaceBase.value = RGB(0, 0, 0);
+	CHECK_TRUE(ditto::theme::BuildThemeSnapshot(req).isDarkTheme == true);
+
+	// Mid-grey #808080 has L ~= 0.216 (dark side), so the flag must say dark
+	// even though the OS setting above is light.
+	req.surfaceBase.value = RGB(0x80, 0x80, 0x80);
+	CHECK_TRUE(ditto::theme::BuildThemeSnapshot(req).isDarkTheme == true);
+}
+
+static void test_snapshot_accent_text_clears_surface()
+{
+	// The Fluent Light accent #005FB8 on near-white is ~6.3:1 (hand-worked
+	// WCAG figure), past AA -- the producer keeps the hue.
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+	CHECK_TRUE(snap.accentText == RGB(0x00, 0x5F, 0xB8));
+	CHECK_TRUE(ContrastRatio(snap.accentText, snap.surfaceBase) >= 4.5);
+
+	// White on white is exactly 1:1 ((1.0 + 0.05) / (1.0 + 0.05)), far below
+	// AA -- feeding white as the accent must NOT survive: the guarantee
+	// shifts it until it clears 4.5:1.
+	CHECK_TRUE(ContrastRatio(RGB(255, 255, 255), RGB(255, 255, 255)) == 1.0);
+	req.builtInAccent = RGB(255, 255, 255);
+	snap = ditto::theme::BuildThemeSnapshot(req);
+	CHECK_TRUE(snap.accentText != RGB(255, 255, 255));
+	CHECK_TRUE(ContrastRatio(snap.accentText, snap.surfaceBase) >= 4.5);
+}
+
+static void test_snapshot_selected_bg_separates_from_rows()
+{
+	// kMinSeparation = 1.25:1. Pin one walk ref exactly onto the pill's
+	// hand-worked start (light BlendOver(#F3F3F3, #005FB8, 31) = (213,225,236),
+	// ~1:1 against that row): the walk must move the pill until it separates
+	// from the surface AND both stored row refs.
+	ditto::theme::ThemeSnapshotRequest req;
+	req.osDark = false;
+	req.parsedXml = false;
+	req.builtInAccent = RGB(0x00, 0x5F, 0xB8);
+	req.rowOddBG = RGB(255, 255, 255);
+	req.rowEvenBG = RGB(213, 225, 236);
+	// Production wiring (PublishTokenSnapshot) fills the walk refs and the
+	// stored row pair from the same members, so mirror that here: the pill
+	// must separate from the stored refs too.
+	req.listBoxOddRowsBG = RGB(255, 255, 255);
+	req.listBoxEvenRowsBG = RGB(213, 225, 236);
+
+	ditto::theme::ThemeTokenSnapshot snap = ditto::theme::BuildThemeSnapshot(req);
+	CHECK_TRUE(snap.stateSelectedBG != RGB(213, 225, 236));
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, snap.surfaceBase) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, snap.listBoxOddRowsBG) >= 1.25);
+	CHECK_TRUE(ContrastRatio(snap.stateSelectedBG, snap.listBoxEvenRowsBG) >= 1.25);
+}
+
 int main()
 {
 	test_light_defaults_carry_finished_values();
@@ -466,6 +563,9 @@ int main()
 	test_publish_explicit_override_matches_producer();
 	test_copy_fields_carry_identity();
 	test_no_focus_selection_stays_distinct();
+	test_snapshot_dark_flag_follows_surface();
+	test_snapshot_accent_text_clears_surface();
+	test_snapshot_selected_bg_separates_from_rows();
 
 	if (g_failures > 0)
 	{
